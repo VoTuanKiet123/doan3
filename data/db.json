@@ -108,6 +108,18 @@
       "note": "",
       "createdAt": "2026-05-24T04:41:43.106Z",
       "updatedAt": "2026-05-24T04:41:43.106Z"
+    },
+    {
+      "_id": "booking_1l0zqbmkk",
+      "user": "user_8oclzo70n",
+      "court": "court_1",
+      "date": "2026-06-02",
+      "startTime": "06:30",
+      "endTime": "08:00",
+      "totalPrice": 120000,
+      "note": "",
+      "createdAt": "2026-06-01T06:24:50.800Z",
+      "updatedAt": "2026-06-01T06:24:50.800Z"
     }
   ]
 }

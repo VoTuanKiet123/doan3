@@ -64,9 +64,11 @@ export default function MyBookingsPage() {
         <div className="space-y-4">
           {bookings.map((b) => {
             const s = STATUS_MAP[b.status] || STATUS_MAP.pending;
-            const startHour = parseInt(b.startTime.split(':')[0]);
-            const endHour = parseInt(b.endTime.split(':')[0]);
-            const duration = endHour - startHour;
+            const startParts = b.startTime.split(':');
+            const endParts = b.endTime.split(':');
+            const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+            const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+            const duration = (endMinutes - startMinutes) / 60;
 
             return (
               <div key={b._id} className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition duration-300">

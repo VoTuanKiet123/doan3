@@ -4,8 +4,10 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 const TIME_SLOTS = [
-  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30',
+  '21:00', '21:30', '22:00'
 ];
 
 export default function BookingPage() {
@@ -46,13 +48,21 @@ export default function BookingPage() {
       .catch(() => {});
   }, [date, courtId]);
 
+  // Helper tính thời lượng đặt sân chính xác theo số phút (hỗ trợ giờ lẻ như 1.5, 2.5 giờ)
+  const getDuration = () => {
+    if (!startTime || !endTime) return 0;
+    const startParts = startTime.split(':');
+    const endParts = endTime.split(':');
+    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+    return (endMinutes - startMinutes) / 60;
+  };
+
   // Calculate dynamic price
   useEffect(() => {
     if (startTime && endTime && court) {
-      const startHour = parseInt(startTime.split(':')[0]);
-      const endHour = parseInt(endTime.split(':')[0]);
-      const hours = endHour - startHour;
-      setTotalPrice(hours > 0 ? hours * court.pricePerHour : 0);
+      const duration = getDuration();
+      setTotalPrice(duration > 0 ? duration * court.pricePerHour : 0);
     } else {
       setTotalPrice(0);
     }
@@ -61,12 +71,17 @@ export default function BookingPage() {
   // Helper to check if a specific hour slot (e.g. 08:00 - 09:00) is already booked
   const isHourBooked = (startHourStr, endHourStr) => {
     if (!startHourStr || !endHourStr) return false;
-    const sVal = parseInt(startHourStr.split(':')[0]);
-    const eVal = parseInt(endHourStr.split(':')[0]);
+    
+    const startParts = startHourStr.split(':');
+    const endParts = endHourStr.split(':');
+    const sVal = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const eVal = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
     
     return bookedSlots.some(booked => {
-      const bStart = parseInt(booked.start.split(':')[0]);
-      const bEnd = parseInt(booked.end.split(':')[0]);
+      const bStartParts = booked.start.split(':');
+      const bEndParts = booked.end.split(':');
+      const bStart = parseInt(bStartParts[0]) * 60 + parseInt(bStartParts[1]);
+      const bEnd = parseInt(bEndParts[0]) * 60 + parseInt(bEndParts[1]);
       // Overlap logic: start < booked.end AND end > booked.start
       return sVal < bEnd && eVal > bStart;
     });
@@ -80,9 +95,11 @@ export default function BookingPage() {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
-    const startVal = parseInt(startTime.split(':')[0]);
-    const endVal = parseInt(endTime.split(':')[0]);
-    if (endVal <= startVal) {
+    const startParts = startTime.split(':');
+    const endParts = endTime.split(':');
+    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+    if (endMinutes <= startMinutes) {
       toast.error('Giờ kết thúc phải sau giờ bắt đầu');
       return;
     }
@@ -123,9 +140,11 @@ export default function BookingPage() {
   // Filter end slots based on start slot selected
   const availableEndSlots = TIME_SLOTS.filter(t => {
     if (!startTime) return false;
-    const startH = parseInt(startTime.split(':')[0]);
-    const currentH = parseInt(t.split(':')[0]);
-    return currentH > startH;
+    const startParts = startTime.split(':');
+    const endParts = t.split(':');
+    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+    return endMinutes > startMinutes;
   });
 
   return (
@@ -302,7 +321,7 @@ export default function BookingPage() {
                 <div className="flex justify-between text-sm text-emerald-100">
                   <span>Khung giờ:</span>
                   <span className="font-bold text-white">
-                    {startTime} - {endTime} ({parseInt(endTime.split(':')[0]) - parseInt(startTime.split(':')[0])} giờ)
+                    {startTime} - {endTime} ({getDuration()} giờ)
                   </span>
                 </div>
                 <div className="flex justify-between text-sm text-emerald-100">

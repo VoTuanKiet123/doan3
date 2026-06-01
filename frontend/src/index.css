@@ -26,6 +26,21 @@
   --radius-lg: 24px;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* Force margin centering for mx-auto across all browsers */
+.mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: #f1f5f9;

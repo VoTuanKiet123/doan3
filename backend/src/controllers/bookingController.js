@@ -39,11 +39,21 @@ const getBookingById = async (req, res) => {
   }
 };
 
+// Helper để lấy Date theo múi giờ Việt Nam độc lập với múi giờ máy chủ
+const getVietnamTime = () => {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+};
+
 // @desc    Tạo booking mới
 // @route   POST /api/bookings
 const createBooking = async (req, res) => {
   try {
     const { courtId, date, startTime, endTime, note } = req.body;
+
+    // Kiểm tra thông tin đầu vào
+    if (!courtId || !date || !startTime || !endTime) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ thông tin' });
+    }
 
     // Kiểm tra sân có tồn tại không
     const court = await Court.findById(courtId);
@@ -52,6 +62,48 @@ const createBooking = async (req, res) => {
     }
     if (court.status !== 'active') {
       return res.status(400).json({ success: false, message: 'Sân hiện không khả dụng' });
+    }
+
+    // 1. Kiểm tra định dạng thời gian HH:mm
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+      return res.status(400).json({ success: false, message: 'Định dạng thời gian không hợp lệ (HH:mm)' });
+    }
+
+    // 2. Chuyển sang phút để so sánh và tính toán
+    const startParts = startTime.split(':');
+    const endParts = endTime.split(':');
+    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+
+    if (endMinutes <= startMinutes) {
+      return res.status(400).json({ success: false, message: 'Giờ kết thúc phải sau giờ bắt đầu' });
+    }
+
+    // 3. Giờ hoạt động (06:00 - 22:00)
+    const OPEN_MINUTES = 6 * 60;
+    const CLOSE_MINUTES = 22 * 60;
+    if (startMinutes < OPEN_MINUTES || endMinutes > CLOSE_MINUTES) {
+      return res.status(400).json({ success: false, message: 'Thời gian đặt sân phải nằm trong giờ hoạt động (06:00 - 22:00)' });
+    }
+
+    // 4. Validate ngày đặt không nằm trong quá khứ
+    const vnNow = getVietnamTime();
+    const year = vnNow.getFullYear();
+    const month = String(vnNow.getMonth() + 1).padStart(2, '0');
+    const day = String(vnNow.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    if (date < todayStr) {
+      return res.status(400).json({ success: false, message: 'Không thể đặt sân trong quá khứ' });
+    }
+
+    // 5. Nếu ngày đặt là hôm nay, kiểm tra giờ bắt đầu có lớn hơn giờ hiện tại hay không
+    if (date === todayStr) {
+      const currentMinutes = vnNow.getHours() * 60 + vnNow.getMinutes();
+      if (startMinutes <= currentMinutes) {
+        return res.status(400).json({ success: false, message: 'Giờ bắt đầu đặt sân phải sau thời điểm hiện tại' });
+      }
     }
 
     // Kiểm tra trùng lịch
@@ -67,10 +119,8 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Sân đã được đặt trong khung giờ này' });
     }
 
-    // Tính tổng tiền
-    const start = parseInt(startTime.split(':')[0]);
-    const end = parseInt(endTime.split(':')[0]);
-    const hours = end - start;
+    // Tính tổng tiền chính xác dựa trên phút
+    const hours = (endMinutes - startMinutes) / 60;
     const totalPrice = hours * court.pricePerHour;
 
     const booking = await Booking.create({
