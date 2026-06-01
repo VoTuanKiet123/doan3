@@ -1,0 +1,113 @@
+{
+  "courts": [
+    {
+      "_id": "court_1",
+      "name": "Sân A1 - Tiêu chuẩn",
+      "description": "Sân cầu lông tiêu chuẩn BWF, sàn gỗ cứng, hệ thống đèn LED 600 lux. Phù hợp luyện tập và thi đấu phong trào.",
+      "pricePerHour": 80000,
+      "status": "active",
+      "createdAt": "2026-05-24T04:06:13.818Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "court_2",
+      "name": "Sân A2 - Tiêu chuẩn",
+      "description": "Sân cầu lông tiêu chuẩn BWF, sàn gỗ cứng, hệ thống đèn LED 600 lux. Phù hợp luyện tập và thi đấu phong trào.",
+      "pricePerHour": 80000,
+      "status": "active",
+      "createdAt": "2026-05-24T04:06:13.820Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "court_3",
+      "name": "Sân B1 - VIP",
+      "description": "Sân VIP cao cấp, sàn PVC chuyên dụng, hệ thống đèn LED 800 lux, điều hòa không khí. Tiêu chuẩn thi đấu quốc gia.",
+      "pricePerHour": 150000,
+      "status": "active",
+      "createdAt": "2026-05-24T04:06:13.820Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "court_4",
+      "name": "Sân B2 - VIP",
+      "description": "Sân VIP cao cấp, sàn PVC chuyên dụng, hệ thống đèn LED 800 lux, điều hòa không khí. Tiêu chuẩn thi đấu quốc gia.",
+      "pricePerHour": 150000,
+      "status": "active",
+      "createdAt": "2026-05-24T04:06:13.820Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "court_5",
+      "name": "Sân C1 - Premium",
+      "description": "Sân Premium đẳng cấp nhất, sàn gỗ maple nhập khẩu, hệ thống chiếu sáng chuyên nghiệp 1000 lux, phòng thay đồ riêng.",
+      "pricePerHour": 220000,
+      "status": "active",
+      "createdAt": "2026-05-24T04:06:13.820Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "court_6",
+      "name": "Sân C2 - Bảo trì",
+      "description": "Sân đang trong quá trình nâng cấp và bảo trì. Dự kiến mở cửa trở lại trong tuần tới.",
+      "pricePerHour": 120000,
+      "status": "maintenance",
+      "createdAt": "2026-05-24T04:06:13.820Z",
+      "updatedAt": "2026-05-24T04:06:13.820Z"
+    }
+  ],
+  "users": [
+    {
+      "_id": "user_admin",
+      "name": "Admin",
+      "email": "admin@badminton.com",
+      "password": "$2a$10$2LYA4qdeFcOjVIYNQicLxeUTYluriMp9S0dfxzcOYtTpVV8tYCXC.",
+      "role": "admin",
+      "phone": "0901234567",
+      "createdAt": "2026-05-24T04:06:13.820Z"
+    },
+    {
+      "_id": "user_kebrye03v",
+      "name": "Nguyễn Văn A",
+      "email": "nguyenvana@gmail.com",
+      "password": "th0833234533",
+      "phone": "0912345678",
+      "createdAt": "2026-05-24T04:34:33.899Z",
+      "updatedAt": "2026-05-24T04:34:33.899Z"
+    },
+    {
+      "_id": "user_8oclzo70n",
+      "name": "Võ Tuấn Kiệt",
+      "email": "vtkiet68kg@gmail.com",
+      "password": "12345678",
+      "phone": "0919019019",
+      "createdAt": "2026-05-24T04:36:28.652Z",
+      "updatedAt": "2026-05-24T04:36:28.652Z"
+    }
+  ],
+  "bookings": [
+    {
+      "_id": "booking_pjrffhlxl",
+      "user": "user_kebrye03v",
+      "court": "court_1",
+      "date": "2026-05-27",
+      "startTime": "07:00",
+      "endTime": "08:00",
+      "totalPrice": 80000,
+      "note": "",
+      "createdAt": "2026-05-24T04:34:57.046Z",
+      "updatedAt": "2026-05-24T04:34:57.046Z"
+    },
+    {
+      "_id": "booking_4nwv7m6wc",
+      "user": "user_8oclzo70n",
+      "court": "court_1",
+      "date": "2026-05-26",
+      "startTime": "07:00",
+      "endTime": "08:00",
+      "totalPrice": 80000,
+      "note": "",
+      "createdAt": "2026-05-24T04:41:43.106Z",
+      "updatedAt": "2026-05-24T04:41:43.106Z"
+    }
+  ]
+}

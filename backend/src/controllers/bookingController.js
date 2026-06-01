@@ -1,0 +1,132 @@
+const Booking = require('../models/Booking');
+const Court = require('../models/Court');
+
+// @desc    Lấy danh sách booking (admin: tất cả, user: của mình)
+// @route   GET /api/bookings
+const getBookings = async (req, res) => {
+  try {
+    let query = {};
+    if (req.user.role !== 'admin') {
+      query.user = req.user._id;
+    }
+    const bookings = await Booking.find(query)
+      .populate('user', 'name email phone')
+      .populate('court', 'name pricePerHour')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, count: bookings.length, bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Lấy chi tiết booking
+// @route   GET /api/bookings/:id
+const getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('user', 'name email phone')
+      .populate('court', 'name pricePerHour');
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy booking' });
+    }
+    // Chỉ cho phép xem của mình hoặc admin
+    if (booking.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Không có quyền truy cập' });
+    }
+    res.json({ success: true, booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Tạo booking mới
+// @route   POST /api/bookings
+const createBooking = async (req, res) => {
+  try {
+    const { courtId, date, startTime, endTime, note } = req.body;
+
+    // Kiểm tra sân có tồn tại không
+    const court = await Court.findById(courtId);
+    if (!court) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sân' });
+    }
+    if (court.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Sân hiện không khả dụng' });
+    }
+
+    // Kiểm tra trùng lịch
+    const conflictBooking = await Booking.findOne({
+      court: courtId,
+      date,
+      status: { $ne: 'cancelled' },
+      $or: [
+        { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
+      ],
+    });
+    if (conflictBooking) {
+      return res.status(400).json({ success: false, message: 'Sân đã được đặt trong khung giờ này' });
+    }
+
+    // Tính tổng tiền
+    const start = parseInt(startTime.split(':')[0]);
+    const end = parseInt(endTime.split(':')[0]);
+    const hours = end - start;
+    const totalPrice = hours * court.pricePerHour;
+
+    const booking = await Booking.create({
+      user: req.user._id,
+      court: courtId,
+      date,
+      startTime,
+      endTime,
+      totalPrice,
+      note,
+    });
+
+    await booking.populate('court', 'name pricePerHour');
+    res.status(201).json({ success: true, message: 'Đặt sân thành công', booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Cập nhật trạng thái booking (admin)
+// @route   PUT /api/bookings/:id/status
+const updateBookingStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('user', 'name email').populate('court', 'name');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy booking' });
+    }
+    res.json({ success: true, message: 'Cập nhật trạng thái thành công', booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Huỷ booking
+// @route   DELETE /api/bookings/:id
+const cancelBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy booking' });
+    }
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Không có quyền thực hiện' });
+    }
+    booking.status = 'cancelled';
+    await booking.save();
+    res.json({ success: true, message: 'Huỷ booking thành công' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getBookings, getBookingById, createBooking, updateBookingStatus, cancelBooking };
