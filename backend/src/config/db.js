@@ -121,10 +121,32 @@ const setupMockDB = () => {
 
     const doc = { ...item };
 
-    doc.populate = async function () { return this; };
+    // Default status for Booking and Court
+    if (modelName === 'Booking' && !doc.status) {
+      doc.status = 'pending';
+    }
+    if (modelName === 'Court' && !doc.status) {
+      doc.status = 'active';
+    }
+
+    doc.populate = async function (path) {
+      const data = readData();
+      if (path === 'user') {
+        const userId = typeof this.user === 'string' ? this.user : (this.user?._id || this.user);
+        const u = data.users.find(x => x._id === userId || x._id?.toString() === userId?.toString());
+        if (u) this.user = { ...u };
+      }
+      if (path === 'court') {
+        const courtId = typeof this.court === 'string' ? this.court : (this.court?._id || this.court);
+        const c = data.courts.find(x => x._id === courtId || x._id?.toString() === courtId?.toString());
+        if (c) this.court = { ...c };
+      }
+      return this;
+    };
+
     doc.save = async function () {
+      const data = readData();
       if (modelName === 'User') {
-        const data = readData();
         const list = data.users || [];
         const idx = list.findIndex(u => u._id === this._id || u._id?.toString() === this._id?.toString());
         if (idx !== -1) {
@@ -132,8 +154,30 @@ const setupMockDB = () => {
           if (this.password && this.password !== oldUser.password && !this.password.startsWith('$2a$')) {
             this.password = await bcrypt.hash(this.password, 10);
           }
-          list[idx] = { ...this };
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list[idx] = rawDoc;
           data.users = list;
+          writeData(data);
+        }
+      }
+      if (modelName === 'Booking') {
+        const list = data.bookings || [];
+        const idx = list.findIndex(b => b._id === this._id || b._id?.toString() === this._id?.toString());
+        if (idx !== -1) {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          // Ensure we don't save populated user/court structures, keep them as IDs
+          if (rawDoc.user && typeof rawDoc.user === 'object') {
+            rawDoc.user = rawDoc.user._id || rawDoc.user;
+          }
+          if (rawDoc.court && typeof rawDoc.court === 'object') {
+            rawDoc.court = rawDoc.court._id || rawDoc.court;
+          }
+          list[idx] = rawDoc;
+          data.bookings = list;
           writeData(data);
         }
       }
@@ -171,7 +215,24 @@ const setupMockDB = () => {
     const chain = {
       results: wrapped,
       sort: function () { return this; },
-      populate: function () { return this; },
+      populate: function (path, select) {
+        const data = readData();
+        const items = Array.isArray(this.results) ? this.results : (this.results ? [this.results] : []);
+        
+        items.forEach(item => {
+          if (path === 'user') {
+            const userId = typeof item.user === 'string' ? item.user : (item.user?._id || item.user);
+            const u = data.users.find(x => x._id === userId || x._id?.toString() === userId?.toString());
+            if (u) item.user = { ...u };
+          }
+          if (path === 'court') {
+            const courtId = typeof item.court === 'string' ? item.court : (item.court?._id || item.court);
+            const c = data.courts.find(x => x._id === courtId || x._id?.toString() === courtId?.toString());
+            if (c) item.court = { ...c };
+          }
+        });
+        return this;
+      },
       select: function () { return this; },
       then: function (resolve) { resolve(this.results); return this; },
       catch: function () { return this; }
