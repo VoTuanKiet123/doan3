@@ -29,6 +29,17 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    // Chi tiết giá từng segment 30 phút (dynamic pricing)
+    priceBreakdown: [
+      {
+        timeSlot: String,   // "17:00 - 17:30"
+        rate: Number,       // đơn giá / giờ áp dụng cho segment này
+        price: Number,      // tiền thực tế của segment
+        multiplier: Number, // hệ số nhân (1.0 = giá thường, 1.5 = peak)
+        ruleName: String,   // tên rule (null nếu giá thường)
+        ruleType: String,   // 'normal', 'peak', 'weekend', 'holiday'
+      },
+    ],
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'cancelled'],

@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourts from './pages/admin/AdminCourts';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminPricing from './pages/admin/AdminPricing';
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="courts" element={<AdminCourts />} />
             <Route path="bookings" element={<AdminBookings />} />
+            <Route path="pricing" element={<AdminPricing />} />
             <Route path="users" element={<AdminUsers />} />
           </Route>
         </Routes>

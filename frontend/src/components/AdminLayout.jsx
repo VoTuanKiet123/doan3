@@ -5,6 +5,7 @@ const sidebarLinks = [
   { to: '/admin', icon: '📊', label: 'Dashboard', end: true },
   { to: '/admin/courts', icon: '🏸', label: 'Quản lý sân' },
   { to: '/admin/bookings', icon: '📋', label: 'Đặt sân' },
+  { to: '/admin/pricing', icon: '💰', label: 'Quản lý giá' },
   { to: '/admin/users', icon: '👥', label: 'Người dùng' },
 ];
 

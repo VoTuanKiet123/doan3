@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,11 @@ export default function AdminBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [expandedRows, setExpandedRows] = useState({});
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const fetchBookings = () => {
     api.get('/bookings').then(res => { setBookings(res.data.bookings); setLoading(false); });
@@ -88,38 +93,105 @@ export default function AdminBookings() {
             <tbody>
               {filtered.map((b) => {
                 const s = STATUS_MAP[b.status];
+                const isExpanded = expandedRows[b._id];
                 return (
-                  <tr key={b._id}>
-                    <td>
-                      <div className="admin-user-cell">
-                        <div className="admin-user-name">{b.user?.name}</div>
-                        <div className="admin-text-muted">{b.user?.phone}</div>
-                      </div>
-                    </td>
-                    <td className="admin-text-secondary">🏸 {b.court?.name}</td>
-                    <td className="admin-text-secondary">{b.date}</td>
-                    <td className="admin-text-secondary">{b.startTime} - {b.endTime}</td>
-                    <td className="admin-text-price">{b.totalPrice?.toLocaleString('vi-VN')}đ</td>
-                    <td>
-                      <span className={s?.cls}>{s?.text}</span>
-                    </td>
-                    <td>
-                      <div className="admin-action-group">
-                        {b.status === 'pending' && (
-                          <button onClick={() => handleStatus(b._id, 'confirmed')}
-                            className="admin-action-btn admin-action-btn--confirm">
-                            Xác nhận
-                          </button>
-                        )}
-                        {b.status !== 'cancelled' && (
-                          <button onClick={() => handleStatus(b._id, 'cancelled')}
-                            className="admin-action-btn admin-action-btn--danger">
-                            Huỷ
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                  <Fragment key={b._id}>
+                    <tr>
+                      <td>
+                        <div className="admin-user-cell">
+                          <div className="admin-user-name">{b.user?.name}</div>
+                          <div className="admin-text-muted">{b.user?.phone}</div>
+                        </div>
+                      </td>
+                      <td className="admin-text-secondary">🏸 {b.court?.name}</td>
+                      <td className="admin-text-secondary">{b.date}</td>
+                      <td className="admin-text-secondary">{b.startTime} - {b.endTime}</td>
+                      <td>
+                        <div className="admin-price-cell" style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span className="admin-text-price" style={{ fontWeight: 'bold' }}>
+                            {b.totalPrice?.toLocaleString('vi-VN')}đ
+                          </span>
+                          {b.priceBreakdown && b.priceBreakdown.length > 0 && (
+                            <button
+                              onClick={() => toggleRow(b._id)}
+                              className="admin-detail-toggle-btn"
+                              style={{
+                                border: 'none',
+                                background: 'none',
+                                color: '#10b981',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                padding: '2px 0',
+                                textDecoration: 'underline',
+                                textAlign: 'left',
+                                marginTop: '2px'
+                              }}
+                            >
+                              {isExpanded ? '▲ Ẩn chi tiết' : '▼ Chi tiết giá'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={s?.cls}>{s?.text}</span>
+                      </td>
+                      <td>
+                        <div className="admin-action-group">
+                          {b.status === 'pending' && (
+                            <button onClick={() => handleStatus(b._id, 'confirmed')}
+                              className="admin-action-btn admin-action-btn--confirm">
+                              Xác nhận
+                            </button>
+                          )}
+                          {b.status !== 'cancelled' && (
+                            <button onClick={() => handleStatus(b._id, 'cancelled')}
+                              className="admin-action-btn admin-action-btn--danger">
+                              Huỷ
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && b.priceBreakdown && b.priceBreakdown.length > 0 && (
+                      <tr className="admin-expanded-row" style={{ backgroundColor: '#f8fafc' }}>
+                        <td colSpan="7" style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                          <div className="admin-breakdown-container">
+                            <h4 style={{ margin: '0 0 10px 0', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              📊 Chi tiết phân bổ giá động từng khung giờ (30 phút)
+                            </h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                              {b.priceBreakdown.map((seg, idx) => {
+                                const isNormal = seg.ruleType === 'normal';
+                                const isPeak = seg.ruleType === 'peak';
+                                const isWeekend = seg.ruleType === 'weekend';
+                                const isHoliday = seg.ruleType === 'holiday';
+                                const dotColor = isNormal ? '#10b981' : isPeak ? '#f59e0b' : isWeekend ? '#ef4444' : '#8b5cf6';
+                                const tagBg = isNormal ? '#ecfdf5' : isPeak ? '#fffbeb' : isWeekend ? '#fef2f2' : '#f5f3ff';
+                                const borderColor = isNormal ? '#a7f3d0' : isPeak ? '#fde68a' : isWeekend ? '#fca5a5' : '#ddd6fe';
+                                return (
+                                  <div key={idx} style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '8px 12px', borderRadius: '10px', backgroundColor: tagBg,
+                                    border: `1px solid ${borderColor}`, fontSize: '11px'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: dotColor }} />
+                                      <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{seg.timeSlot}</span>
+                                      {seg.ruleName && <span style={{ color: '#64748b', fontSize: '10px', marginLeft: '4px' }}>({seg.ruleName})</span>}
+                                    </div>
+                                    <span style={{ fontWeight: 'bold', color: '#0f172a' }}>
+                                      {seg.price?.toLocaleString('vi-VN')}đ
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

@@ -12,6 +12,11 @@ const STATUS_MAP = {
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedBookings, setExpandedBookings] = useState({});
+
+  const toggleBreakdown = (id) => {
+    setExpandedBookings(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const fetchBookings = () => {
     api.get('/bookings')
@@ -106,9 +111,17 @@ export default function MyBookingsPage() {
                   <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 pt-4 md:pt-0 border-t border-slate-100 md:border-t-0">
                     <div className="text-left md:text-right">
                       <span className="text-xs font-semibold text-slate-400 block">Tổng tiền</span>
-                      <span className="text-xl font-extrabold text-green-700">
+                      <span className="text-xl font-extrabold text-green-700 block">
                         {b.totalPrice?.toLocaleString('vi-VN')}đ
                       </span>
+                      {b.priceBreakdown && b.priceBreakdown.length > 0 && (
+                        <button
+                          onClick={() => toggleBreakdown(b._id)}
+                          className="text-[11px] font-bold text-green-600 hover:text-green-700 flex items-center gap-1 mt-1 cursor-pointer bg-green-50 px-2 py-1 rounded-lg border border-green-100/50 hover:bg-green-100 transition inline-flex"
+                        >
+                          {expandedBookings[b._id] ? '▲ Ẩn chi tiết giá' : '▼ Chi tiết giá'}
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -128,6 +141,43 @@ export default function MyBookingsPage() {
                   </div>
 
                 </div>
+
+                {/* Breakdown Area */}
+                {expandedBookings[b._id] && b.priceBreakdown && b.priceBreakdown.length > 0 && (
+                  <div className="mt-5 pt-5 border-t border-slate-100 animate-fadeIn">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      📊 Chi tiết tính giá
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {b.priceBreakdown.map((seg, idx) => {
+                        const isNormal = seg.ruleType === 'normal';
+                        const isPeak = seg.ruleType === 'peak';
+                        const isWeekend = seg.ruleType === 'weekend';
+                        const isHoliday = seg.ruleType === 'holiday';
+                        const dotColor = isNormal ? 'bg-emerald-500' : isPeak ? 'bg-amber-500' : isWeekend ? 'bg-rose-500' : 'bg-purple-500';
+                        const tagBg = isNormal ? 'bg-emerald-50/40 border-emerald-100 text-emerald-800' : isPeak ? 'bg-amber-50/40 border-amber-100 text-amber-800' : isWeekend ? 'bg-rose-50/40 border-rose-100 text-rose-800' : 'bg-purple-50/40 border-purple-100 text-purple-800';
+                        
+                        return (
+                          <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl border ${tagBg} text-xs`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${dotColor} shrink-0`} />
+                              <span className="font-semibold">{seg.timeSlot}</span>
+                              {seg.ruleName && (
+                                <span className="text-[10px] opacity-75 font-bold">
+                                  ({seg.ruleName})
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-bold">
+                              {seg.price?.toLocaleString('vi-VN')}đ
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
               </div>
             );
           })}

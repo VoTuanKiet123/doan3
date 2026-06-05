@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Court = require('../models/Court');
+const { getPriceForBooking } = require('../services/pricingService');
 
 // @desc    Lấy danh sách booking (admin: tất cả, user: của mình)
 // @route   GET /api/bookings
@@ -119,9 +120,9 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Sân đã được đặt trong khung giờ này' });
     }
 
-    // Tính tổng tiền chính xác dựa trên phút
-    const hours = (endMinutes - startMinutes) / 60;
-    const totalPrice = hours * court.pricePerHour;
+    // Tính tổng tiền động dựa trên quy tắc giá (Peak hours / Weekend)
+    const priceResult = await getPriceForBooking(court.pricePerHour, date, startTime, endTime);
+    const { totalPrice, breakdown: priceBreakdown } = priceResult;
 
     const booking = await Booking.create({
       user: req.user._id,
@@ -130,6 +131,7 @@ const createBooking = async (req, res) => {
       startTime,
       endTime,
       totalPrice,
+      priceBreakdown,
       note,
     });
 

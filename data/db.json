@@ -121,5 +121,58 @@
       "createdAt": "2026-06-01T06:24:50.800Z",
       "updatedAt": "2026-06-01T06:24:50.800Z"
     }
+  ],
+  "pricingrules": [
+    {
+      "_id": "rule_1",
+      "name": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+      "type": "peak",
+      "daysOfWeek": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startHour": 17,
+      "endHour": 22,
+      "priceMultiplier": 1.5,
+      "priority": 2,
+      "isActive": true,
+      "createdAt": "2026-06-05T12:04:49.465Z",
+      "updatedAt": "2026-06-05T12:04:49.466Z"
+    },
+    {
+      "_id": "rule_2",
+      "name": "Cuối tuần (Thứ 7 & Chủ Nhật)",
+      "type": "weekend",
+      "daysOfWeek": [
+        0,
+        6
+      ],
+      "startHour": 6,
+      "endHour": 22,
+      "priceMultiplier": 1.8,
+      "priority": 1,
+      "isActive": true,
+      "createdAt": "2026-06-05T12:04:49.466Z",
+      "updatedAt": "2026-06-05T12:04:49.466Z"
+    },
+    {
+      "_id": "pricingrule_zczeeux95",
+      "name": "giờ vàng cuối tuần",
+      "type": "weekend",
+      "daysOfWeek": [
+        0,
+        6
+      ],
+      "startHour": 12,
+      "endHour": 21,
+      "priceMultiplier": 1.5,
+      "priority": 2,
+      "isActive": false,
+      "createdAt": "2026-06-05T12:08:48.451Z",
+      "updatedAt": "2026-06-05T12:08:48.451Z"
+    }
   ]
 }

@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const courtRoutes = require('./src/routes/courtRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const userRoutes = require('./src/routes/userRoutes');
+const pricingRoutes = require('./src/routes/pricingRoutes');
 
 // Connect to MongoDB
 connectDB();
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courts', courtRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/pricing', pricingRoutes);
 
 // Health check
 app.get('/', (req, res) => {

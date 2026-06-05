@@ -19,8 +19,11 @@ export default function BookingPage() {
   const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState([]); // List of {start, end} for selected date
+  const [bookedSlots, setBookedSlots] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [priceBreakdown, setPriceBreakdown] = useState([]);
+  const [hasSpecialPrice, setHasSpecialPrice] = useState(false);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
   // Load court details
   useEffect(() => {
@@ -58,15 +61,39 @@ export default function BookingPage() {
     return (endMinutes - startMinutes) / 60;
   };
 
-  // Calculate dynamic price
+  // Calculate dynamic price via API preview
   useEffect(() => {
-    if (startTime && endTime && court) {
-      const duration = getDuration();
-      setTotalPrice(duration > 0 ? duration * court.pricePerHour : 0);
+    if (startTime && endTime && court && date) {
+      const startParts = startTime.split(':');
+      const endParts = endTime.split(':');
+      const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+      const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+      if (endMinutes <= startMinutes) {
+        setTotalPrice(0); setPriceBreakdown([]); setHasSpecialPrice(false);
+        return;
+      }
+      setPricingLoading(true);
+      api.post('/pricing/preview', { courtId, date, startTime, endTime })
+        .then(res => {
+          if (res.data.success) {
+            setTotalPrice(res.data.totalPrice);
+            setPriceBreakdown(res.data.breakdown || []);
+            setHasSpecialPrice(res.data.hasSpecialPrice || false);
+          }
+        })
+        .catch(() => {
+          // Fallback: tính đơn giản nếu API lỗi
+          const duration = getDuration();
+          setTotalPrice(duration > 0 ? duration * court.pricePerHour : 0);
+          setPriceBreakdown([]);
+        })
+        .finally(() => setPricingLoading(false));
     } else {
       setTotalPrice(0);
+      setPriceBreakdown([]);
+      setHasSpecialPrice(false);
     }
-  }, [startTime, endTime, court]);
+  }, [startTime, endTime, court, date]);
 
   // Helper to check if a specific hour slot (e.g. 08:00 - 09:00) is already booked
   const isHourBooked = (startHourStr, endHourStr) => {
@@ -309,37 +336,118 @@ export default function BookingPage() {
           {/* Pricing detail card */}
           <div className="bg-gradient-to-br from-green-900 to-emerald-950 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full filter blur-xl"></div>
-            
-            <h3 className="font-bold mb-4 text-base text-emerald-300">Hóa Đơn Tạm Tính</h3>
 
-            {totalPrice > 0 ? (
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm text-emerald-100">
-                  <span>Ngày chọn:</span>
-                  <span className="font-bold text-white">{date}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 className="font-bold text-base text-emerald-300">Hóa Đơn Tạm Tính</h3>
+              {hasSpecialPrice && (
+                <span style={{
+                  background: 'rgba(245,158,11,0.25)', color: '#fcd34d',
+                  fontSize: '10px', fontWeight: 800, padding: '3px 8px',
+                  borderRadius: '8px', border: '1px solid rgba(245,158,11,0.4)',
+                  letterSpacing: '0.3px',
+                }}>
+                  ⚡ GIỜ CAO ĐIỂM
+                </span>
+              )}
+            </div>
+
+            {pricingLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(167,243,208,0.6)', fontSize: '13px' }}>
+                <div style={{ width: '24px', height: '24px', border: '2px solid rgba(167,243,208,0.3)', borderTopColor: '#6ee7b7', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 8px' }} />
+                Đang tính giá...
+              </div>
+            ) : totalPrice > 0 ? (
+              <div>
+                {/* Thông tin chung */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
+                    <span>Ngày:</span>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{date}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
+                    <span>Khung giờ:</span>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{startTime} – {endTime} ({getDuration()} giờ)</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
+                    <span>Giá gốc/giờ:</span>
+                    <span style={{ fontWeight: 600, color: '#a7f3d0' }}>{court.pricePerHour?.toLocaleString('vi-VN')}đ</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm text-emerald-100">
-                  <span>Khung giờ:</span>
-                  <span className="font-bold text-white">
-                    {startTime} - {endTime} ({getDuration()} giờ)
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm text-emerald-100">
-                  <span>Đơn giá:</span>
-                  <span className="font-bold text-white">{court.pricePerHour?.toLocaleString('vi-VN')}đ / giờ</span>
-                </div>
-                
-                <div className="border-t border-emerald-800/60 pt-4 mt-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-emerald-300">TỔNG CỘNG</span>
-                    <span className="text-2xl font-extrabold text-green-300">
+
+                {/* Chi tiết từng segment */}
+                {priceBreakdown.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(167,243,208,0.5)', letterSpacing: '0.8px', marginBottom: '6px', textTransform: 'uppercase' }}>
+                      Chi tiết từng khung giờ
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
+                      {priceBreakdown.map((seg, idx) => {
+                        const isNormal = seg.ruleType === 'normal';
+                        const isPeak = seg.ruleType === 'peak';
+                        const isWeekend = seg.ruleType === 'weekend';
+                        const isHoliday = seg.ruleType === 'holiday';
+                        const dotColor = isNormal ? '#6ee7b7' : isPeak ? '#fbbf24' : isWeekend ? '#f87171' : '#c084fc';
+                        const tagBg = isNormal ? 'rgba(110,231,183,0.1)' : isPeak ? 'rgba(251,191,36,0.15)' : isWeekend ? 'rgba(248,113,113,0.15)' : 'rgba(192,132,252,0.15)';
+                        return (
+                          <div key={idx} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '5px 8px', borderRadius: '8px',
+                            background: tagBg, border: `1px solid ${dotColor}20`,
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
+                              <span style={{ fontSize: '12px', color: '#d1fae5', fontWeight: 600 }}>{seg.timeSlot}</span>
+                              {seg.ruleName && (
+                                <span style={{ fontSize: '10px', color: dotColor, fontWeight: 700, opacity: 0.85 }}>
+                                  ×{seg.multiplier}
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: isNormal ? '#6ee7b7' : dotColor }}>
+                              {seg.price.toLocaleString('vi-VN')}đ
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tổng */}
+                <div style={{ borderTop: '1px solid rgba(16,185,129,0.3)', paddingTop: '12px' }}>
+                  {/* Legend màu sắc */}
+                  {priceBreakdown.some(s => s.ruleType !== 'normal') && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {priceBreakdown.some(s => s.ruleType === 'normal') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6ee7b7', display: 'inline-block' }} />
+                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Giá thường</span>
+                        </div>
+                      )}
+                      {priceBreakdown.some(s => s.ruleType === 'peak') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }} />
+                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Giờ vàng</span>
+                        </div>
+                      )}
+                      {priceBreakdown.some(s => s.ruleType === 'weekend') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f87171', display: 'inline-block' }} />
+                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Cuối tuần</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#a7f3d0' }}>TỔNG CỘNG</span>
+                    <span style={{ fontSize: '24px', fontWeight: 900, color: '#86efac' }}>
                       {totalPrice.toLocaleString('vi-VN')}đ
                     </span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6 text-emerald-200/60 text-sm">
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(167,243,208,0.4)', fontSize: '13px' }}>
                 💡 Vui lòng chọn ngày và giờ để hiển thị hóa đơn tạm tính.
               </div>
             )}

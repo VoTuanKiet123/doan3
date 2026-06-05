@@ -97,7 +97,35 @@ const setupMockDB = () => {
           createdAt: new Date().toISOString()
         }
       ],
-      bookings: []
+      bookings: [],
+      pricingrules: [
+        {
+          _id: 'rule_1',
+          name: 'Giờ vàng tối (Thứ 2 - Thứ 6)',
+          type: 'peak',
+          daysOfWeek: [1, 2, 3, 4, 5],
+          startHour: 17,
+          endHour: 22,
+          priceMultiplier: 1.5,
+          priority: 2,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: 'rule_2',
+          name: 'Cuối tuần (Thứ 7 & Chủ Nhật)',
+          type: 'weekend',
+          daysOfWeek: [0, 6],
+          startHour: 6,
+          endHour: 22,
+          priceMultiplier: 1.8,
+          priority: 1,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]
     };
     fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2), 'utf8');
   }
@@ -105,9 +133,48 @@ const setupMockDB = () => {
   // Read/write helpers
   const readData = () => {
     try {
-      return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+      const data = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+      let modified = false;
+      if (!data.courts) { data.courts = []; modified = true; }
+      if (!data.users) { data.users = []; modified = true; }
+      if (!data.bookings) { data.bookings = []; modified = true; }
+      if (!data.pricingrules) {
+        data.pricingrules = [
+          {
+            _id: 'rule_1',
+            name: 'Giờ vàng tối (Thứ 2 - Thứ 6)',
+            type: 'peak',
+            daysOfWeek: [1, 2, 3, 4, 5],
+            startHour: 17,
+            endHour: 22,
+            priceMultiplier: 1.5,
+            priority: 2,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            _id: 'rule_2',
+            name: 'Cuối tuần (Thứ 7 & Chủ Nhật)',
+            type: 'weekend',
+            daysOfWeek: [0, 6],
+            startHour: 6,
+            endHour: 22,
+            priceMultiplier: 1.8,
+            priority: 1,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        modified = true;
+      }
+      if (modified) {
+        fs.writeFileSync(dbFile, JSON.stringify(data, null, 2), 'utf8');
+      }
+      return data;
     } catch (e) {
-      return { courts: [], users: [], bookings: [] };
+      return { courts: [], users: [], bookings: [], pricingrules: [] };
     }
   };
 
@@ -178,6 +245,18 @@ const setupMockDB = () => {
           }
           list[idx] = rawDoc;
           data.bookings = list;
+          writeData(data);
+        }
+      }
+      if (modelName === 'PricingRule') {
+        const list = data.pricingrules || [];
+        const idx = list.findIndex(r => r._id === this._id || r._id?.toString() === this._id?.toString());
+        if (idx !== -1) {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list[idx] = rawDoc;
+          data.pricingrules = list;
           writeData(data);
         }
       }
@@ -348,6 +427,7 @@ const setupMockDB = () => {
   patchModel('Court', 'courts');
   patchModel('User', 'users');
   patchModel('Booking', 'bookings');
+  patchModel('PricingRule', 'pricingrules');
 };
 
 const connectDB = async () => {
