@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute, AdminRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import BottomNav from './components/BottomNav';
 import AdminLayout from './components/AdminLayout';
 
 import HomePage from './pages/HomePage';
@@ -23,7 +24,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public & User routes - with Navbar + Footer */}
+          {/* Public & User routes - with Navbar + Footer + BottomNav */}
           <Route
             path="/*"
             element={
@@ -40,6 +41,7 @@ export default function App() {
                   </Routes>
                 </main>
                 <Footer />
+                <BottomNav />
               </div>
             }
           />
@@ -60,7 +62,20 @@ export default function App() {
             <Route path="users" element={<AdminUsers />} />
           </Route>
         </Routes>
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              fontFamily: 'Nunito, sans-serif',
+              fontWeight: 700,
+              borderRadius: 12,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            },
+            success: {
+              iconTheme: { primary: '#0D9D57', secondary: 'white' },
+            },
+          }}
+        />
       </BrowserRouter>
     </AuthProvider>
   );

@@ -18,9 +18,8 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      const user = await register(form);
+      await register(form);
       toast.success('Đăng ký thành công! Chào mừng bạn 🎉');
-      // Sau đăng ký, khách hàng luôn được điều hướng về trang đặt sân
       navigate('/courts');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Đăng ký thất bại');
@@ -34,155 +33,174 @@ export default function RegisterPage() {
     if (!p) return null;
     if (p.length < 6) return { level: 'weak', label: 'Yếu', color: '#ef4444' };
     if (p.length < 10) return { level: 'medium', label: 'Trung bình', color: '#f59e0b' };
-    return { level: 'strong', label: 'Mạnh', color: '#10b981' };
+    return { level: 'strong', label: 'Mạnh', color: '#0D9D57' };
   };
 
   const strength = passwordStrength();
 
   return (
     <div className="auth-page">
-      {/* Background decoration */}
-      <div className="auth-bg-deco" aria-hidden="true">
-        <div className="auth-deco-circle auth-deco-circle-1" />
-        <div className="auth-deco-circle auth-deco-circle-2" />
-        <div className="auth-deco-circle auth-deco-circle-3" />
+      {/* Left: Brand Panel */}
+      <div className="auth-left">
+        <div className="auth-left-content">
+          <div className="auth-left-logo">🏸</div>
+          <h1 className="auth-left-title">
+            Tham Gia<br />Cộng Đồng<br />BadmintonHub
+          </h1>
+          <p className="auth-left-sub">
+            Hàng ngàn tay vợt đã tin tưởng chọn BadmintonHub để đặt sân, quản lý lịch và nâng cao kỹ năng thi đấu.
+          </p>
+          <div className="auth-left-features">
+            {[
+              { icon: '⚡', text: 'Đặt sân nhanh — chỉ 30 giây' },
+              { icon: '🎯', text: 'Chọn giờ linh hoạt theo lịch của bạn' },
+              { icon: '💰', text: 'Giá minh bạch, không phát sinh thêm' },
+              { icon: '🔒', text: 'Tài khoản bảo mật 100%' },
+            ].map(f => (
+              <div key={f.text} className="auth-left-feature">
+                <span style={{ fontSize: 20 }}>{f.icon}</span>
+                <span>{f.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="auth-container animate-fadeInUp">
-        {/* Header */}
-        <div className="auth-header">
-          <div className="auth-logo animate-float">🏸</div>
-          <h1 className="auth-title">Tạo Tài Khoản Mới</h1>
-          <p className="auth-subtitle">Trở thành thành viên và bắt đầu đặt sân ngay hôm nay.</p>
-        </div>
-
-        {/* Member benefit */}
-        <div className="register-benefit-bar">
-          <div className="register-benefit-item">
-            <span>⚡</span> Đặt sân nhanh chóng
-          </div>
-          <div className="register-benefit-item">
-            <span>📅</span> Theo dõi lịch đặt
-          </div>
-          <div className="register-benefit-item">
-            <span>🎯</span> Ưu tiên chọn giờ
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label className="form-label">
-              <span className="form-label-icon">👤</span> Họ và tên
-            </label>
-            <input
-              id="register-name"
-              type="text"
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="form-input"
-              placeholder="Nguyễn Văn A"
-              autoComplete="name"
-            />
+      {/* Right: Register Form */}
+      <div className="auth-right">
+        <div className="auth-container animate-fadeInUp">
+          {/* Header */}
+          <div className="auth-header">
+            <div className="auth-logo">✨</div>
+            <h1 className="auth-title">Tạo Tài Khoản</h1>
+            <p className="auth-subtitle">Đăng ký miễn phí và bắt đầu đặt sân ngay!</p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              <span className="form-label-icon">✉️</span> Địa chỉ Email
-            </label>
-            <input
-              id="register-email"
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="form-input"
-              placeholder="ten@email.com"
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              <span className="form-label-icon">📞</span> Số điện thoại
-            </label>
-            <input
-              id="register-phone"
-              type="tel"
-              required
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="form-input"
-              placeholder="0912 345 678"
-              autoComplete="tel"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              <span className="form-label-icon">🔒</span> Mật khẩu
-            </label>
-            <div className="input-password-wrap">
-              <input
-                id="register-password"
-                type={showPass ? 'text' : 'password'}
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="form-input"
-                placeholder="Tối thiểu 6 ký tự"
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="input-eye-btn"
-                onClick={() => setShowPass(!showPass)}
-                tabIndex={-1}
-              >
-                {showPass ? '🙈' : '👁️'}
-              </button>
-            </div>
-            {strength && (
-              <div className="password-strength">
-                <div className="password-strength-bar">
-                  <div
-                    className="password-strength-fill"
-                    style={{
-                      width: strength.level === 'weak' ? '33%' : strength.level === 'medium' ? '66%' : '100%',
-                      background: strength.color,
-                    }}
-                  />
-                </div>
-                <span className="password-strength-label" style={{ color: strength.color }}>
-                  {strength.label}
-                </span>
+          {/* Benefits */}
+          <div className="register-benefit-bar">
+            {[
+              { icon: '⚡', text: 'Đặt sân nhanh' },
+              { icon: '📅', text: 'Xem lịch đặt' },
+              { icon: '🎯', text: 'Ưu tiên giờ đẹp' },
+            ].map(b => (
+              <div key={b.text} className="register-benefit-item">
+                <span style={{ fontSize: 20 }}>{b.icon}</span>
+                <span>{b.text}</span>
               </div>
-            )}
+            ))}
           </div>
 
-          <button
-            id="btn-register-submit"
-            type="submit"
-            disabled={loading}
-            className="auth-submit-btn"
-          >
-            {loading ? (
-              <span className="auth-btn-loading">
-                <span className="auth-spinner" />
-                Đang đăng ký...
-              </span>
-            ) : (
-              'Tạo Tài Khoản'
-            )}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label className="form-label">
+                <span className="form-label-icon">👤</span> Họ và tên
+              </label>
+              <input
+                id="register-name"
+                type="text"
+                required
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                className="form-input"
+                placeholder="Nguyễn Văn A"
+                autoComplete="name"
+              />
+            </div>
 
-        <p className="auth-footer-text">
-          Đã có tài khoản?{' '}
-          <Link to="/login" className="auth-link">
-            Đăng nhập ngay
-          </Link>
-        </p>
+            <div className="form-group">
+              <label className="form-label">
+                <span className="form-label-icon">✉️</span> Địa chỉ Email
+              </label>
+              <input
+                id="register-email"
+                type="email"
+                required
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                className="form-input"
+                placeholder="ten@email.com"
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                <span className="form-label-icon">📞</span> Số điện thoại
+              </label>
+              <input
+                id="register-phone"
+                type="tel"
+                required
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+                className="form-input"
+                placeholder="0912 345 678"
+                autoComplete="tel"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                <span className="form-label-icon">🔒</span> Mật khẩu
+              </label>
+              <div className="input-password-wrap">
+                <input
+                  id="register-password"
+                  type={showPass ? 'text' : 'password'}
+                  required
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  className="form-input"
+                  placeholder="Tối thiểu 6 ký tự"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="input-eye-btn"
+                  onClick={() => setShowPass(!showPass)}
+                  tabIndex={-1}
+                >
+                  {showPass ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {strength && (
+                <div className="password-strength">
+                  <div className="password-strength-bar">
+                    <div
+                      className="password-strength-fill"
+                      style={{
+                        width: strength.level === 'weak' ? '33%' : strength.level === 'medium' ? '66%' : '100%',
+                        background: strength.color,
+                      }}
+                    />
+                  </div>
+                  <span className="password-strength-label" style={{ color: strength.color }}>
+                    {strength.label}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <button
+              id="btn-register-submit"
+              type="submit"
+              disabled={loading}
+              className="auth-submit-btn"
+            >
+              {loading ? (
+                <span className="auth-btn-loading">
+                  <span className="auth-spinner" />
+                  Đang đăng ký...
+                </span>
+              ) : '✨ Tạo Tài Khoản Miễn Phí'}
+            </button>
+          </form>
+
+          <p className="auth-footer-text">
+            Đã có tài khoản?{' '}
+            <Link to="/login" className="auth-link">Đăng nhập ngay →</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -4,33 +4,30 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 const STATUS_MAP = {
-  pending: { text: 'Chờ Xác Nhận', cls: 'badge-pending' },
-  confirmed: { text: 'Đã Xác Nhận', cls: 'badge-confirmed' },
-  cancelled: { text: 'Đã Hủy Lịch', cls: 'badge-cancelled' },
+  pending:   { text: 'Chờ Xác Nhận', cls: 'badge-pending',   icon: '⏳' },
+  confirmed: { text: 'Đã Xác Nhận',  cls: 'badge-confirmed', icon: '✅' },
+  cancelled: { text: 'Đã Hủy Lịch',  cls: 'badge-cancelled', icon: '❌' },
 };
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedBookings, setExpandedBookings] = useState({});
+  const [filter, setFilter] = useState('all');
 
-  const toggleBreakdown = (id) => {
+  const toggleBreakdown = (id) =>
     setExpandedBookings(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const fetchBookings = () => {
     api.get('/bookings')
-      .then(res => {
-        setBookings(res.data.bookings);
-        setLoading(false);
-      })
+      .then(res => { setBookings(res.data.bookings); setLoading(false); })
       .catch(() => setLoading(false));
   };
 
   useEffect(() => { fetchBookings(); }, []);
 
   const handleCancel = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này? Lịch sẽ chuyển sang trạng thái đã hủy.')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này?')) return;
     try {
       await api.delete(`/bookings/${id}`);
       toast.success('Hủy lịch thành công');
@@ -40,99 +37,156 @@ export default function MyBookingsPage() {
     }
   };
 
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+
+  const counts = {
+    all: bookings.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    confirmed: bookings.filter(b => b.status === 'confirmed').length,
+    cancelled: bookings.filter(b => b.status === 'cancelled').length,
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 animate-fadeIn">
+    <div className="animate-fadeIn has-bottom-nav">
       {/* Header */}
-      <div className="mb-10 text-center md:text-left">
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight mb-2">Lịch Đặt Của Tôi</h1>
-        <p className="text-slate-500">Quản lý và xem lịch sử đặt sân đấu của bạn.</p>
+      <div style={{ background: 'linear-gradient(135deg, #0D9D57 0%, #1aaf64 60%, #0a7a42 100%)', padding: '28px 16px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 900, color: 'white', marginBottom: 6 }}>
+            📅 Lịch Đặt Của Tôi
+          </h1>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+            {bookings.length} lịch đặt tổng cộng
+          </p>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 rounded-3xl skeleton"></div>
+      <div style={{ maxWidth: 800, margin: '-24px auto 0', padding: '0 16px 48px' }}>
+
+        {/* Filter Tabs */}
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', padding: '6px', display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto' }}>
+          {[
+            { id: 'all',       label: 'Tất cả',      icon: '📋' },
+            { id: 'pending',   label: 'Chờ xác nhận', icon: '⏳' },
+            { id: 'confirmed', label: 'Đã xác nhận',  icon: '✅' },
+            { id: 'cancelled', label: 'Đã hủy',       icon: '❌' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              style={{
+                flex: 1,
+                padding: '10px 8px',
+                borderRadius: 10,
+                border: 'none',
+                background: filter === tab.id ? '#0D9D57' : 'transparent',
+                color: filter === tab.id ? 'white' : 'var(--text-secondary)',
+                fontWeight: 800,
+                fontSize: 12,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontFamily: 'Nunito, sans-serif',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{tab.icon}</span>
+              {tab.label}
+              <span style={{ fontSize: 11, background: filter === tab.id ? 'rgba(255,255,255,0.25)' : 'var(--surface-2)', borderRadius: 999, padding: '1px 8px' }}>
+                {counts[tab.id]}
+              </span>
+            </button>
           ))}
         </div>
-      ) : bookings.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-          <div className="text-6xl mb-4 animate-float">📅</div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Bạn chưa đặt lịch nào</h3>
-          <p className="text-slate-400 text-sm max-w-xs mx-auto mb-8">
-            Hãy bắt đầu trải nghiệm thi đấu cầu lông đỉnh cao ngay hôm nay bằng cách đăng ký một sân đấu trống!
-          </p>
-          <Link to="/courts" className="btn btn-primary px-6 py-3 cursor-pointer">
-            Đặt sân ngay
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {bookings.map((b) => {
-            const s = STATUS_MAP[b.status] || STATUS_MAP.pending;
-            const startParts = b.startTime.split(':');
-            const endParts = b.endTime.split(':');
-            const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-            const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-            const duration = (endMinutes - startMinutes) / 60;
 
-            return (
-              <div key={b._id} className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm hover:shadow-md transition duration-300">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  
-                  {/* Left part: Sân, Ngày, Giờ, Note */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-green-100">
-                      🏸
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg group-hover:text-green-600 transition">
+        {/* Content */}
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 14 }} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '56px 20px', background: 'white', borderRadius: 16, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 56, marginBottom: 12 }}>📅</div>
+            <h3 style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>
+              {filter === 'all' ? 'Bạn chưa đặt lịch nào' : 'Không có lịch trong mục này'}
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, maxWidth: 280, margin: '0 auto 24px' }}>
+              {filter === 'all' ? 'Hãy đặt sân ngay để bắt đầu trải nghiệm!' : 'Không tìm thấy lịch với trạng thái này.'}
+            </p>
+            {filter === 'all' ? (
+              <Link to="/courts" className="btn btn-primary" style={{ borderRadius: 999, padding: '12px 28px' }}>
+                Đặt sân ngay →
+              </Link>
+            ) : (
+              <button onClick={() => setFilter('all')} className="btn btn-outline" style={{ borderRadius: 999 }}>
+                Xem tất cả lịch
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {filtered.map((b, idx) => {
+              const s = STATUS_MAP[b.status] || STATUS_MAP.pending;
+              const startParts = b.startTime.split(':');
+              const endParts = b.endTime.split(':');
+              const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+              const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+              const duration = (endMinutes - startMinutes) / 60;
+
+              return (
+                <div
+                  key={b._id}
+                  className="booking-card"
+                  style={{ animation: `fadeInUp 0.4s ease ${idx * 0.05}s both` }}
+                >
+                  {/* Header */}
+                  <div className="booking-card__header">
+                    <div className="booking-card__icon">🏸</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                         {b.court?.name || 'Sân cầu lông'}
                       </h3>
-                      
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-500 font-medium">
-                        <span className="flex items-center gap-1">
-                          📅 {b.date}
-                        </span>
-                        <span className="hidden md:inline text-slate-300">|</span>
-                        <span className="flex items-center gap-1 text-slate-700">
-                          ⏰ {b.startTime} - {b.endTime} ({duration} giờ)
-                        </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        <span className="booking-meta-chip">📅 {b.date}</span>
+                        <span className="booking-meta-chip">⏰ {b.startTime} – {b.endTime} ({duration}h)</span>
                       </div>
-                      
-                      {b.note && (
-                        <p className="text-slate-400 text-xs mt-3 flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 inline-block">
-                          📝 <span className="font-semibold text-slate-500">Ghi chú:</span> {b.note}
-                        </p>
-                      )}
                     </div>
+                    <span className={`badge ${s.cls}`}>
+                      {s.icon} {s.text}
+                    </span>
                   </div>
 
-                  {/* Right part: Price, Status, Cancel button */}
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 pt-4 md:pt-0 border-t border-slate-100 md:border-t-0">
-                    <div className="text-left md:text-right">
-                      <span className="text-xs font-semibold text-slate-400 block">Tổng tiền</span>
-                      <span className="text-xl font-extrabold text-green-700 block">
+                  {/* Body */}
+                  <div className="booking-card__body">
+                    {/* Price */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 2 }}>TỔNG TIỀN</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--primary)' }}>
                         {b.totalPrice?.toLocaleString('vi-VN')}đ
-                      </span>
+                      </div>
                       {b.priceBreakdown && b.priceBreakdown.length > 0 && (
                         <button
                           onClick={() => toggleBreakdown(b._id)}
-                          className="text-[11px] font-bold text-green-600 hover:text-green-700 flex items-center gap-1 mt-1 cursor-pointer bg-green-50 px-2 py-1 rounded-lg border border-green-100/50 hover:bg-green-100 transition inline-flex"
+                          style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', marginTop: 4, fontFamily: 'Nunito, sans-serif' }}
                         >
-                          {expandedBookings[b._id] ? '▲ Ẩn chi tiết giá' : '▼ Chi tiết giá'}
+                          {expandedBookings[b._id] ? '▲ Ẩn chi tiết' : '▼ Chi tiết giá'}
                         </button>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className={`badge ${s.cls}`}>
-                        {s.text}
-                      </span>
-                      
+                    {/* Note + Cancel */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                      {b.note && (
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: 8, maxWidth: 200, textAlign: 'right' }}>
+                          📝 {b.note}
+                        </div>
+                      )}
                       {b.status !== 'cancelled' && (
                         <button
                           onClick={() => handleCancel(b._id)}
-                          className="btn btn-ghost border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-3 py-1.5 text-xs font-bold rounded-xl cursor-pointer"
+                          style={{ background: '#ffeaea', color: '#c62828', border: '1px solid #ffcdd2', padding: '8px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', transition: 'all 0.2s' }}
                         >
                           Hủy lịch
                         </button>
@@ -140,49 +194,40 @@ export default function MyBookingsPage() {
                     </div>
                   </div>
 
-                </div>
-
-                {/* Breakdown Area */}
-                {expandedBookings[b._id] && b.priceBreakdown && b.priceBreakdown.length > 0 && (
-                  <div className="mt-5 pt-5 border-t border-slate-100 animate-fadeIn">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      📊 Chi tiết tính giá
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {b.priceBreakdown.map((seg, idx) => {
-                        const isNormal = seg.ruleType === 'normal';
-                        const isPeak = seg.ruleType === 'peak';
-                        const isWeekend = seg.ruleType === 'weekend';
-                        const isHoliday = seg.ruleType === 'holiday';
-                        const dotColor = isNormal ? 'bg-emerald-500' : isPeak ? 'bg-amber-500' : isWeekend ? 'bg-rose-500' : 'bg-purple-500';
-                        const tagBg = isNormal ? 'bg-emerald-50/40 border-emerald-100 text-emerald-800' : isPeak ? 'bg-amber-50/40 border-amber-100 text-amber-800' : isWeekend ? 'bg-rose-50/40 border-rose-100 text-rose-800' : 'bg-purple-50/40 border-purple-100 text-purple-800';
-                        
-                        return (
-                          <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl border ${tagBg} text-xs`}>
-                            <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${dotColor} shrink-0`} />
-                              <span className="font-semibold">{seg.timeSlot}</span>
-                              {seg.ruleName && (
-                                <span className="text-[10px] opacity-75 font-bold">
-                                  ({seg.ruleName})
-                                </span>
-                              )}
+                  {/* Price breakdown */}
+                  {expandedBookings[b._id] && b.priceBreakdown && b.priceBreakdown.length > 0 && (
+                    <div style={{ borderTop: '1px solid var(--border-light)', padding: '14px 20px', animation: 'fadeIn 0.3s ease' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+                        📊 Chi tiết tính giá
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                        {b.priceBreakdown.map((seg, i) => {
+                          const isNormal = seg.ruleType === 'normal';
+                          const isPeak = seg.ruleType === 'peak';
+                          const isWeekend = seg.ruleType === 'weekend';
+                          const bg = isNormal ? '#e8f8ef' : isPeak ? '#fff8e1' : isWeekend ? '#fdecea' : '#f3e8ff';
+                          const color = isNormal ? '#0D9D57' : isPeak ? '#d97706' : isWeekend ? '#c62828' : '#7c3aed';
+                          return (
+                            <div key={i} style={{ background: bg, borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color }}>{seg.timeSlot}</div>
+                                {seg.ruleName && <div style={{ fontSize: 10, color, opacity: 0.7 }}>{seg.ruleName}</div>}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color }}>
+                                {seg.price?.toLocaleString('vi-VN')}đ
+                              </div>
                             </div>
-                            <span className="font-bold">
-                              {seg.price?.toLocaleString('vi-VN')}đ
-                            </span>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
