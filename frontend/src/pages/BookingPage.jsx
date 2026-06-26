@@ -1,81 +1,138 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import toast from 'react-hot-toast';
-import { Activity, Calendar, Clock, FileText, Zap, Info } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../services/api";
+import toast from "react-hot-toast";
+import { Activity, Calendar, Clock, FileText, Zap } from "lucide-react";
 
 const TIME_SLOTS = [
-  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-  '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30',
-  '21:00', '21:30', '22:00'
+  "06:00",
+  "06:30",
+  "07:00",
+  "07:30",
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
+  "20:30",
+  "21:00",
+  "21:30",
+  "22:00",
+];
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: "CN" },
+  { value: 1, label: "T2" },
+  { value: 2, label: "T3" },
+  { value: 3, label: "T4" },
+  { value: 4, label: "T5" },
+  { value: 5, label: "T6" },
+  { value: 6, label: "T7" },
 ];
 
 export default function BookingPage() {
   const { courtId } = useParams();
   const navigate = useNavigate();
+
+  // ========== Chung ==========
   const [court, setCourt] = useState(null);
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [note, setNote] = useState('');
+  const [bookingMode, setBookingMode] = useState("casual");
   const [loading, setLoading] = useState(false);
+
+  // ========== Vãng lai ==========
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [note, setNote] = useState("");
   const [bookedSlots, setBookedSlots] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [priceBreakdown, setPriceBreakdown] = useState([]);
   const [hasSpecialPrice, setHasSpecialPrice] = useState(false);
   const [pricingLoading, setPricingLoading] = useState(false);
 
-  // Load court details
-  useEffect(() => {
-    api.get(`/courts/${courtId}`)
-      .then(res => setCourt(res.data.court))
-      .catch(() => {
-        toast.error('Không tìm thấy sân');
-        navigate('/courts');
-      });
-  }, [courtId]);
+  // ========== Cố định theo tháng ==========
+  const [fmStartDate, setFmStartDate] = useState("");
+  const [fmEndDate, setFmEndDate] = useState("");
+  const [fmDaysOfWeek, setFmDaysOfWeek] = useState([]);
+  const [fmStartTime, setFmStartTime] = useState("");
+  const [fmEndTime, setFmEndTime] = useState("");
+  const [fmNote, setFmNote] = useState("");
+  const [fmPreview, setFmPreview] = useState(null);
+  const [fmPreviewLoading, setFmPreviewLoading] = useState(false);
+  const [fmConflictDates, setFmConflictDates] = useState([]);
 
-  // Load booked slots when date changes
+  // ========== Load court ==========
   useEffect(() => {
-    if (!date) return;
-    api.get('/bookings')
-      .then(res => {
-        // Filter bookings for this court, this date, and not cancelled
-        const dayBookings = res.data.bookings.filter(b => 
-          (b.court?._id === courtId || b.court === courtId) && 
-          b.date === date && 
-          b.status !== 'cancelled'
+    api
+      .get(`/courts/${courtId}`)
+      .then((res) => setCourt(res.data.court))
+      .catch(() => {
+        toast.error("Không tìm thấy sân");
+        navigate("/courts");
+      });
+  }, [courtId, navigate]);
+
+  // ========== Load booked slots (casual) ==========
+  useEffect(() => {
+    if (!date || bookingMode !== "casual") return;
+    api
+      .get("/bookings")
+      .then((res) => {
+        const dayBookings = res.data.bookings.filter(
+          (b) =>
+            (b.court?._id === courtId || b.court === courtId) &&
+            b.date === date &&
+            b.status !== "cancelled",
         );
-        setBookedSlots(dayBookings.map(b => ({ start: b.startTime, end: b.endTime })));
+        setBookedSlots(
+          dayBookings.map((b) => ({ start: b.startTime, end: b.endTime })),
+        );
       })
       .catch(() => {});
-  }, [date, courtId]);
+  }, [date, courtId, bookingMode]);
 
-  // Helper tính thời lượng đặt sân chính xác theo số phút (hỗ trợ giờ lẻ như 1.5, 2.5 giờ)
+  // ========== Tính giá casual ==========
   const getDuration = () => {
     if (!startTime || !endTime) return 0;
-    const startParts = startTime.split(':');
-    const endParts = endTime.split(':');
-    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-    return (endMinutes - startMinutes) / 60;
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    return (eh * 60 + em - (sh * 60 + sm)) / 60;
   };
 
-  // Calculate dynamic price via API preview
   useEffect(() => {
-    if (startTime && endTime && court && date) {
-      const startParts = startTime.split(':');
-      const endParts = endTime.split(':');
-      const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-      const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-      if (endMinutes <= startMinutes) {
-        setTotalPrice(0); setPriceBreakdown([]); setHasSpecialPrice(false);
+    if (startTime && endTime && court && date && bookingMode === "casual") {
+      const [sh, sm] = startTime.split(":").map(Number);
+      const [eh, em] = endTime.split(":").map(Number);
+      if (eh * 60 + em <= sh * 60 + sm) {
+        setTotalPrice(0);
+        setPriceBreakdown([]);
+        setHasSpecialPrice(false);
         return;
       }
       setPricingLoading(true);
-      api.post('/pricing/preview', { courtId, date, startTime, endTime })
-        .then(res => {
+      api
+        .post("/pricing/preview", { courtId, date, startTime, endTime })
+        .then((res) => {
           if (res.data.success) {
             setTotalPrice(res.data.totalPrice);
             setPriceBreakdown(res.data.breakdown || []);
@@ -83,9 +140,8 @@ export default function BookingPage() {
           }
         })
         .catch(() => {
-          // Fallback: tính đơn giản nếu API lỗi
-          const duration = getDuration();
-          setTotalPrice(duration > 0 ? duration * court.pricePerHour : 0);
+          const dur = getDuration();
+          setTotalPrice(dur > 0 ? dur * court.pricePerHour : 0);
           setPriceBreakdown([]);
         })
         .finally(() => setPricingLoading(false));
@@ -94,63 +150,139 @@ export default function BookingPage() {
       setPriceBreakdown([]);
       setHasSpecialPrice(false);
     }
-  }, [startTime, endTime, court, date]);
+  }, [startTime, endTime, court, date, bookingMode]);
 
-  // Helper to check if a specific hour slot (e.g. 08:00 - 09:00) is already booked
-  const isHourBooked = (startHourStr, endHourStr) => {
-    if (!startHourStr || !endHourStr) return false;
-    
-    const startParts = startHourStr.split(':');
-    const endParts = endHourStr.split(':');
-    const sVal = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-    const eVal = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-    
-    return bookedSlots.some(booked => {
-      const bStartParts = booked.start.split(':');
-      const bEndParts = booked.end.split(':');
-      const bStart = parseInt(bStartParts[0]) * 60 + parseInt(bStartParts[1]);
-      const bEnd = parseInt(bEndParts[0]) * 60 + parseInt(bEndParts[1]);
-      // Overlap logic: start < booked.end AND end > booked.start
-      return sVal < bEnd && eVal > bStart;
+  // ========== Helper check booked ==========
+  const isHourBooked = (startH, endH) => {
+    if (!startH || !endH) return false;
+    const [ss, sM] = startH.split(":").map(Number);
+    const [es, eM] = endH.split(":").map(Number);
+    const sVal = ss * 60 + sM;
+    const eVal = es * 60 + eM;
+    return bookedSlots.some((b) => {
+      const [bs, bm] = b.start.split(":").map(Number);
+      const [be, bem] = b.end.split(":").map(Number);
+      return sVal < be * 60 + bem && eVal > bs * 60 + bm;
     });
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  // ========== Toggle day of week ==========
+  const toggleDay = (dayVal) => {
+    setFmDaysOfWeek((prev) =>
+      prev.includes(dayVal)
+        ? prev.filter((d) => d !== dayVal)
+        : [...prev, dayVal].sort(),
+    );
+    setFmPreview(null);
+  };
 
-  const handleSubmit = async (e) => {
+  // ========== Preview fixed schedule ==========
+  const handlePreview = async () => {
+    if (
+      !fmStartDate ||
+      !fmEndDate ||
+      fmDaysOfWeek.length === 0 ||
+      !fmStartTime ||
+      !fmEndTime
+    ) {
+      toast.error("Vui lòng điền đầy đủ: ngày, thứ, giờ");
+      return;
+    }
+    if (fmStartDate >= fmEndDate) {
+      toast.error("Ngày bắt đầu phải trước ngày kết thúc");
+      return;
+    }
+    const [sh, sm] = fmStartTime.split(":").map(Number);
+    const [eh, em] = fmEndTime.split(":").map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) {
+      toast.error("Giờ kết thúc phải sau giờ bắt đầu");
+      return;
+    }
+
+    setFmPreviewLoading(true);
+    setFmPreview(null);
+    try {
+      const res = await api.post("/bookings/preview-fixed-schedule", {
+        courtId,
+        startDate: fmStartDate,
+        endDate: fmEndDate,
+        daysOfWeek: fmDaysOfWeek,
+        startTime: fmStartTime,
+        endTime: fmEndTime,
+      });
+      setFmPreview(res.data);
+      setFmConflictDates(res.data.conflictDates || []);
+      if (res.data.conflictDates?.length > 0) {
+        toast.error(`Có ${res.data.conflictDates.length} ngày bị trùng lịch!`);
+      } else {
+        toast.success(`Có ${res.data.availableSlots} buổi khả dụng`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi preview");
+    } finally {
+      setFmPreviewLoading(false);
+    }
+  };
+
+  // ========== Submit casual ==========
+  const handleCasualSubmit = async (e) => {
     e.preventDefault();
     if (!date || !startTime || !endTime) {
-      toast.error('Vui lòng điền đầy đủ thông tin');
+      toast.error("Vui lòng điền đầy đủ thông tin");
       return;
     }
-    const startParts = startTime.split(':');
-    const endParts = endTime.split(':');
-    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-    if (endMinutes <= startMinutes) {
-      toast.error('Giờ kết thúc phải sau giờ bắt đầu');
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) {
+      toast.error("Giờ kết thúc phải sau giờ bắt đầu");
       return;
     }
-
-    // Check overlap one last time on client side
     if (isHourBooked(startTime, endTime)) {
-      toast.error('Khung giờ này đã được đặt trước. Vui lòng chọn khung giờ khác.');
+      toast.error("Khung giờ này đã được đặt trước.");
       return;
     }
 
     setLoading(true);
     try {
-      await api.post('/bookings', {
-        courtId,
-        date,
-        startTime,
-        endTime,
-        note
-      });
-      toast.success('Đặt sân thành công!');
-      navigate('/my-bookings');
+      await api.post("/bookings", { courtId, date, startTime, endTime, note });
+      toast.success("Đặt sân thành công!");
+      navigate("/my-bookings");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Đặt sân thất bại');
+      toast.error(err.response?.data?.message || "Đặt sân thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ========== Submit fixed monthly ==========
+  const handleFixedSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      !fmStartDate ||
+      !fmEndDate ||
+      fmDaysOfWeek.length === 0 ||
+      !fmStartTime ||
+      !fmEndTime
+    ) {
+      toast.error("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.post("/bookings/fixed-monthly", {
+        courtId,
+        startDate: fmStartDate,
+        endDate: fmEndDate,
+        daysOfWeek: fmDaysOfWeek,
+        startTime: fmStartTime,
+        endTime: fmEndTime,
+        note: fmNote,
+      });
+      toast.success(res.data.message || "Đặt lịch cố định thành công!");
+      navigate("/my-bookings");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Đặt lịch thất bại");
     } finally {
       setLoading(false);
     }
@@ -160,110 +292,120 @@ export default function BookingPage() {
     return (
       <div className="flex flex-col items-center justify-center py-32">
         <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 mt-4 text-sm font-medium">Đang tải thông tin sân...</p>
+        <p className="text-slate-400 mt-4 text-sm font-medium">
+          Đang tải thông tin sân...
+        </p>
       </div>
     );
   }
 
-  // Filter end slots based on start slot selected
-  const availableEndSlots = TIME_SLOTS.filter(t => {
+  const today = new Date().toISOString().split("T")[0];
+  const availableEndSlots = TIME_SLOTS.filter((t) => {
     if (!startTime) return false;
-    const startParts = startTime.split(':');
-    const endParts = t.split(':');
-    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-    return endMinutes > startMinutes;
+    const [ss, sm] = startTime.split(":").map(Number);
+    const [es, em] = t.split(":").map(Number);
+    return es * 60 + em > ss * 60 + sm;
   });
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 animate-fadeIn">
-      {/* Booking card layout split in 2 columns on desktop */}
+      {/* ========== TAB CHỌN HÌNH THỨC ĐẶT ========== */}
+      <div className="flex gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit">
+        <button
+          onClick={() => {
+            setBookingMode("casual");
+            setFmPreview(null);
+          }}
+          className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            bookingMode === "casual"
+              ? "bg-white text-green-700 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          🏸 Đặt vãng lai
+        </button>
+        <button
+          onClick={() => setBookingMode("fixed_monthly")}
+          className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            bookingMode === "fixed_monthly"
+              ? "bg-white text-green-700 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          📅 Đặt cố định theo tháng
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        
-        {/* Left Column: Form & interactive grids */}
+        {/* ==================== LEFT: FORM ==================== */}
         <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-4xl text-emerald-600" style={{ display: 'inline-flex' }}><Activity size={32} /></span>
+            <span className="text-emerald-600 inline-flex">
+              <Activity size={32} />
+            </span>
+            <span className="text-4xl">
+              {bookingMode === "casual" ? "🏸" : "📅"}
+            </span>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">Đặt lịch: {court.name}</h1>
-              <p className="text-slate-400 text-xs mt-0.5">Tiêu chuẩn: {court.pricePerHour?.toLocaleString('vi-VN')}đ / giờ</p>
+              <h1 className="text-2xl font-bold text-slate-800">
+                {bookingMode === "casual"
+                  ? `Đặt lịch: ${court.name}`
+                  : `Đặt cố định: ${court.name}`}
+              </h1>
+              <p className="text-slate-400 text-xs mt-0.5">
+                {court.pricePerHour?.toLocaleString("vi-VN")}đ / giờ
+              </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Date input */}
-            <div>
-              <label className="form-label flex items-center gap-1.5">
-                <Calendar size={15} /> Ngày đặt sân
-              </label>
-              <input
-                type="date"
-                required
-                min={today}
-                value={date}
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  setStartTime('');
-                  setEndTime('');
-                }}
-                className="form-input text-slate-700 font-medium"
-              />
-            </div>
+          {/* ===== CASUAL FORM ===== */}
+          {bookingMode === "casual" && (
+            <form onSubmit={handleCasualSubmit} className="space-y-6">
+              <div>
+                <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                  <Calendar size={15} /> Ngày đặt sân
+                </label>
+                <input
+                  type="date"
+                  required
+                  min={today}
+                  value={date}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    setStartTime("");
+                    setEndTime("");
+                  }}
+                  className="form-input text-slate-700 font-medium w-full mt-2 p-2.5 border rounded-xl"
+                />
+              </div>
 
-            {date && (
-              <div className="space-y-6 animate-fadeIn">
-                {/* Visual grid for Start Time */}
-                <div>
-                  <label className="form-label flex items-center gap-1.5">
-                    <Clock size={15} /> Chọn giờ bắt đầu
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mt-2">
-                    {TIME_SLOTS.slice(0, -1).map(slot => {
-                      // Try to see if this individual hour slot is booked
-                      const nextHour = TIME_SLOTS[TIME_SLOTS.indexOf(slot) + 1];
-                      const isBooked = isHourBooked(slot, nextHour);
-                      const isSelected = startTime === slot;
-
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={isBooked}
-                          onClick={() => {
-                            setStartTime(slot);
-                            setEndTime('');
-                          }}
-                          className={`time-slot cursor-pointer ${
-                            isBooked ? 'time-slot-booked' : isSelected ? 'time-slot-selected' : ''
-                          }`}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Visual grid for End Time */}
-                {startTime && (
-                  <div className="animate-fadeIn">
-                    <label className="form-label flex items-center gap-1.5">
-                      <Clock size={15} /> Chọn giờ kết thúc
+              {date && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div>
+                    <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                      <Clock size={15} /> Chọn giờ bắt đầu
                     </label>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mt-2">
-                      {availableEndSlots.map(slot => {
-                        // Check if booking from startTime to this slot overlaps any already booked interval
-                        const isBooked = isHourBooked(startTime, slot);
-                        const isSelected = endTime === slot;
-
+                      {TIME_SLOTS.slice(0, -1).map((slot) => {
+                        const nextHour =
+                          TIME_SLOTS[TIME_SLOTS.indexOf(slot) + 1];
+                        const booked = isHourBooked(slot, nextHour);
+                        const selected = startTime === slot;
                         return (
                           <button
                             key={slot}
                             type="button"
-                            disabled={isBooked}
-                            onClick={() => setEndTime(slot)}
-                            className={`time-slot cursor-pointer ${
-                              isBooked ? 'time-slot-booked' : isSelected ? 'time-slot-selected' : ''
+                            disabled={booked}
+                            onClick={() => {
+                              setStartTime(slot);
+                              setEndTime("");
+                            }}
+                            className={`p-2 text-xs font-semibold border rounded-xl transition-all cursor-pointer ${
+                              booked
+                                ? "bg-slate-100 text-slate-400 line-through cursor-not-allowed"
+                                : selected
+                                  ? "bg-green-600 text-white border-green-600"
+                                  : "bg-white text-slate-700 hover:border-green-500"
                             }`}
                           >
                             {slot}
@@ -272,51 +414,292 @@ export default function BookingPage() {
                       })}
                     </div>
                   </div>
-                )}
+
+                  {startTime && (
+                    <div className="animate-fadeIn">
+                      <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                        <Clock size={15} /> Chọn giờ kết thúc
+                      </label>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mt-2">
+                        {availableEndSlots.map((slot) => {
+                          const booked = isHourBooked(startTime, slot);
+                          const selected = endTime === slot;
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              disabled={booked}
+                              onClick={() => setEndTime(slot)}
+                              className={`p-2 text-xs font-semibold border rounded-xl transition-all cursor-pointer ${
+                                booked
+                                  ? "bg-slate-100 text-slate-400 line-through cursor-not-allowed"
+                                  : selected
+                                    ? "bg-green-600 text-white border-green-600"
+                                    : "bg-white text-slate-700 hover:border-green-500"
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                  <FileText size={15} /> Ghi chú (tùy chọn)
+                </label>
+                <textarea
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="form-input resize-none w-full mt-2 p-2.5 border rounded-xl"
+                  placeholder="Ví dụ: Cần mượn thêm vợt, mua nước lọc..."
+                />
               </div>
-            )}
 
-            {/* Note */}
-            <div>
-              <label className="form-label flex items-center gap-1.5">
-                <FileText size={15} /> Ghi chú (tùy chọn)
-              </label>
-              <textarea
-                rows={3}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="form-input resize-none"
-                placeholder="Ví dụ: Cần mượn thêm vợt, mua nước lọc..."
-              />
-            </div>
+              <div className="flex gap-4 pt-4 border-t border-slate-50">
+                <button
+                  type="button"
+                  onClick={() => navigate("/courts")}
+                  className="border border-slate-200 hover:border-slate-300 flex-1 py-3 text-sm rounded-xl font-bold cursor-pointer"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !date || !startTime || !endTime}
+                  className="bg-green-600 text-white hover:bg-green-700 flex-1 py-3 text-sm rounded-xl font-extrabold cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? "Đang tạo lịch..." : "Xác nhận đặt"}
+                </button>
+              </div>
+            </form>
+          )}
 
-            {/* Actions */}
-            <div className="flex gap-4 pt-4 border-t border-slate-50">
+          {/* ===== FIXED MONTHLY FORM ===== */}
+          {bookingMode === "fixed_monthly" && (
+            <form onSubmit={handleFixedSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <Calendar size={15} /> Ngày bắt đầu
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={today}
+                    value={fmStartDate}
+                    onChange={(e) => {
+                      setFmStartDate(e.target.value);
+                      setFmPreview(null);
+                    }}
+                    className="form-input text-slate-700 font-medium w-full mt-2 p-2.5 border rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <Calendar size={15} /> Ngày kết thúc
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={fmStartDate || today}
+                    value={fmEndDate}
+                    onChange={(e) => {
+                      setFmEndDate(e.target.value);
+                      setFmPreview(null);
+                    }}
+                    className="form-input text-slate-700 font-medium w-full mt-2 p-2.5 border rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                  📆 Chọn thứ trong tuần
+                  {fmDaysOfWeek.length > 0 && (
+                    <span className="text-xs text-green-600 font-normal ml-2">
+                      ({fmDaysOfWeek.length} thứ đã chọn)
+                    </span>
+                  )}
+                </label>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  =
+                  {DAYS_OF_WEEK.map((d) => {
+                    const active = fmDaysOfWeek.includes(d.value);
+                    return (
+                      <button
+                        key={d.value}
+                        type="button"
+                        onClick={() => toggleDay(d.value)}
+                        className={`w-12 h-12 rounded-xl text-sm font-bold transition-all cursor-pointer border-2 ${
+                          active
+                            ? "bg-green-600 text-white border-green-600 shadow-md"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-green-300"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <Clock size={15} /> Giờ bắt đầu
+                  </label>
+                  <select
+                    value={fmStartTime}
+                    onChange={(e) => {
+                      setFmStartTime(e.target.value);
+                      setFmPreview(null);
+                    }}
+                    className="form-input text-slate-700 font-medium w-full mt-2 p-2.5 border rounded-xl"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {TIME_SLOTS.slice(0, -1).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <Clock size={15} /> Giờ kết thúc
+                  </label>
+                  <select
+                    value={fmEndTime}
+                    onChange={(e) => {
+                      setFmEndTime(e.target.value);
+                      setFmPreview(null);
+                    }}
+                    className="form-input text-slate-700 font-medium w-full mt-2 p-2.5 border rounded-xl"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {fmStartTime
+                      ? TIME_SLOTS.filter((t) => {
+                          const [ss, sm] = fmStartTime.split(":").map(Number);
+                          const [es, em] = t.split(":").map(Number);
+                          return es * 60 + em > ss * 60 + sm;
+                        }).map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))
+                      : TIME_SLOTS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                  </select>
+                </div>
+              </div>
+
               <button
                 type="button"
-                onClick={() => navigate('/courts')}
-                className="btn btn-ghost border border-slate-200 hover:border-slate-300 flex-1 py-3 text-sm rounded-xl font-bold cursor-pointer"
+                onClick={handlePreview}
+                disabled={fmPreviewLoading}
+                className="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Quay lại
+                {fmPreviewLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                    Đang kiểm tra...
+                  </>
+                ) : (
+                  <>🔍 Kiểm tra lịch trống</>
+                )}
               </button>
-              <button
-                type="submit"
-                disabled={loading || !date || !startTime || !endTime}
-                className="btn btn-primary flex-1 py-3 text-sm rounded-xl font-extrabold cursor-pointer"
-              >
-                {loading ? 'Đang tạo lịch...' : 'Xác nhận đặt'}
-              </button>
-            </div>
-          </form>
+
+              {fmPreview && (
+                <div
+                  className={`p-4 rounded-2xl border animate-fadeIn ${fmConflictDates.length > 0 ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"}`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">
+                      {fmConflictDates.length > 0 ? "⚠️" : "✅"}
+                    </span>
+                    <span
+                      className={`font-bold text-sm ${fmConflictDates.length > 0 ? "text-amber-700" : "text-green-700"}`}
+                    >
+                      {fmConflictDates.length > 0
+                        ? `${fmConflictDates.length} ngày bị trùng lịch`
+                        : `${fmPreview.availableSlots} buổi khả dụng — sẵn sàng đặt!`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-white rounded-lg p-2">
+                      <div className="font-bold text-slate-700">
+                        {fmPreview.totalGenerated}
+                      </div>
+                      <div className="text-slate-400">Tổng sinh</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2">
+                      <div className="font-bold text-green-600">
+                        {fmPreview.availableSlots}
+                      </div>
+                      <div className="text-slate-400">Khả dụng</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2">
+                      <div className="font-bold text-amber-600">
+                        {fmPreview.conflictDates?.length || 0}
+                      </div>
+                      <div className="text-slate-400">Trùng lịch</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="form-label flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                  <FileText size={15} /> Ghi chú (tùy chọn)
+                </label>
+                <textarea
+                  rows={2}
+                  value={fmNote}
+                  onChange={(e) => setFmNote(e.target.value)}
+                  className="form-input resize-none w-full mt-2 p-2.5 border rounded-xl"
+                  placeholder="Ví dụ: Lịch tập cố định tháng 7..."
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-slate-50">
+                <button
+                  type="button"
+                  onClick={() => navigate("/courts")}
+                  className="border border-slate-200 hover:border-slate-300 flex-1 py-3 text-sm rounded-xl font-bold cursor-pointer"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !fmPreview || fmConflictDates.length > 0}
+                  className="bg-green-600 text-white hover:bg-green-700 flex-1 py-3 text-sm rounded-xl font-extrabold cursor-pointer disabled:opacity-50"
+                >
+                  {loading
+                    ? "Đang tạo lịch..."
+                    : `Xác nhận đặt ${fmPreview?.availableSlots || 0} buổi`}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
-        {/* Right Column: Dynamic Price Summary Sticky Box */}
+        {/* ==================== RIGHT: SUMMARY PANEL ==================== */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Sân details brief */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-800 mb-3 text-base">Thông tin sân đấu</h3>
+            <h3 className="font-bold text-slate-800 mb-3 text-base">
+              Thông tin sân đấu
+            </h3>
             <p className="text-slate-500 text-sm leading-relaxed mb-4">
-              {court.description || 'Sân cầu lông tiêu chuẩn quốc tế, trang bị thảm PVC êm ái chống sốc.'}
+              {court.description || "Sân cầu lông tiêu chuẩn quốc tế."}
             </p>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
               <div className="flex justify-between text-xs font-semibold text-slate-500">
@@ -334,127 +717,53 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Pricing detail card */}
           <div className="bg-gradient-to-br from-green-900 to-emerald-950 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full filter blur-xl"></div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 className="font-bold text-base text-emerald-300">Hóa Đơn Tạm Tính</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-base text-emerald-300">
+                Hóa Đơn Tạm Tính
+              </h3>
               {hasSpecialPrice && (
-                <span style={{
-                  background: 'rgba(245,158,11,0.25)', color: '#fcd34d',
-                  fontSize: '10px', fontWeight: 800, padding: '3px 8px',
-                  borderRadius: '8px', border: '1px solid rgba(245,158,11,0.4)',
-                  letterSpacing: '0.3px', display: 'inline-flex', alignItems: 'center', gap: 3
-                }}>
+                <span className="bg-amber-500/25 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 border border-amber-500/40 rounded-lg inline-flex items-center gap-1">
                   <Zap size={10} /> GIỜ CAO ĐIỂM
                 </span>
               )}
             </div>
 
             {pricingLoading ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(167,243,208,0.6)', fontSize: '13px' }}>
-                <div style={{ width: '24px', height: '24px', border: '2px solid rgba(167,243,208,0.3)', borderTopColor: '#6ee7b7', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 8px' }} />
+              <div className="text-center py-5 text-emerald-200/60 text-sm">
                 Đang tính giá...
               </div>
             ) : totalPrice > 0 ? (
               <div>
-                {/* Thông tin chung */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
+                <div className="flex flex-col gap-1.5 mb-3 text-sm text-emerald-200/80">
+                  <div className="flex justify-between">
                     <span>Ngày:</span>
-                    <span style={{ fontWeight: 700, color: '#fff' }}>{date}</span>
+                    <span className="font-bold text-white">{date}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
-                    <span>Khung giờ:</span>
-                    <span style={{ fontWeight: 700, color: '#fff' }}>{startTime} – {endTime} ({getDuration()} giờ)</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(167,243,208,0.8)' }}>
-                    <span>Giá gốc/giờ:</span>
-                    <span style={{ fontWeight: 600, color: '#a7f3d0' }}>{court.pricePerHour?.toLocaleString('vi-VN')}đ</span>
-                  </div>
-                </div>
-
-                {/* Chi tiết từng segment */}
-                {priceBreakdown.length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(167,243,208,0.5)', letterSpacing: '0.8px', marginBottom: '6px', textTransform: 'uppercase' }}>
-                      Chi tiết từng khung giờ
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
-                      {priceBreakdown.map((seg, idx) => {
-                        const isNormal = seg.ruleType === 'normal';
-                        const isPeak = seg.ruleType === 'peak';
-                        const isWeekend = seg.ruleType === 'weekend';
-                        const isHoliday = seg.ruleType === 'holiday';
-                        const dotColor = isNormal ? '#6ee7b7' : isPeak ? '#fbbf24' : isWeekend ? '#f87171' : '#c084fc';
-                        const tagBg = isNormal ? 'rgba(110,231,183,0.1)' : isPeak ? 'rgba(251,191,36,0.15)' : isWeekend ? 'rgba(248,113,113,0.15)' : 'rgba(192,132,252,0.15)';
-                        return (
-                          <div key={idx} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '5px 8px', borderRadius: '8px',
-                            background: tagBg, border: `1px solid ${dotColor}20`,
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-                              <span style={{ fontSize: '12px', color: '#d1fae5', fontWeight: 600 }}>{seg.timeSlot}</span>
-                              {seg.ruleName && (
-                                <span style={{ fontSize: '10px', color: dotColor, fontWeight: 700, opacity: 0.85 }}>
-                                  ×{seg.multiplier}
-                                </span>
-                              )}
-                            </div>
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: isNormal ? '#6ee7b7' : dotColor }}>
-                              {seg.price.toLocaleString('vi-VN')}đ
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tổng */}
-                <div style={{ borderTop: '1px solid rgba(16,185,129,0.3)', paddingTop: '12px' }}>
-                  {/* Legend màu sắc */}
-                  {priceBreakdown.some(s => s.ruleType !== 'normal') && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                      {priceBreakdown.some(s => s.ruleType === 'normal') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6ee7b7', display: 'inline-block' }} />
-                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Giá thường</span>
-                        </div>
-                      )}
-                      {priceBreakdown.some(s => s.ruleType === 'peak') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }} />
-                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Giờ vàng</span>
-                        </div>
-                      )}
-                      {priceBreakdown.some(s => s.ruleType === 'weekend') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f87171', display: 'inline-block' }} />
-                          <span style={{ fontSize: '10px', color: 'rgba(167,243,208,0.6)' }}>Cuối tuần</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#a7f3d0' }}>TỔNG CỘNG</span>
-                    <span style={{ fontSize: '24px', fontWeight: 900, color: '#86efac' }}>
-                      {totalPrice.toLocaleString('vi-VN')}đ
+                  <div className="flex justify-between">
+                    <span>Thời gian:</span>
+                    <span className="font-bold text-white">
+                      {startTime} - {endTime}
                     </span>
                   </div>
                 </div>
+                <div className="pt-3 border-t border-white/10 flex justify-between items-baseline">
+                  <span className="text-sm text-emerald-300 font-medium">
+                    Tổng tiền:
+                  </span>
+                  <span className="text-2xl font-black text-amber-400">
+                    {totalPrice.toLocaleString("vi-VN")}đ
+                  </span>
+                </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(167,243,208,0.4)', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Info size={14} /> Vui lòng chọn ngày và giờ để hiển thị hóa đơn tạm tính.
+              <div className="text-xs text-emerald-300/60 py-2">
+                Vui lòng chọn ngày và giờ để hiển thị hóa đơn.
               </div>
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

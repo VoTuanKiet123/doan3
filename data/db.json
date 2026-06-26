@@ -129,6 +129,804 @@
       "note": "",
       "createdAt": "2026-06-01T06:24:50.800Z",
       "updatedAt": "2026-06-01T06:24:50.800Z"
+    },
+    {
+      "_id": "booking_oz583d8jr",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-01",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_dit034hsr",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-03",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_24bscdoo8",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-06",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_edz9jwh1q",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-08",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_4d8oqiioz",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-10",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_5la3w3pbi",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-13",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_zyjntwmqt",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-15",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_l7onrexf6",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-17",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_phnh4ooah",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-20",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_zhm0w9kae",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-22",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_643dle5pi",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-24",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_ii6m8usqx",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-27",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_oghy1xfdv",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-29",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_3yts7peyt",
+      "user": "user_admin",
+      "court": "court_1",
+      "bookingType": "fixed_monthly",
+      "batchId": "e62a0e98-cf2c-4843-b608-6d92f9b65339",
+      "date": "2026-07-31",
+      "startTime": "17:00",
+      "endTime": "19:00",
+      "totalPrice": 240000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "17:00 - 17:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "17:30 - 18:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:00 - 18:30",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        },
+        {
+          "timeSlot": "18:30 - 19:00",
+          "rate": 120000,
+          "price": 60000,
+          "multiplier": 1.5,
+          "ruleName": "Giờ vàng tối (Thứ 2 - Thứ 6)",
+          "ruleType": "peak"
+        }
+      ],
+      "fixedScheduleMeta": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "daysOfWeek": [
+          1,
+          3,
+          5
+        ]
+      },
+      "note": "Test lịch cố định",
+      "createdAt": "2026-06-17T07:59:11.879Z",
+      "updatedAt": "2026-06-17T07:59:11.879Z"
     }
   ],
   "pricingrules": [

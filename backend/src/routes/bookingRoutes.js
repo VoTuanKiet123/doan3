@@ -1,12 +1,31 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getBookings, getBookingById, createBooking, updateBookingStatus, cancelBooking } = require('../controllers/bookingController');
-const { protect, adminOnly } = require('../middleware/auth');
+const {
+  getBookings,
+  getBookingById,
+  createBooking,
+  createFixedMonthlyBooking,
+  previewFixedSchedule,
+  getBookingsByBatch,
+  cancelBookingByBatch,
+  updateBookingStatus,
+  cancelBooking,
+} = require("../controllers/bookingController");
+const { protect, adminOnly } = require("../middleware/auth");
 
-router.get('/', protect, getBookings);
-router.get('/:id', protect, getBookingById);
-router.post('/', protect, createBooking);
-router.put('/:id/status', protect, adminOnly, updateBookingStatus);
-router.delete('/:id', protect, cancelBooking);
+// ========== Đặt sân vãng lai ==========
+router.get("/", protect, getBookings);
+router.get("/batch/:batchId", protect, getBookingsByBatch); // phải đặt trước /:id
+router.get("/:id", protect, getBookingById);
+router.post("/", protect, createBooking);
+
+// ========== Đặt lịch cố định theo tháng ==========
+router.post("/fixed-monthly", protect, createFixedMonthlyBooking);
+router.post("/preview-fixed-schedule", protect, previewFixedSchedule);
+router.put("/batch/:batchId/cancel", protect, cancelBookingByBatch);
+
+// ========== Quản lý (admin) ==========
+router.put("/:id/status", protect, adminOnly, updateBookingStatus);
+router.delete("/:id", protect, cancelBooking);
 
 module.exports = router;
