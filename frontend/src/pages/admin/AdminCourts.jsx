@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { Pencil, Trash2, PlusCircle, Volleyball } from 'lucide-react';
 
 const emptyForm = { name: '', description: '', pricePerHour: '', status: 'active' };
 
@@ -71,8 +72,8 @@ export default function AdminCourts() {
           <h1 className="admin-page-title">Quản lý sân</h1>
           <p className="admin-page-subtitle">Thêm, sửa, xóa sân cầu lông</p>
         </div>
-        <button onClick={openAdd} className="admin-header-btn">
-          + Thêm sân
+        <button onClick={openAdd} className="admin-header-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <PlusCircle size={16} /> Thêm sân
         </button>
       </div>
 
@@ -98,7 +99,9 @@ export default function AdminCourts() {
                 <tr><td colSpan={5} className="admin-table-empty">Chưa có sân nào</td></tr>
               ) : courts.map((court) => (
                 <tr key={court._id}>
-                  <td className="admin-user-name">🏸 {court.name}</td>
+                  <td className="admin-user-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Volleyball size={15} style={{ color: '#0D9D57', flexShrink: 0 }} /> {court.name}
+                  </td>
                   <td className="admin-text-secondary admin-text-truncate">{court.description || '—'}</td>
                   <td className="admin-text-price">{court.pricePerHour?.toLocaleString('vi-VN')}đ</td>
                   <td>
@@ -108,8 +111,12 @@ export default function AdminCourts() {
                   </td>
                   <td>
                     <div className="admin-action-group">
-                      <button onClick={() => openEdit(court)} className="admin-action-btn admin-action-btn--edit">Sửa</button>
-                      <button onClick={() => handleDelete(court._id)} className="admin-action-btn admin-action-btn--danger">Xóa</button>
+                      <button onClick={() => openEdit(court)} className="admin-action-btn admin-action-btn--edit" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Pencil size={13} /> Sửa
+                      </button>
+                      <button onClick={() => handleDelete(court._id)} className="admin-action-btn admin-action-btn--danger" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Trash2 size={13} /> Xóa
+                      </button>
                     </div>
                   </td>
                 </tr>

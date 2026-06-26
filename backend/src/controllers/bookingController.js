@@ -45,6 +45,25 @@ const getVietnamTime = () => {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
 };
 
+const HOLD_MINUTES = 5;
+
+const cleanupExpiredPendingBookings = async () => {
+  const now = getVietnamTime();
+  const result = await Booking.updateMany(
+    {
+      status: 'pending',
+      expiresAt: { $lte: now },
+    },
+    {
+      $set: {
+        status: 'cancelled',
+        note: 'Hết hạn giữ chỗ tự động',
+      },
+    }
+  );
+  return result.modifiedCount || 0;
+};
+
 // @desc    Tạo booking mới
 // @route   POST /api/bookings
 const createBooking = async (req, res) => {
@@ -107,11 +126,19 @@ const createBooking = async (req, res) => {
       }
     }
 
-    // Kiểm tra trùng lịch
+    // Dọn dẹp các giữ chỗ hết hạn trước khi kiểm tra trùng lịch
+    await cleanupExpiredPendingBookings();
+
+    // Kiểm tra trùng lịch, bỏ qua những giữ chỗ hết hạn
+    const now = getVietnamTime();
     const conflictBooking = await Booking.findOne({
       court: courtId,
       date,
       status: { $ne: 'cancelled' },
+      $or: [
+        { status: { $ne: 'pending' } },
+        { expiresAt: { $gt: now } },
+      ],
       $or: [
         { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
       ],
@@ -133,6 +160,7 @@ const createBooking = async (req, res) => {
       totalPrice,
       priceBreakdown,
       note,
+      expiresAt: new Date(getVietnamTime().getTime() + HOLD_MINUTES * 60 * 1000),
     });
 
     await booking.populate('court', 'name pricePerHour');
@@ -181,4 +209,11 @@ const cancelBooking = async (req, res) => {
   }
 };
 
-module.exports = { getBookings, getBookingById, createBooking, updateBookingStatus, cancelBooking };
+module.exports = {
+  getBookings,
+  getBookingById,
+  createBooking,
+  updateBookingStatus,
+  cancelBooking,
+  cleanupExpiredPendingBookings,
+};

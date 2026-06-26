@@ -82,6 +82,15 @@
       "phone": "0919019019",
       "createdAt": "2026-05-24T04:36:28.652Z",
       "updatedAt": "2026-05-24T04:36:28.652Z"
+    },
+    {
+      "_id": "user_h4wt0voep",
+      "name": "votuankiet",
+      "email": "votuankiet90hg@gmail.com",
+      "password": "$2a$10$vJyWF42sO8Nzpj8xdaXupeTltNfWxaxynEm./3l7yLpjrpOby8JBm",
+      "phone": "+84866994249",
+      "createdAt": "2026-06-15T14:46:57.848Z",
+      "updatedAt": "2026-06-15T14:46:57.848Z"
     }
   ],
   "bookings": [

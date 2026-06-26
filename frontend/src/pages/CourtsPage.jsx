@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { Search, Volleyball, Clock, Trophy, MapPin, Activity, Wrench, Flame } from 'lucide-react';
 
 export default function CourtsPage() {
   const [courts, setCourts] = useState([]);
@@ -35,7 +36,7 @@ export default function CourtsPage() {
       <div style={{ background: 'linear-gradient(135deg, #0D9D57 0%, #1aaf64 60%, #0a7a42 100%)', padding: '28px 16px 56px', position: 'relative' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 999, padding: '4px 14px', fontSize: 12, fontWeight: 700, color: 'white', marginBottom: 12 }}>
-            🏸 Danh sách sân cầu lông
+            <Volleyball size={14} /> Danh sách sân cầu lông
           </div>
           <h1 style={{ fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 900, color: 'white', marginBottom: 8 }}>
             Tìm Sân Cầu Lông Gần Bạn
@@ -51,7 +52,7 @@ export default function CourtsPage() {
         <div className="search-panel">
           {/* Search */}
           <div className="search-panel__input-wrap">
-            <span className="search-panel__icon">🔍</span>
+            <Search size={16} className="search-panel__icon" style={{ color: '#9ba6bb' }} />
             <input
               type="text"
               placeholder="Tìm tên sân, địa chỉ, loại sân..."
@@ -67,8 +68,8 @@ export default function CourtsPage() {
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginRight: 2 }}>Lọc:</span>
             {[
               { id: 'all', label: `Tất cả (${courts.length})` },
-              { id: 'active', label: `✅ Trống (${activeCount})` },
-              { id: 'maintenance', label: `🛠 Bảo trì (${maintenanceCount})` },
+              { id: 'active', label: `Trống (${activeCount})` },
+              { id: 'maintenance', label: `Bảo trì (${maintenanceCount})` },
             ].map(tag => (
               <button
                 key={tag.id}
@@ -92,7 +93,7 @@ export default function CourtsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 20px', background: 'white', borderRadius: 16, border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>🏸</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}><Activity size={56} className="text-slate-300" /></div>
             <h3 style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>Không tìm thấy sân phù hợp</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, maxWidth: 300, margin: '0 auto 24px' }}>
               Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc để xem tất cả sân.
@@ -121,11 +122,11 @@ export default function CourtsPage() {
                   >
                     {/* Thumbnail */}
                     <div className="court-card-h__thumb" style={{ width: 130, minWidth: 130 }}>
-                      <span style={{ position: 'relative', zIndex: 1, fontSize: 52 }}>🏸</span>
+                      <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', color: 'white' }}><Activity size={48} /></span>
                       {!isAvailable && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ background: '#FF8F00', color: 'white', padding: '3px 10px', borderRadius: 6, fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
-                            🛠 Bảo trì
+                          <span style={{ background: '#FF8F00', color: 'white', padding: '3px 10px', borderRadius: 6, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <Wrench size={10} /> Bảo trì
                           </span>
                         </div>
                       )}
@@ -140,21 +141,29 @@ export default function CourtsPage() {
                             <h2 style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {court.name}
                             </h2>
-                            {idx === 0 && <span className="badge badge-hot">🔥 Nổi bật</span>}
+                            {idx === 0 && (
+                              <span className="badge badge-hot" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                <Flame size={10} /> Nổi bật
+                              </span>
+                            )}
                           </div>
                           <p style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.5 }}>
-                            📍 {court.description || 'Sân cầu lông tiêu chuẩn quốc tế, trang bị hiện đại'}
+                            <MapPin size={11} style={{ display: 'inline', marginRight: 3 }} />{court.description || 'Sân cầu lông tiêu chuẩn quốc tế, trang bị hiện đại'}
                           </p>
                         </div>
                         <span className={`badge ${isAvailable ? 'badge-active' : 'badge-maintenance'}`} style={{ flexShrink: 0 }}>
-                          {isAvailable ? '● Trống' : '🛠 Bảo trì'}
+                          {isAvailable ? '● Trống' : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <Wrench size={11} /> Bảo trì
+                            </span>
+                          )}
                         </span>
                       </div>
 
                       {/* Meta info */}
                       <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                        <span className="booking-meta-chip">⏰ 05:00 - 23:00</span>
-                        <span className="booking-meta-chip">🏆 Tiêu chuẩn BWF</span>
+                        <span className="booking-meta-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> 05:00 - 23:00</span>
+                        <span className="booking-meta-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trophy size={11} /> Tiêu chuẩn BWF</span>
                       </div>
 
                       {/* Bottom: price + CTA */}

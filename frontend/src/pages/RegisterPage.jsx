@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { Activity, Zap, Target, Coins, Lock, Sparkles, User, Mail, Phone, EyeOff, Eye, UserPlus, ArrowRight } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -43,7 +44,9 @@ export default function RegisterPage() {
       {/* Left: Brand Panel */}
       <div className="auth-left">
         <div className="auth-left-content">
-          <div className="auth-left-logo">🏸</div>
+          <div className="auth-left-logo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Activity size={28} className="text-white" />
+          </div>
           <h1 className="auth-left-title">
             Tham Gia<br />Cộng Đồng<br />BadmintonHub
           </h1>
@@ -52,13 +55,13 @@ export default function RegisterPage() {
           </p>
           <div className="auth-left-features">
             {[
-              { icon: '⚡', text: 'Đặt sân nhanh — chỉ 30 giây' },
-              { icon: '🎯', text: 'Chọn giờ linh hoạt theo lịch của bạn' },
-              { icon: '💰', text: 'Giá minh bạch, không phát sinh thêm' },
-              { icon: '🔒', text: 'Tài khoản bảo mật 100%' },
+              { icon: <Zap size={20} />, text: 'Đặt sân nhanh — chỉ 30 giây' },
+              { icon: <Target size={20} />, text: 'Chọn giờ linh hoạt theo lịch của bạn' },
+              { icon: <Coins size={20} />, text: 'Giá minh bạch, không phát sinh thêm' },
+              { icon: <Lock size={20} />, text: 'Tài khoản bảo mật 100%' },
             ].map(f => (
-              <div key={f.text} className="auth-left-feature">
-                <span style={{ fontSize: 20 }}>{f.icon}</span>
+              <div key={f.text} className="auth-left-feature" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ display: 'inline-flex', color: '#fff' }}>{f.icon}</span>
                 <span>{f.text}</span>
               </div>
             ))}
@@ -71,29 +74,17 @@ export default function RegisterPage() {
         <div className="auth-container animate-fadeInUp">
           {/* Header */}
           <div className="auth-header">
-            <div className="auth-logo">✨</div>
+            <div className="auth-logo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={28} className="text-emerald-600" />
+            </div>
             <h1 className="auth-title">Tạo Tài Khoản</h1>
             <p className="auth-subtitle">Đăng ký miễn phí và bắt đầu đặt sân ngay!</p>
           </div>
 
-          {/* Benefits */}
-          <div className="register-benefit-bar">
-            {[
-              { icon: '⚡', text: 'Đặt sân nhanh' },
-              { icon: '📅', text: 'Xem lịch đặt' },
-              { icon: '🎯', text: 'Ưu tiên giờ đẹp' },
-            ].map(b => (
-              <div key={b.text} className="register-benefit-item">
-                <span style={{ fontSize: 20 }}>{b.icon}</span>
-                <span>{b.text}</span>
-              </div>
-            ))}
-          </div>
-
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label className="form-label">
-                <span className="form-label-icon">👤</span> Họ và tên
+              <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="form-label-icon" style={{ display: 'inline-flex' }}><User size={14} /></span> Họ và tên
               </label>
               <input
                 id="register-name"
@@ -108,8 +99,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">
-                <span className="form-label-icon">✉️</span> Địa chỉ Email
+              <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="form-label-icon" style={{ display: 'inline-flex' }}><Mail size={14} /></span> Địa chỉ Email
               </label>
               <input
                 id="register-email"
@@ -124,8 +115,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">
-                <span className="form-label-icon">📞</span> Số điện thoại
+              <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="form-label-icon" style={{ display: 'inline-flex' }}><Phone size={14} /></span> Số điện thoại
               </label>
               <input
                 id="register-phone"
@@ -140,8 +131,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">
-                <span className="form-label-icon">🔒</span> Mật khẩu
+              <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="form-label-icon" style={{ display: 'inline-flex' }}><Lock size={14} /></span> Mật khẩu
               </label>
               <div className="input-password-wrap">
                 <input
@@ -159,8 +150,9 @@ export default function RegisterPage() {
                   className="input-eye-btn"
                   onClick={() => setShowPass(!showPass)}
                   tabIndex={-1}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  {showPass ? '🙈' : '👁️'}
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {strength && (
@@ -186,19 +178,27 @@ export default function RegisterPage() {
               type="submit"
               disabled={loading}
               className="auth-submit-btn"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               {loading ? (
-                <span className="auth-btn-loading">
+                <span className="auth-btn-loading" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span className="auth-spinner" />
                   Đang đăng ký...
                 </span>
-              ) : '✨ Tạo Tài Khoản Miễn Phí'}
+              ) : (
+                <>
+                  <UserPlus size={16} />
+                  <span>Tạo Tài Khoản Miễn Phí</span>
+                </>
+              )}
             </button>
           </form>
 
           <p className="auth-footer-text">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="auth-link">Đăng nhập ngay →</Link>
+            <Link to="/login" className="auth-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              Đăng nhập ngay <ArrowRight size={12} />
+            </Link>
           </p>
         </div>
       </div>

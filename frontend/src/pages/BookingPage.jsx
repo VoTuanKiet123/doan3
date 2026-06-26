@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { Activity, Calendar, Clock, FileText, Zap, Info } from 'lucide-react';
 
 const TIME_SLOTS = [
   '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
@@ -182,7 +183,7 @@ export default function BookingPage() {
         {/* Left Column: Form & interactive grids */}
         <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-4xl">🏸</span>
+            <span className="text-4xl text-emerald-600" style={{ display: 'inline-flex' }}><Activity size={32} /></span>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Đặt lịch: {court.name}</h1>
               <p className="text-slate-400 text-xs mt-0.5">Tiêu chuẩn: {court.pricePerHour?.toLocaleString('vi-VN')}đ / giờ</p>
@@ -193,7 +194,7 @@ export default function BookingPage() {
             {/* Date input */}
             <div>
               <label className="form-label flex items-center gap-1.5">
-                📅 Ngày đặt sân
+                <Calendar size={15} /> Ngày đặt sân
               </label>
               <input
                 type="date"
@@ -214,7 +215,7 @@ export default function BookingPage() {
                 {/* Visual grid for Start Time */}
                 <div>
                   <label className="form-label flex items-center gap-1.5">
-                    ⏰ Chọn giờ bắt đầu
+                    <Clock size={15} /> Chọn giờ bắt đầu
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mt-2">
                     {TIME_SLOTS.slice(0, -1).map(slot => {
@@ -247,7 +248,7 @@ export default function BookingPage() {
                 {startTime && (
                   <div className="animate-fadeIn">
                     <label className="form-label flex items-center gap-1.5">
-                      ⏰ Chọn giờ kết thúc
+                      <Clock size={15} /> Chọn giờ kết thúc
                     </label>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mt-2">
                       {availableEndSlots.map(slot => {
@@ -278,7 +279,7 @@ export default function BookingPage() {
             {/* Note */}
             <div>
               <label className="form-label flex items-center gap-1.5">
-                📝 Ghi chú (tùy chọn)
+                <FileText size={15} /> Ghi chú (tùy chọn)
               </label>
               <textarea
                 rows={3}
@@ -344,9 +345,9 @@ export default function BookingPage() {
                   background: 'rgba(245,158,11,0.25)', color: '#fcd34d',
                   fontSize: '10px', fontWeight: 800, padding: '3px 8px',
                   borderRadius: '8px', border: '1px solid rgba(245,158,11,0.4)',
-                  letterSpacing: '0.3px',
+                  letterSpacing: '0.3px', display: 'inline-flex', alignItems: 'center', gap: 3
                 }}>
-                  ⚡ GIỜ CAO ĐIỂM
+                  <Zap size={10} /> GIỜ CAO ĐIỂM
                 </span>
               )}
             </div>
@@ -447,8 +448,8 @@ export default function BookingPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(167,243,208,0.4)', fontSize: '13px' }}>
-                💡 Vui lòng chọn ngày và giờ để hiển thị hóa đơn tạm tính.
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(167,243,208,0.4)', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Info size={14} /> Vui lòng chọn ngày và giờ để hiển thị hóa đơn tạm tính.
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, Fragment } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { Volleyball, CheckCircle, XCircle, ChevronDown, ChevronUp, CalendarX } from 'lucide-react';
 
 const STATUS_MAP = {
   pending: { text: 'Chờ xác nhận', cls: 'badge badge-pending' },
@@ -73,7 +74,7 @@ export default function AdminBookings() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="admin-empty">
-          <span className="admin-empty-icon">📋</span>
+          <span className="admin-empty-icon"><CalendarX size={40} /></span>
           <p>Không có booking nào</p>
         </div>
       ) : (
@@ -103,7 +104,9 @@ export default function AdminBookings() {
                           <div className="admin-text-muted">{b.user?.phone}</div>
                         </div>
                       </td>
-                      <td className="admin-text-secondary">🏸 {b.court?.name}</td>
+                      <td className="admin-text-secondary" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Volleyball size={14} style={{ color: '#0D9D57' }} /> {b.court?.name}
+                      </td>
                       <td className="admin-text-secondary">{b.date}</td>
                       <td className="admin-text-secondary">{b.startTime} - {b.endTime}</td>
                       <td>
@@ -125,10 +128,13 @@ export default function AdminBookings() {
                                 padding: '2px 0',
                                 textDecoration: 'underline',
                                 textAlign: 'left',
-                                marginTop: '2px'
+                                marginTop: '2px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3,
                               }}
                             >
-                              {isExpanded ? '▲ Ẩn chi tiết' : '▼ Chi tiết giá'}
+                              {isExpanded ? <><ChevronUp size={12} /> Ẩn chi tiết</> : <><ChevronDown size={12} /> Chi tiết giá</>}
                             </button>
                           )}
                         </div>
@@ -140,14 +146,16 @@ export default function AdminBookings() {
                         <div className="admin-action-group">
                           {b.status === 'pending' && (
                             <button onClick={() => handleStatus(b._id, 'confirmed')}
-                              className="admin-action-btn admin-action-btn--confirm">
-                              Xác nhận
+                              className="admin-action-btn admin-action-btn--confirm"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <CheckCircle size={13} /> Xác nhận
                             </button>
                           )}
                           {b.status !== 'cancelled' && (
                             <button onClick={() => handleStatus(b._id, 'cancelled')}
-                              className="admin-action-btn admin-action-btn--danger">
-                              Huỷ
+                              className="admin-action-btn admin-action-btn--danger"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <XCircle size={13} /> Huỷ
                             </button>
                           )}
                         </div>

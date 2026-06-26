@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { PlusCircle, Pencil, Trash2, ToggleLeft, ToggleRight, CalendarRange } from 'lucide-react';
 
 const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const DAY_FULL = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
@@ -132,8 +133,8 @@ export default function AdminPricing() {
           <h1 className="admin-page-title">Quản lý giá động</h1>
           <p className="admin-page-subtitle">Cấu hình giờ vàng, cuối tuần và ngày lễ</p>
         </div>
-        <button onClick={openAdd} className="admin-header-btn">
-          + Thêm quy tắc giá
+        <button onClick={openAdd} className="admin-header-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <PlusCircle size={16} /> Thêm quy tắc giá
         </button>
       </div>
 
@@ -147,7 +148,7 @@ export default function AdminPricing() {
         boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <span style={{ fontSize: '20px' }}>📅</span>
+          <CalendarRange size={22} style={{ color: '#0D9D57' }} />
           <div>
             <h2 style={{ fontWeight: 700, color: '#1e293b', fontSize: '15px', margin: 0 }}>Bản đồ giá theo khung giờ</h2>
             <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Màu sắc thể hiện quy tắc đang active</p>
@@ -297,8 +298,8 @@ export default function AdminPricing() {
                     </td>
                     <td>
                       <div className="admin-action-group">
-                        <button onClick={() => openEdit(rule)} className="admin-action-btn admin-action-btn--edit">Sửa</button>
-                        <button onClick={() => handleDelete(rule._id)} className="admin-action-btn admin-action-btn--danger">Xóa</button>
+                        <button onClick={() => openEdit(rule)} className="admin-action-btn admin-action-btn--edit" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Pencil size={13} /> Sửa</button>
+                        <button onClick={() => handleDelete(rule._id)} className="admin-action-btn admin-action-btn--danger" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Trash2 size={13} /> Xóa</button>
                       </div>
                     </td>
                   </tr>

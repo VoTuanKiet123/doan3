@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import { Activity, Calendar, Clock, CheckCircle, XCircle, List, Hourglass, FileText, BarChart3 } from 'lucide-react';
 
 const STATUS_MAP = {
-  pending:   { text: 'Chờ Xác Nhận', cls: 'badge-pending',   icon: '⏳' },
-  confirmed: { text: 'Đã Xác Nhận',  cls: 'badge-confirmed', icon: '✅' },
-  cancelled: { text: 'Đã Hủy Lịch',  cls: 'badge-cancelled', icon: '❌' },
+  pending:   { text: 'Chờ Xác Nhận', cls: 'badge-pending',   icon: <Clock size={12} /> },
+  confirmed: { text: 'Đã Xác Nhận',  cls: 'badge-confirmed', icon: <CheckCircle size={12} /> },
+  cancelled: { text: 'Đã Hủy Lịch',  cls: 'badge-cancelled', icon: <XCircle size={12} /> },
 };
 
 export default function MyBookingsPage() {
@@ -14,6 +15,7 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedBookings, setExpandedBookings] = useState({});
   const [filter, setFilter] = useState('all');
+  const [now, setNow] = useState(Date.now());
 
   const toggleBreakdown = (id) =>
     setExpandedBookings(prev => ({ ...prev, [id]: !prev[id] }));
@@ -25,6 +27,11 @@ export default function MyBookingsPage() {
   };
 
   useEffect(() => { fetchBookings(); }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleCancel = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này?')) return;
@@ -39,6 +46,14 @@ export default function MyBookingsPage() {
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
 
+  const getHoldTimeLeft = (expiresAt) => {
+    if (!expiresAt) return null;
+    const diff = Math.max(0, new Date(expiresAt).getTime() - now);
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
+
   const counts = {
     all: bookings.length,
     pending: bookings.filter(b => b.status === 'pending').length,
@@ -51,8 +66,8 @@ export default function MyBookingsPage() {
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0D9D57 0%, #1aaf64 60%, #0a7a42 100%)', padding: '28px 16px 48px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <h1 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 900, color: 'white', marginBottom: 6 }}>
-            📅 Lịch Đặt Của Tôi
+          <h1 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 900, color: 'white', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={24} /> Lịch Đặt Của Tôi
           </h1>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
             {bookings.length} lịch đặt tổng cộng
@@ -65,10 +80,10 @@ export default function MyBookingsPage() {
         {/* Filter Tabs */}
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', padding: '6px', display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto' }}>
           {[
-            { id: 'all',       label: 'Tất cả',      icon: '📋' },
-            { id: 'pending',   label: 'Chờ xác nhận', icon: '⏳' },
-            { id: 'confirmed', label: 'Đã xác nhận',  icon: '✅' },
-            { id: 'cancelled', label: 'Đã hủy',       icon: '❌' },
+            { id: 'all',       label: 'Tất cả',      icon: <List size={16} /> },
+            { id: 'pending',   label: 'Chờ xác nhận', icon: <Clock size={16} /> },
+            { id: 'confirmed', label: 'Đã xác nhận',  icon: <CheckCircle size={16} /> },
+            { id: 'cancelled', label: 'Đã hủy',       icon: <XCircle size={16} /> },
           ].map(tab => (
             <button
               key={tab.id}
@@ -89,10 +104,10 @@ export default function MyBookingsPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 2,
+                gap: 4,
               }}
             >
-              <span style={{ fontSize: 16 }}>{tab.icon}</span>
+              <span style={{ display: 'inline-flex' }}>{tab.icon}</span>
               {tab.label}
               <span style={{ fontSize: 11, background: filter === tab.id ? 'rgba(255,255,255,0.25)' : 'var(--surface-2)', borderRadius: 999, padding: '1px 8px' }}>
                 {counts[tab.id]}
@@ -108,7 +123,7 @@ export default function MyBookingsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '56px 20px', background: 'white', borderRadius: 16, border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 56, marginBottom: 12 }}>📅</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Calendar size={56} className="text-slate-300" /></div>
             <h3 style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>
               {filter === 'all' ? 'Bạn chưa đặt lịch nào' : 'Không có lịch trong mục này'}
             </h3>
@@ -129,6 +144,7 @@ export default function MyBookingsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map((b, idx) => {
               const s = STATUS_MAP[b.status] || STATUS_MAP.pending;
+              const holdTimeLeft = b.status === 'pending' ? getHoldTimeLeft(b.expiresAt) : null;
               const startParts = b.startTime.split(':');
               const endParts = b.endTime.split(':');
               const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
@@ -143,19 +159,28 @@ export default function MyBookingsPage() {
                 >
                   {/* Header */}
                   <div className="booking-card__header">
-                    <div className="booking-card__icon">🏸</div>
+                    <div className="booking-card__icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Activity size={20} className="text-emerald-600" />
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <h3 style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                         {b.court?.name || 'Sân cầu lông'}
                       </h3>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        <span className="booking-meta-chip">📅 {b.date}</span>
-                        <span className="booking-meta-chip">⏰ {b.startTime} – {b.endTime} ({duration}h)</span>
+                        <span className="booking-meta-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Calendar size={11} /> {b.date}</span>
+                        <span className="booking-meta-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> {b.startTime} – {b.endTime} ({duration}h)</span>
                       </div>
                     </div>
-                    <span className={`badge ${s.cls}`}>
-                      {s.icon} {s.text}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                      <span className={`badge ${s.cls}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {s.icon} <span>{s.text}</span>
+                      </span>
+                      {holdTimeLeft && (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#b45309', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Hourglass size={11} /> Giữ chỗ còn {holdTimeLeft}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Body */}
@@ -179,8 +204,8 @@ export default function MyBookingsPage() {
                     {/* Note + Cancel */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                       {b.note && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: 8, maxWidth: 200, textAlign: 'right' }}>
-                          📝 {b.note}
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: 8, maxWidth: 200, textAlign: 'right', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <FileText size={12} /> {b.note}
                         </div>
                       )}
                       {b.status !== 'cancelled' && (
@@ -197,8 +222,8 @@ export default function MyBookingsPage() {
                   {/* Price breakdown */}
                   {expandedBookings[b._id] && b.priceBreakdown && b.priceBreakdown.length > 0 && (
                     <div style={{ borderTop: '1px solid var(--border-light)', padding: '14px 20px', animation: 'fadeIn 0.3s ease' }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                        📊 Chi tiết tính giá
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <BarChart3 size={12} /> Chi tiết tính giá
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
                         {b.priceBreakdown.map((seg, i) => {

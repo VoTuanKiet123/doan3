@@ -9,6 +9,7 @@ const courtRoutes = require('./src/routes/courtRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const pricingRoutes = require('./src/routes/pricingRoutes');
+const { cleanupExpiredPendingBookings } = require('./src/controllers/bookingController');
 
 // Connect to MongoDB
 connectDB();
@@ -47,6 +48,23 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+const cleanupInterval = setInterval(async () => {
+  try {
+    const expiredCount = await cleanupExpiredPendingBookings();
+    if (expiredCount > 0) {
+      console.log(`[cleanup] Đã hủy ${expiredCount} giữ chỗ hết hạn.`);
+    }
+  } catch (error) {
+    console.error('[cleanup] Lỗi khi dọn dẹp giữ chỗ hết hạn:', error.message);
+  }
+}, 60 * 1000);
+
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+});
+
+process.on('SIGINT', () => {
+  clearInterval(cleanupInterval);
+  process.exit(0);
 });

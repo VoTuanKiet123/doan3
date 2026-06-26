@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LayoutDashboard, Volleyball, ClipboardList, DollarSign, Users, Globe, LogOut, Activity } from 'lucide-react';
 
 const sidebarLinks = [
-  { to: '/admin', icon: '📊', label: 'Dashboard', end: true },
-  { to: '/admin/courts', icon: '🏸', label: 'Quản lý sân' },
-  { to: '/admin/bookings', icon: '📋', label: 'Đặt sân' },
-  { to: '/admin/pricing', icon: '💰', label: 'Quản lý giá' },
-  { to: '/admin/users', icon: '👥', label: 'Người dùng' },
+  { to: '/admin', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
+  { to: '/admin/courts', icon: <Volleyball size={18} />, label: 'Quản lý sân' },
+  { to: '/admin/bookings', icon: <ClipboardList size={18} />, label: 'Đặt sân' },
+  { to: '/admin/pricing', icon: <DollarSign size={18} />, label: 'Quản lý giá' },
+  { to: '/admin/users', icon: <Users size={18} />, label: 'Người dùng' },
 ];
 
 export default function AdminLayout() {
@@ -23,7 +24,9 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
-          <div className="admin-sidebar-logo">🏸</div>
+          <div className="admin-sidebar-logo">
+            <Activity size={24} className="text-white animate-pulse" />
+          </div>
           <div className="admin-sidebar-brand">
             <span className="admin-sidebar-title">BadmintonHub</span>
             <span className="admin-sidebar-badge">Admin</span>
@@ -49,7 +52,7 @@ export default function AdminLayout() {
 
         <div className="admin-sidebar-footer">
           <NavLink to="/" className="admin-sidebar-link admin-sidebar-link--back">
-            <span className="admin-sidebar-link-icon">🌐</span>
+            <span className="admin-sidebar-link-icon"><Globe size={18} /></span>
             <span>Về trang chính</span>
           </NavLink>
           <div className="admin-sidebar-user">
@@ -64,8 +67,9 @@ export default function AdminLayout() {
               onClick={handleLogout}
               className="admin-sidebar-logout"
               title="Đăng xuất"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              🚪
+              <LogOut size={16} />
             </button>
           </div>
         </div>

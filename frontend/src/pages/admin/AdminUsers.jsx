@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { Users, Trash2, ShieldCheck, UserCircle } from 'lucide-react';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -51,7 +52,7 @@ export default function AdminUsers() {
         </div>
       ) : users.length === 0 ? (
         <div className="admin-empty">
-          <span className="admin-empty-icon">👥</span>
+          <span className="admin-empty-icon"><Users size={40} /></span>
           <p>Chưa có người dùng nào</p>
         </div>
       ) : (
@@ -83,7 +84,10 @@ export default function AdminUsers() {
                     <td className="admin-text-secondary">{u.email}</td>
                     <td className="admin-text-secondary">{u.phone || '—'}</td>
                     <td>
-                      <span className={r.cls}>{r.text}</span>
+                      <span className={r.cls} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {u.role === 'admin' ? <ShieldCheck size={12} /> : <UserCircle size={12} />}
+                        {r.text}
+                      </span>
                     </td>
                     <td className="admin-text-secondary">
                       {new Date(u.createdAt).toLocaleDateString('vi-VN')}
@@ -93,8 +97,9 @@ export default function AdminUsers() {
                         <button
                           onClick={() => handleDelete(u._id, u.name)}
                           className="admin-action-btn admin-action-btn--danger"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
-                          Xóa
+                          <Trash2 size={13} /> Xóa
                         </button>
                       ) : (
                         <span className="admin-text-muted">—</span>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { Volleyball, CalendarDays, Users, Wallet, Pencil, PlusCircle, ChevronRight, CalendarCheck } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ courts: 0, bookings: 0, users: 0, revenue: 0 });
@@ -35,10 +36,10 @@ export default function AdminDashboard() {
   };
 
   const statCards = [
-    { label: 'Tổng sân', value: stats.courts, icon: '🏸', color: 'admin-stat-card--green', link: '/admin/courts' },
-    { label: 'Tổng booking', value: stats.bookings, icon: '📅', color: 'admin-stat-card--blue', link: '/admin/bookings' },
-    { label: 'Người dùng', value: stats.users, icon: '👥', color: 'admin-stat-card--purple', link: '/admin/users' },
-    { label: 'Doanh thu', value: stats.revenue.toLocaleString('vi-VN') + 'đ', icon: '💰', color: 'admin-stat-card--yellow', link: '#' },
+    { label: 'Tổng sân', value: stats.courts, icon: <Volleyball size={22} />, color: 'admin-stat-card--green', link: '/admin/courts' },
+    { label: 'Tổng booking', value: stats.bookings, icon: <CalendarDays size={22} />, color: 'admin-stat-card--blue', link: '/admin/bookings' },
+    { label: 'Người dùng', value: stats.users, icon: <Users size={22} />, color: 'admin-stat-card--purple', link: '/admin/users' },
+    { label: 'Doanh thu', value: stats.revenue.toLocaleString('vi-VN') + 'đ', icon: <Wallet size={22} />, color: 'admin-stat-card--yellow', link: '#' },
   ];
 
   return (
@@ -53,16 +54,16 @@ export default function AdminDashboard() {
       {/* Banner */}
       <div className="admin-create-court-banner">
         <div className="admin-banner-text" style={{ position: 'relative', zIndex: 1 }}>
-          <h2>🏸 Tạo sân mới ngay</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Volleyball size={20} /> Tạo sân mới ngay</h2>
           <p>Thêm sân cầu lông để khách hàng có thể đặt lịch thi đấu</p>
         </div>
         <Link
           to="/admin/courts"
           id="btn-goto-manage-courts"
           className="admin-banner-btn"
-          style={{ position: 'relative', zIndex: 1 }}
+          style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          + Quản lý &amp; Tạo sân
+          <PlusCircle size={16} /> Quản lý &amp; Tạo sân
         </Link>
       </div>
 
@@ -80,14 +81,14 @@ export default function AdminDashboard() {
       {/* Quick Links */}
       <div className="admin-quick-links">
         <Link to="/admin/courts" className="admin-quick-link admin-quick-link--green">
-          <span className="admin-quick-link-icon">🏸</span>
+          <span className="admin-quick-link-icon"><Volleyball size={22} /></span>
           <div>
             <div className="admin-quick-link-title">Quản lý sân</div>
             <div className="admin-quick-link-desc">Thêm, sửa, xóa sân cầu lông</div>
           </div>
         </Link>
         <Link to="/admin/bookings" className="admin-quick-link admin-quick-link--blue">
-          <span className="admin-quick-link-icon">📋</span>
+          <span className="admin-quick-link-icon"><CalendarCheck size={22} /></span>
           <div>
             <div className="admin-quick-link-title">Quản lý đặt sân</div>
             <div className="admin-quick-link-desc">Xem và xác nhận các booking</div>
@@ -99,7 +100,9 @@ export default function AdminDashboard() {
       <div className="admin-table-wrap">
         <div className="admin-table-header">
           <h2>Booking gần đây</h2>
-          <Link to="/admin/bookings" className="admin-table-view-all">Xem tất cả →</Link>
+          <Link to="/admin/bookings" className="admin-table-view-all" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            Xem tất cả <ChevronRight size={14} />
+          </Link>
         </div>
         {loading ? (
           <div className="admin-loading">
@@ -108,7 +111,7 @@ export default function AdminDashboard() {
           </div>
         ) : recentBookings.length === 0 ? (
           <div className="admin-empty">
-            <span className="admin-empty-icon">📅</span>
+            <span className="admin-empty-icon"><CalendarDays size={40} /></span>
             <p>Chưa có booking nào</p>
           </div>
         ) : (
@@ -128,7 +131,7 @@ export default function AdminDashboard() {
                 return (
                   <tr key={b._id}>
                     <td className="admin-user-name">{b.user?.name}</td>
-                    <td className="admin-text-secondary">🏸 {b.court?.name}</td>
+                    <td className="admin-text-secondary" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Volleyball size={14} /> {b.court?.name}</td>
                     <td className="admin-text-secondary">{b.date}</td>
                     <td className="admin-text-secondary">{b.startTime} - {b.endTime}</td>
                     <td>
