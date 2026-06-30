@@ -10,6 +10,8 @@ const {
   cancelBookingByBatch,
   updateBookingStatus,
   cancelBooking,
+  getBookingPaymentInfo,
+  confirmBookingPayment,
 } = require("../controllers/bookingController");
 const { protect, adminOnly } = require("../middleware/auth");
 
@@ -17,6 +19,7 @@ const { protect, adminOnly } = require("../middleware/auth");
 router.get("/", protect, getBookings);
 router.get("/batch/:batchId", protect, getBookingsByBatch); // phải đặt trước /:id
 router.get("/:id", protect, getBookingById);
+router.get("/:id/payment", protect, getBookingPaymentInfo);
 router.post("/", protect, createBooking);
 
 // ========== Đặt lịch cố định theo tháng ==========
@@ -27,5 +30,6 @@ router.put("/batch/:batchId/cancel", protect, cancelBookingByBatch);
 // ========== Quản lý (admin) ==========
 router.put("/:id/status", protect, adminOnly, updateBookingStatus);
 router.delete("/:id", protect, cancelBooking);
+router.put("/:id/payment/confirm", protect, confirmBookingPayment);
 
 module.exports = router;

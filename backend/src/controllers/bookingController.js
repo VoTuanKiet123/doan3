@@ -4,9 +4,10 @@ const { getPriceForBooking } = require("../services/pricingService");
 const {
   generateFixedScheduleDates,
   bulkCheckConflicts,
-  countGeneratedDates,
 } = require("../services/scheduleService");
 const crypto = require("crypto");
+
+const HOLD_MINUTES = 15;
 
 // ============ HELPERS ============
 
@@ -117,7 +118,18 @@ const getBookingById = async (req, res) => {
   }
 };
 
-const HOLD_MINUTES = 5;
+const generatePaymentInfo = ({ court, date, startTime, endTime, totalPrice }) => {
+  const description = `Thanh toán đặt sân ${court.name} ${date} ${startTime}-${endTime}`;
+  const qrText = `BANK:VietQR;NAME:${court.name};ACCOUNT:1234567890;AMOUNT:${totalPrice};NOTE:${description}`;
+  return {
+    bankName: "VietQR",
+    accountNumber: "1234567890",
+    accountName: "Sân Cầu Lông Demo",
+    amount: totalPrice,
+    description,
+    qrText,
+  };
+};
 
 const cleanupExpiredPendingBookings = async () => {
   const now = getVietnamTime();
@@ -134,6 +146,88 @@ const cleanupExpiredPendingBookings = async () => {
     },
   );
   return result.modifiedCount || 0;
+};
+
+// @desc    Lấy thông tin thanh toán QR cho booking
+// @route   GET /api/bookings/:id/payment
+const getBookingPaymentInfo = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate(
+      "court",
+      "name pricePerHour",
+    );
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy booking" });
+    }
+    if (
+      booking.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền truy cập" });
+    }
+    if (!booking.paymentInfo) {
+      booking.paymentInfo = generatePaymentInfo({
+        court: booking.court,
+        date: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        totalPrice: booking.totalPrice,
+      });
+      await booking.save();
+    }
+    res.json({
+      success: true,
+      paymentInfo: booking.paymentInfo,
+      expiresAt: booking.expiresAt,
+      status: booking.status,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Xác nhận đã thanh toán booking
+// @route   PUT /api/bookings/:id/payment/confirm
+const confirmBookingPayment = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy booking" });
+    }
+    if (
+      booking.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền truy cập" });
+    }
+    if (booking.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking không ở trạng thái chờ thanh toán",
+      });
+    }
+    if (booking.expiresAt && booking.expiresAt <= getVietnamTime()) {
+      booking.status = "cancelled";
+      await booking.save();
+      return res.status(410).json({
+        success: false,
+        message: "Giữ chỗ đã hết hạn",
+      });
+    }
+    booking.status = "confirmed";
+    await booking.save();
+    res.json({ success: true, message: "Thanh toán thành công", booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // @desc    Cập nhật trạng thái booking (admin)
@@ -253,6 +347,15 @@ const createBooking = async (req, res) => {
       endTime,
     );
 
+    const paymentInfo = generatePaymentInfo({
+      court,
+      date,
+      startTime,
+      endTime,
+      totalPrice: priceResult.totalPrice,
+    });
+    const expiresAt = new Date(getVietnamTime().getTime() + HOLD_MINUTES * 60000);
+
     const booking = await Booking.create({
       user: req.user._id,
       court: courtId,
@@ -263,12 +366,17 @@ const createBooking = async (req, res) => {
       totalPrice: priceResult.totalPrice,
       priceBreakdown: priceResult.breakdown,
       note: note || "",
+      status: "pending",
+      expiresAt,
+      paymentInfo,
     });
 
     await booking.populate("court", "name pricePerHour");
-    res
-      .status(201)
-      .json({ success: true, message: "Đặt sân thành công", booking });
+    res.status(201).json({
+      success: true,
+      message: "Đặt sân thành công. Vui lòng thanh toán trong 15 phút để giữ chỗ.",
+      booking,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -395,7 +503,7 @@ const createFixedMonthlyBooking = async (req, res) => {
         slot.startTime,
         slot.endTime,
       );
-      bookingDocs.push({
+        bookingDocs.push({
         user: req.user._id,
         court: courtId,
         bookingType: "fixed_monthly",
@@ -407,6 +515,7 @@ const createFixedMonthlyBooking = async (req, res) => {
         priceBreakdown: priceResult.breakdown,
         fixedScheduleMeta: { startDate, endDate, daysOfWeek },
         note: note || "",
+        status: "confirmed",
       });
     }
 
@@ -560,4 +669,6 @@ module.exports = {
   previewFixedSchedule,
   getBookingsByBatch,
   cancelBookingByBatch,
+  getBookingPaymentInfo,
+  confirmBookingPayment,
 };

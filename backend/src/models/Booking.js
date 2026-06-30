@@ -65,6 +65,15 @@ const bookingSchema = new mongoose.Schema(
       },
     ],
 
+    paymentInfo: {
+      bankName: String,
+      accountNumber: String,
+      accountName: String,
+      amount: Number,
+      description: String,
+      qrText: String,
+    },
+
     // ============ TRẠNG THÁI ============
     status: {
       type: String,
