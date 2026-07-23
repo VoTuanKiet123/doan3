@@ -19,6 +19,11 @@ import AdminCourts from "./pages/admin/AdminCourts";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPricing from "./pages/admin/AdminPricing";
+import AdminMaintenance from "./pages/admin/AdminMaintenance";
+import AdminPOS from "./pages/admin/AdminPOS";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminRentals from "./pages/admin/AdminRentals";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 export default function App() {
   return (
