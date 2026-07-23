@@ -11,6 +11,15 @@ const courtSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    type: {
+      type: String,
+      enum: ['A', 'B', 'C'],
+      default: 'A',
+    },
+    services: {
+      type: [String],
+      default: [],
+    },
     pricePerHour: {
       type: Number,
       required: [true, 'Vui lòng nhập giá thuê sân'],
@@ -22,7 +31,7 @@ const courtSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'maintenance'],
+      enum: ['active', 'inactive'],
       default: 'active',
     },
   },

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, Volleyball, CalendarCheck, User, Activity } from 'lucide-react';
+import { Home, Volleyball, CalendarCheck, User, Activity, Star } from 'lucide-react';
 
 export default function BottomNav() {
   const location = useLocation();
@@ -43,11 +43,18 @@ export default function BottomNav() {
         </Link>
       )}
 
-      {/* Tài khoản */}
+      {/* Đánh giá / Tài khoản */}
       {user ? (
-        <Link to="/my-bookings" className="bottom-nav-item">
-          <span className="bottom-nav-icon"><User size={22} strokeWidth={1.8} /></span>
-          <span className="bottom-nav-label">Tài khoản</span>
+        <Link to="/reviews" className={`bottom-nav-item ${isActive('/reviews') ? 'bottom-nav-item--active' : ''}`}>
+          <span className="bottom-nav-icon">
+            <Star
+              size={22}
+              strokeWidth={isActive('/reviews') ? 2.5 : 1.8}
+              fill={isActive('/reviews') ? '#f59e0b' : 'none'}
+              color={isActive('/reviews') ? '#f59e0b' : undefined}
+            />
+          </span>
+          <span className="bottom-nav-label" style={{ color: isActive('/reviews') ? '#f59e0b' : undefined }}>Đánh giá</span>
         </Link>
       ) : (
         <Link to="/login" className={`bottom-nav-item ${isActive('/login') ? 'bottom-nav-item--active' : ''}`}>

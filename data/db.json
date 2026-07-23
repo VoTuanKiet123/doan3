@@ -927,6 +927,47 @@
       "note": "Test lịch cố định",
       "createdAt": "2026-06-17T07:59:11.879Z",
       "updatedAt": "2026-06-17T07:59:11.879Z"
+    },
+    {
+      "_id": "booking_r0703gkjo",
+      "user": "user_h4wt0voep",
+      "court": "court_1",
+      "bookingType": "casual",
+      "date": "2026-07-08",
+      "startTime": "06:00",
+      "endTime": "07:00",
+      "totalPrice": 80000,
+      "priceBreakdown": [
+        {
+          "timeSlot": "06:00 - 06:30",
+          "rate": 80000,
+          "price": 40000,
+          "multiplier": 1,
+          "ruleName": null,
+          "ruleType": "normal"
+        },
+        {
+          "timeSlot": "06:30 - 07:00",
+          "rate": 80000,
+          "price": 40000,
+          "multiplier": 1,
+          "ruleName": null,
+          "ruleType": "normal"
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "expiresAt": "2026-07-06T15:02:30.000Z",
+      "paymentInfo": {
+        "bankName": "VietQR",
+        "accountNumber": "1234567890",
+        "accountName": "Sân Cầu Lông Demo",
+        "amount": 80000,
+        "description": "Thanh toán đặt sân Sân A1 - Tiêu chuẩn 2026-07-08 06:00-07:00",
+        "qrText": "BANK:VietQR;NAME:Sân A1 - Tiêu chuẩn;ACCOUNT:1234567890;AMOUNT:80000;NOTE:Thanh toán đặt sân Sân A1 - Tiêu chuẩn 2026-07-08 06:00-07:00"
+      },
+      "createdAt": "2026-07-06T14:47:30.514Z",
+      "updatedAt": "2026-07-06T14:47:30.514Z"
     }
   ],
   "pricingrules": [

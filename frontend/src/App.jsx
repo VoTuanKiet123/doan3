@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage';
 import CourtsPage from './pages/CourtsPage';
 import BookingPage from './pages/BookingPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import ReviewPage from './pages/ReviewPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourts from './pages/admin/AdminCourts';
 import AdminBookings from './pages/admin/AdminBookings';
@@ -38,6 +39,7 @@ export default function App() {
                     <Route path="/courts" element={<CourtsPage />} />
                     <Route path="/book/:courtId" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
                     <Route path="/my-bookings" element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
+                    <Route path="/reviews" element={<PrivateRoute><ReviewPage /></PrivateRoute>} />
                   </Routes>
                 </main>
                 <Footer />

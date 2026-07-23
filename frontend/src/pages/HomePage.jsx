@@ -180,26 +180,31 @@ export default function HomePage() {
                   {/* Thumbnail */}
                   <div className="court-card-h__thumb">
                     <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}><Activity size={32} /></span>
-                    {!isAvail && (
-                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ background: '#FF8F00', color: 'white', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>BẢO TRÌ</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Body */}
                   <div className="court-card-h__body">
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                       <div>
-                        <h3 style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2 }}>
-                          {court.name}
-                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                          <h3 style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)' }}>
+                            {court.name}
+                          </h3>
+                          {(() => {
+                            const cType = court.type || (court.pricePerHour >= 70000 ? 'A' : (court.pricePerHour >= 50000 ? 'B' : 'C'));
+                            return (
+                              <span className={`badge ${cType === 'A' ? 'badge-hot' : cType === 'B' ? 'badge-active' : 'badge-inactive'}`} style={{ fontSize: 10 }}>
+                                Sân {cType} ({cType === 'A' ? 'VIP 70k' : cType === 'B' ? 'Standard 50k' : 'Eco 30k'})
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, WebkitLineClamp: 2, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical' }}>
                           {court.description || '📍 Sân cầu lông tiêu chuẩn, trang thiết bị hiện đại'}
                         </p>
                       </div>
-                      <span className={`badge ${isAvail ? 'badge-active' : 'badge-maintenance'}`} style={{ flexShrink: 0 }}>
-                        {isAvail ? '● Trống' : '🛠 Bảo trì'}
+                      <span className="badge badge-active" style={{ flexShrink: 0 }}>
+                        ● Khả dụng
                       </span>
                     </div>
 

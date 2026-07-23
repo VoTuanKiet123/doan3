@@ -658,6 +658,163 @@ const cancelBookingByBatch = async (req, res) => {
   }
 };
 
+// @desc    Khách hàng check-in sân
+// @route   PUT /api/bookings/:id/checkin
+const checkInBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate("court", "name");
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy booking" });
+    }
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Không có quyền thực hiện" });
+    }
+    if (booking.status !== "confirmed") {
+      return res.status(400).json({ success: false, message: "Chỉ có thể check-in khi booking đã được xác nhận" });
+    }
+    if (booking.checkedIn) {
+      return res.status(400).json({ success: false, message: "Booking này đã được check-in trước đó" });
+    }
+    booking.checkedIn = true;
+    booking.checkedInAt = getVietnamTime();
+    await booking.save();
+    res.json({ success: true, message: "Check-in thành công!", booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Khách hàng đánh giá sân sau khi chơi
+// @route   POST /api/bookings/:id/review
+const submitReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: "Đánh giá phải từ 1 đến 5 sao" });
+    }
+    const booking = await Booking.findById(req.params.id).populate("court", "name");
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy booking" });
+    }
+    if (booking.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Không có quyền thực hiện" });
+    }
+    if (booking.status !== "confirmed") {
+      return res.status(400).json({ success: false, message: "Chỉ có thể đánh giá booking đã xác nhận" });
+    }
+
+    // Kiểm tra ngày chơi đã qua chưa (cho phép đánh giá từ ngày chơi trở đi)
+    const vnNow = getVietnamTime();
+    const todayStr = `${vnNow.getFullYear()}-${String(vnNow.getMonth() + 1).padStart(2, "0")}-${String(vnNow.getDate()).padStart(2, "0")}`;
+    if (booking.date > todayStr) {
+      return res.status(400).json({ success: false, message: "Chỉ có thể đánh giá sau khi đã chơi xong" });
+    }
+
+    if (booking.review && booking.review.rating) {
+      return res.status(400).json({ success: false, message: "Bạn đã đánh giá sân này rồi" });
+    }
+
+    booking.review = {
+      rating: Number(rating),
+      comment: comment || "",
+      createdAt: getVietnamTime(),
+    };
+    await booking.save();
+    res.json({ success: true, message: "Cảm ơn bạn đã đánh giá!", booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Lấy tất cả đánh giá mà user hiện tại đã gửi
+// @route   GET /api/bookings/my-reviews
+const getMyReviews = async (req, res) => {
+  try {
+    const reviews = await Booking.find({
+      user: req.user._id,
+      "review.rating": { $exists: true, $ne: null },
+    })
+      .populate("court", "name")
+      .select("review date court startTime endTime status")
+      .sort({ "review.createdAt": -1 });
+
+    res.json({
+      success: true,
+      count: reviews.length,
+      reviews: reviews.map((b) => ({
+        _id: b._id,
+        court: b.court,
+        date: b.date,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        rating: b.review.rating,
+        comment: b.review.comment,
+        createdAt: b.review.createdAt,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Lấy các booking đã xác nhận & đã qua ngày (để đánh giá)
+// @route   GET /api/bookings/reviewable
+const getReviewableBookings = async (req, res) => {
+  try {
+    const vnNow = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }),
+    );
+    const todayStr = `${vnNow.getFullYear()}-${String(vnNow.getMonth() + 1).padStart(2, "0")}-${String(vnNow.getDate()).padStart(2, "0")}`;
+
+    const bookings = await Booking.find({
+      user: req.user._id,
+      status: "confirmed",
+      date: { $lte: todayStr },
+      "review.rating": { $exists: false },
+    })
+      .populate("court", "name")
+      .select("date startTime endTime court totalPrice")
+      .sort({ date: -1 });
+
+    res.json({ success: true, count: bookings.length, bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Lấy tất cả đánh giá của một sân
+// @route   GET /api/courts/:id/reviews
+const getCourtReviews = async (req, res) => {
+  try {
+    const reviews = await Booking.find({
+      court: req.params.id,
+      "review.rating": { $exists: true, $ne: null },
+    })
+      .populate("user", "name")
+      .select("review date user checkedIn")
+      .sort({ "review.createdAt": -1 });
+
+    const totalRating = reviews.reduce((sum, b) => sum + (b.review?.rating || 0), 0);
+    const avgRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
+
+    res.json({
+      success: true,
+      count: reviews.length,
+      avgRating: Number(avgRating),
+      reviews: reviews.map((b) => ({
+        _id: b._id,
+        user: b.user,
+        date: b.date,
+        rating: b.review.rating,
+        comment: b.review.comment,
+        createdAt: b.review.createdAt,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getBookings,
   getBookingById,
@@ -671,4 +828,9 @@ module.exports = {
   cancelBookingByBatch,
   getBookingPaymentInfo,
   confirmBookingPayment,
+  checkInBooking,
+  submitReview,
+  getCourtReviews,
+  getMyReviews,
+  getReviewableBookings,
 };
