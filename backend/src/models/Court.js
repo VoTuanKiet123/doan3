@@ -13,8 +13,8 @@ const courtSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['A', 'B', 'C'],
-      default: 'A',
+      enum: ["A", "B", "C"],
+      default: "A",
     },
     services: {
       type: [String],
@@ -31,13 +31,8 @@ const courtSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-<<<<<<< HEAD
       enum: ["active", "inactive", "maintenance"],
       default: "active",
-=======
-      enum: ['active', 'inactive'],
-      default: 'active',
->>>>>>> c43715cc4445c1f84dec4c11d364f1bae6a9579e
     },
   },
   { timestamps: true },

@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-<<<<<<< HEAD
 const multer = require("multer");
 const path = require("path");
 const {
@@ -10,6 +9,7 @@ const {
   updateCourt,
   deleteCourt,
 } = require("../controllers/courtController");
+const { getCourtReviews } = require("../controllers/bookingController");
 const { protect, adminOnly } = require("../middleware/auth");
 
 // Cấu hình multer: lưu vào thư mục uploads
@@ -45,20 +45,9 @@ const upload = multer({
 
 router.get("/", getCourts);
 router.get("/:id", getCourtById);
+router.get("/:id/reviews", getCourtReviews);
 router.post("/", protect, adminOnly, upload.array("images", 10), createCourt);
 router.put("/:id", protect, adminOnly, upload.array("images", 10), updateCourt);
 router.delete("/:id", protect, adminOnly, deleteCourt);
-=======
-const { getCourts, getCourtById, createCourt, updateCourt, deleteCourt } = require('../controllers/courtController');
-const { getCourtReviews } = require('../controllers/bookingController');
-const { protect, adminOnly } = require('../middleware/auth');
-
-router.get('/', getCourts);
-router.get('/:id', getCourtById);
-router.get('/:id/reviews', getCourtReviews);
-router.post('/', protect, adminOnly, createCourt);
-router.put('/:id', protect, adminOnly, updateCourt);
-router.delete('/:id', protect, adminOnly, deleteCourt);
->>>>>>> c43715cc4445c1f84dec4c11d364f1bae6a9579e
 
 module.exports = router;
