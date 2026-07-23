@@ -88,6 +88,23 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+
+    // ============ CHECK-IN ============
+    checkedIn: {
+      type: Boolean,
+      default: false,
+    },
+    checkedInAt: {
+      type: Date,
+      default: null,
+    },
+
+    // ============ ĐÁNH GIÁ ============
+    review: {
+      rating: { type: Number, min: 1, max: 5 },
+      comment: { type: String, trim: true },
+      createdAt: { type: Date },
+    },
   },
   { timestamps: true },
 );

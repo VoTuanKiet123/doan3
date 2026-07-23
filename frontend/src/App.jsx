@@ -13,16 +13,12 @@ import RegisterPage from "./pages/RegisterPage";
 import CourtsPage from "./pages/CourtsPage";
 import BookingPage from "./pages/BookingPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import ReviewPage from "./pages/ReviewPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCourts from "./pages/admin/AdminCourts";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPricing from "./pages/admin/AdminPricing";
-import AdminMaintenance from "./pages/admin/AdminMaintenance";
-import AdminPOS from "./pages/admin/AdminPOS";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminRentals from "./pages/admin/AdminRentals";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 export default function App() {
   return (
@@ -54,6 +50,14 @@ export default function App() {
                       element={
                         <PrivateRoute>
                           <MyBookingsPage />
+                        </PrivateRoute>
+                      }
+                    />
+                    <Route
+                      path="/reviews"
+                      element={
+                        <PrivateRoute>
+                          <ReviewPage />
                         </PrivateRoute>
                       }
                     />

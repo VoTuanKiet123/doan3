@@ -1392,25 +1392,35 @@ export default function BookingPage() {
         {/* ==================== RIGHT: SUMMARY PANEL ==================== */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-800 mb-3 text-base">
-              Thông tin sân đấu
-            </h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-4">
-              {court.description || "Sân cầu lông tiêu chuẩn quốc tế."}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="font-bold text-slate-800 text-base">
+                {court.name}
+              </h3>
+              {(() => {
+                const cType = court.type || (court.pricePerHour >= 70000 ? 'A' : (court.pricePerHour >= 50000 ? 'B' : 'C'));
+                const label = cType === 'A' ? 'Sân A (VIP)' : cType === 'B' ? 'Sân B (Tiêu Chuẩn)' : 'Sân C (Tiết Kiệm)';
+                const colorCls = cType === 'A' ? 'bg-amber-100 text-amber-800 border-amber-300' : cType === 'B' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-blue-100 text-blue-800 border-blue-300';
+                return (
+                  <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${colorCls}`}>
+                    {label}
+                  </span>
+                );
+              })()}
+            </div>
+            <p className="text-slate-500 text-xs leading-relaxed mb-4">
+              {court.description || "Sân cầu lông tiêu chuẩn chất lượng cao."}
             </p>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-              <div className="flex justify-between text-xs font-semibold text-slate-500">
-                <span>Hệ thống sàn</span>
-                <span className="text-green-700">PVC Thảm 5.0mm</span>
-              </div>
-              <div className="flex justify-between text-xs font-semibold text-slate-500">
-                <span>Hệ thống đèn</span>
-                <span className="text-green-700">LED Chống lóa BWF</span>
-              </div>
-              <div className="flex justify-between text-xs font-semibold text-slate-500">
-                <span>Dịch vụ kèm</span>
-                <span className="text-green-700">Nước uống & Cho thuê vợt</span>
-              </div>
+              <div className="text-xs font-bold text-slate-700 mb-1">Dịch vụ đi kèm theo loại sân:</div>
+              {Array.isArray(court.services) && court.services.length > 0 ? (
+                court.services.map((srv, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+                    <span className="text-emerald-600 font-bold">✓</span> {srv}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-slate-500">Thảm thi đấu, chiếu sáng LED chống lóa, nước uống & quạt mát.</div>
+              )}
             </div>
           </div>
 

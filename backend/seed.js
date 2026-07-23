@@ -21,8 +21,10 @@ const userSchema = new mongoose.Schema({
 
 const courtSchema = new mongoose.Schema({
   name: String,
+  type: { type: String, enum: ['A', 'B', 'C'], default: 'A' },
   description: String,
   pricePerHour: Number,
+  services: [String],
   imageUrl: { type: String, default: '' },
   status: { type: String, default: 'active' },
 }, { timestamps: true });
@@ -32,40 +34,88 @@ const Court = mongoose.models.Court || mongoose.model('Court', courtSchema);
 
 const courts = [
   {
-    name: 'Sân A1 - Tiêu chuẩn',
-    description: 'Sân cầu lông tiêu chuẩn BWF, sàn gỗ cứng, hệ thống đèn LED 600 lux. Phù hợp luyện tập và thi đấu phong trào.',
-    pricePerHour: 80000,
+    name: 'Sân A1 - VIP Premium',
+    type: 'A',
+    description: 'Sân VIP cao cấp nhất với thảm Taraflex thi đấu quốc tế, hệ thống đèn LED 1000 Lux chống lóa và điều hòa không khí.',
+    pricePerHour: 70000,
+    services: [
+      'Thảm Taraflex cao cấp thi đấu',
+      'Đèn LED 800-1000 Lux chống lóa',
+      'Điều hòa / Quạt mát công suất lớn',
+      'Nước uống đóng chai miễn phí',
+      'Wifi tốc độ cao miễn phí',
+      'Dịch vụ lau thảm & Tủ đồ khóa từ'
+    ],
     status: 'active',
   },
   {
-    name: 'Sân A2 - Tiêu chuẩn',
-    description: 'Sân cầu lông tiêu chuẩn BWF, sàn gỗ cứng, hệ thống đèn LED 600 lux. Phù hợp luyện tập và thi đấu phong trào.',
-    pricePerHour: 80000,
+    name: 'Sân A2 - VIP Premium',
+    type: 'A',
+    description: 'Sân VIP cao cấp đạt tiêu chuẩn thi đấu quốc gia, đầy đủ máy lạnh, nước uống và tủ khóa an toàn.',
+    pricePerHour: 70000,
+    services: [
+      'Thảm Taraflex cao cấp thi đấu',
+      'Đèn LED 800-1000 Lux chống lóa',
+      'Điều hòa / Quạt mát công suất lớn',
+      'Nước uống đóng chai miễn phí',
+      'Wifi tốc độ cao miễn phí',
+      'Dịch vụ lau thảm & Tủ đồ khóa từ'
+    ],
     status: 'active',
   },
   {
-    name: 'Sân B1 - VIP',
-    description: 'Sân VIP cao cấp, sàn PVC chuyên dụng, hệ thống đèn LED 800 lux, điều hòa không khí. Tiêu chuẩn thi đấu quốc gia.',
-    pricePerHour: 150000,
+    name: 'Sân B1 - Tiêu Chuẩn',
+    type: 'B',
+    description: 'Sân cầu lông tiêu chuẩn chất lượng cao, thảm BWF độ đàn hồi tốt, phù hợp tập luyện hàng ngày và giao lưu phong trào.',
+    pricePerHour: 50000,
+    services: [
+      'Thảm cao su tiêu chuẩn BWF',
+      'Đèn LED 600 Lux chống lóa',
+      'Quạt mát công suất lớn & Ghế chờ',
+      'Wifi miễn phí',
+      'Nước giải khát bán kèm'
+    ],
     status: 'active',
   },
   {
-    name: 'Sân B2 - VIP',
-    description: 'Sân VIP cao cấp, sàn PVC chuyên dụng, hệ thống đèn LED 800 lux, điều hòa không khí. Tiêu chuẩn thi đấu quốc gia.',
-    pricePerHour: 150000,
+    name: 'Sân B2 - Tiêu Chuẩn',
+    type: 'B',
+    description: 'Sân tiêu chuẩn BWF sạch đẹp, quạt mát công suất lớn, ánh sáng chống lóa dễ quan sát cầu.',
+    pricePerHour: 50000,
+    services: [
+      'Thảm cao su tiêu chuẩn BWF',
+      'Đèn LED 600 Lux chống lóa',
+      'Quạt mát công suất lớn & Ghế chờ',
+      'Wifi miễn phí',
+      'Nước giải khát bán kèm'
+    ],
     status: 'active',
   },
   {
-    name: 'Sân C1 - Premium',
-    description: 'Sân Premium đẳng cấp nhất, sàn gỗ maple nhập khẩu, hệ thống chiếu sáng chuyên nghiệp 1000 lux, phòng thay đồ riêng.',
-    pricePerHour: 220000,
+    name: 'Sân C1 - Tiết Kiệm',
+    type: 'C',
+    description: 'Sân tiết kiệm chi phí cho nhóm bạn trẻ và sinh viên, sàn phủ cao su êm ái, đầy đủ quạt gió và cây nước uống.',
+    pricePerHour: 30000,
+    services: [
+      'Sàn acrylic / thảm cao su cơ bản',
+      'Hệ thống đèn chiếu sáng tiêu chuẩn',
+      'Quạt xoay & Ghế ngồi nghỉ',
+      'Cây nước uống miễn phí tự phục vụ'
+    ],
     status: 'active',
   },
   {
-    name: 'Sân C2 - Bảo trì',
-    description: 'Sân đang trong quá trình nâng cấp và bảo trì. Dự kiến mở cửa trở lại trong tuần tới.',
-    pricePerHour: 120000,
-    status: 'maintenance',
+    name: 'Sân C2 - Tiết Kiệm',
+    type: 'C',
+    description: 'Sân C2 tiết kiệm chi phí cho nhóm bạn trẻ và sinh viên, sàn phủ cao su êm ái, đầy đủ quạt gió và cây nước uống.',
+    pricePerHour: 30000,
+    services: [
+      'Sàn acrylic / thảm cao su cơ bản',
+      'Hệ thống đèn chiếu sáng tiêu chuẩn',
+      'Quạt xoay & Ghế ngồi nghỉ',
+      'Cây nước uống miễn phí tự phục vụ'
+    ],
+    status: 'active',
   },
 ];
 
