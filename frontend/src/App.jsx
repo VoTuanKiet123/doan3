@@ -1,23 +1,28 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
-import { PrivateRoute, AdminRoute } from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import BottomNav from './components/BottomNav';
-import AdminLayout from './components/AdminLayout';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "./context/AuthContext";
+import { PrivateRoute, AdminRoute } from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import BottomNav from "./components/BottomNav";
+import AdminLayout from "./components/AdminLayout";
 
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import CourtsPage from './pages/CourtsPage';
-import BookingPage from './pages/BookingPage';
-import MyBookingsPage from './pages/MyBookingsPage';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminCourts from './pages/admin/AdminCourts';
-import AdminBookings from './pages/admin/AdminBookings';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminPricing from './pages/admin/AdminPricing';
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import CourtsPage from "./pages/CourtsPage";
+import BookingPage from "./pages/BookingPage";
+import MyBookingsPage from "./pages/MyBookingsPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminCourts from "./pages/admin/AdminCourts";
+import AdminBookings from "./pages/admin/AdminBookings";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPricing from "./pages/admin/AdminPricing";
+import AdminMaintenance from "./pages/admin/AdminMaintenance";
+import AdminPOS from "./pages/admin/AdminPOS";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminRentals from "./pages/admin/AdminRentals";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 export default function App() {
   return (
@@ -36,8 +41,22 @@ export default function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/courts" element={<CourtsPage />} />
-                    <Route path="/book/:courtId" element={<PrivateRoute><BookingPage /></PrivateRoute>} />
-                    <Route path="/my-bookings" element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
+                    <Route
+                      path="/book/:courtId"
+                      element={
+                        <PrivateRoute>
+                          <BookingPage />
+                        </PrivateRoute>
+                      }
+                    />
+                    <Route
+                      path="/my-bookings"
+                      element={
+                        <PrivateRoute>
+                          <MyBookingsPage />
+                        </PrivateRoute>
+                      }
+                    />
                   </Routes>
                 </main>
                 <Footer />
@@ -59,6 +78,11 @@ export default function App() {
             <Route path="courts" element={<AdminCourts />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="pricing" element={<AdminPricing />} />
+            <Route path="maintenance" element={<AdminMaintenance />} />
+            <Route path="pos" element={<AdminPOS />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="rentals" element={<AdminRentals />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="users" element={<AdminUsers />} />
           </Route>
         </Routes>
@@ -66,13 +90,13 @@ export default function App() {
           position="top-right"
           toastOptions={{
             style: {
-              fontFamily: 'Nunito, sans-serif',
+              fontFamily: "Nunito, sans-serif",
               fontWeight: 700,
               borderRadius: 12,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
             },
             success: {
-              iconTheme: { primary: '#0D9D57', secondary: 'white' },
+              iconTheme: { primary: "#0D9D57", secondary: "white" },
             },
           }}
         />

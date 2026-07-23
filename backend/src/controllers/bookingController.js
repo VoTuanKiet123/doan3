@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const Court = require("../models/Court");
+const Maintenance = require("../models/Maintenance");
 const { getPriceForBooking } = require("../services/pricingService");
 const {
   generateFixedScheduleDates,
@@ -72,6 +73,27 @@ const validateNotPast = (dateStr, startMin) => {
   return { valid: true };
 };
 
+/**
+ * Kiểm tra xem khung giờ [date, startTime-endTime] có bị trùng với
+ * phiếu bảo trì nào đang active (pending/in_progress) trên sân không.
+ * Trả về { conflict: boolean, maintenance: object|null }
+ */
+const checkMaintenanceConflict = async (courtId, date, startTime, endTime) => {
+  const activeMaintenances = await Maintenance.find({
+    court: courtId,
+    status: { $in: ["pending", "in_progress"] },
+    startDate: { $lte: date },
+    endDate: { $gte: date },
+  }).lean();
+
+  for (const maint of activeMaintenances) {
+    if (startTime < maint.endTime && endTime > maint.startTime) {
+      return { conflict: true, maintenance: maint };
+    }
+  }
+  return { conflict: false, maintenance: null };
+};
+
 // ============ CONTROLLER: CRUD CƠ BẢN ============
 
 // @desc    Lấy danh sách booking (admin: tất cả, user: của mình)
@@ -118,7 +140,13 @@ const getBookingById = async (req, res) => {
   }
 };
 
-const generatePaymentInfo = ({ court, date, startTime, endTime, totalPrice }) => {
+const generatePaymentInfo = ({
+  court,
+  date,
+  startTime,
+  endTime,
+  totalPrice,
+}) => {
   const description = `Thanh toán đặt sân ${court.name} ${date} ${startTime}-${endTime}`;
   const qrText = `BANK:VietQR;NAME:${court.name};ACCOUNT:1234567890;AMOUNT:${totalPrice};NOTE:${description}`;
   return {
@@ -311,6 +339,20 @@ const createBooking = async (req, res) => {
         .json({ success: false, message: "Sân hiện không khả dụng" });
     }
 
+    // Kiểm tra xung đột với lịch bảo trì (theo ngày cụ thể)
+    const maintCheck = await checkMaintenanceConflict(
+      courtId,
+      date,
+      startTime,
+      endTime,
+    );
+    if (maintCheck.conflict) {
+      return res.status(400).json({
+        success: false,
+        message: `Sân có lịch bảo trì (${maintCheck.maintenance.startTime}-${maintCheck.maintenance.endTime}) trong ngày này. Vui lòng chọn ngày khác.`,
+      });
+    }
+
     const timeCheck = validateTimeSlot(startTime, endTime);
     if (!timeCheck.valid) {
       return res
@@ -354,7 +396,9 @@ const createBooking = async (req, res) => {
       endTime,
       totalPrice: priceResult.totalPrice,
     });
-    const expiresAt = new Date(getVietnamTime().getTime() + HOLD_MINUTES * 60000);
+    const expiresAt = new Date(
+      getVietnamTime().getTime() + HOLD_MINUTES * 60000,
+    );
 
     const booking = await Booking.create({
       user: req.user._id,
@@ -374,7 +418,8 @@ const createBooking = async (req, res) => {
     await booking.populate("court", "name pricePerHour");
     res.status(201).json({
       success: true,
-      message: "Đặt sân thành công. Vui lòng thanh toán trong 15 phút để giữ chỗ.",
+      message:
+        "Đặt sân thành công. Vui lòng thanh toán trong 15 phút để giữ chỗ.",
       booking,
     });
   } catch (error) {
@@ -446,6 +491,29 @@ const createFixedMonthlyBooking = async (req, res) => {
         .json({ success: false, message: "Sân hiện không khả dụng" });
     }
 
+    // Kiểm tra xung đột với lịch bảo trì trong khoảng ngày đặt cố định
+    const activeMaintenances = await Maintenance.find({
+      court: courtId,
+      status: { $in: ["pending", "in_progress"] },
+      startDate: { $lte: endDate },
+      endDate: { $gte: startDate },
+    }).lean();
+    if (activeMaintenances.length > 0) {
+      // Kiểm tra giao thời gian
+      const maintConflict = activeMaintenances.some(
+        (maint) => startTime < maint.endTime && endTime > maint.startTime,
+      );
+      if (maintConflict) {
+        const maintDates = activeMaintenances.map(
+          (m) => `${m.startDate}→${m.endDate} (${m.startTime}-${m.endTime})`,
+        );
+        return res.status(400).json({
+          success: false,
+          message: `Sân có lịch bảo trì trong khoảng thời gian này: ${maintDates.join("; ")}`,
+        });
+      }
+    }
+
     const timeCheck = validateTimeSlot(startTime, endTime);
     if (!timeCheck.valid) {
       return res
@@ -503,7 +571,7 @@ const createFixedMonthlyBooking = async (req, res) => {
         slot.startTime,
         slot.endTime,
       );
-        bookingDocs.push({
+      bookingDocs.push({
         user: req.user._id,
         court: courtId,
         bookingType: "fixed_monthly",

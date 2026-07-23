@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const courtSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Vui lòng nhập tên sân'],
+      required: [true, "Vui lòng nhập tên sân"],
       trim: true,
     },
     description: {
@@ -13,20 +13,20 @@ const courtSchema = new mongoose.Schema(
     },
     pricePerHour: {
       type: Number,
-      required: [true, 'Vui lòng nhập giá thuê sân'],
+      required: [true, "Vui lòng nhập giá thuê sân"],
       min: 0,
     },
-    imageUrl: {
-      type: String,
-      default: '',
+    images: {
+      type: [String],
+      default: [],
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'maintenance'],
-      default: 'active',
+      enum: ["active", "inactive", "maintenance"],
+      default: "active",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Court', courtSchema);
+module.exports = mongoose.model("Court", courtSchema);

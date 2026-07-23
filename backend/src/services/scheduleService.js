@@ -6,6 +6,7 @@
  */
 
 const Booking = require("../models/Booking");
+const Maintenance = require("../models/Maintenance");
 
 /**
  * Sinh mảng các ngày trong khoảng [startDate, endDate] trùng với các thứ được chọn.
@@ -87,6 +88,7 @@ const bulkCheckConflicts = async (courtId, slots, excludeBatchId = null) => {
     endTime: { $gt: startTime },
   }));
 
+  // ----- Kiểm tra trùng với Booking -----
   const query = {
     court: courtId,
     status: { $ne: "cancelled" },
@@ -102,9 +104,30 @@ const bulkCheckConflicts = async (courtId, slots, excludeBatchId = null) => {
     .select("date startTime endTime")
     .lean();
 
-  // Trả về danh sách ngày bị trùng (unique)
-  const conflictDates = [...new Set(conflicts.map((b) => b.date))];
-  return conflictDates;
+  const conflictDates = new Set(conflicts.map((b) => b.date));
+
+  // ----- Kiểm tra trùng với lịch Bảo trì (Maintenance) -----
+  // Lấy tất cả phiếu bảo trì đang active (pending hoặc in_progress) cho sân này
+  const activeMaintenances = await Maintenance.find({
+    court: courtId,
+    status: { $in: ["pending", "in_progress"] },
+  }).lean();
+
+  // Với mỗi slot, kiểm tra xem có nằm trong khoảng bảo trì nào không
+  for (const slot of slots) {
+    for (const maint of activeMaintenances) {
+      // Kiểm tra ngày slot có nằm trong [startDate, endDate] của phiếu bảo trì không
+      if (slot.date >= maint.startDate && slot.date <= maint.endDate) {
+        // Kiểm tra giao thời gian
+        if (slot.startTime < maint.endTime && slot.endTime > maint.startTime) {
+          conflictDates.add(slot.date);
+          break; // Ngày này đã bị conflict, không cần kiểm tra tiếp
+        }
+      }
+    }
+  }
+
+  return [...conflictDates];
 };
 
 /**

@@ -99,5 +99,11 @@ bookingSchema.index({ court: 1, date: 1, status: 1 });
 bookingSchema.index({ court: 1, date: 1, startTime: 1, endTime: 1, status: 1 });
 // Index batchId để truy vấn nhanh nhóm booking cố định
 bookingSchema.index({ batchId: 1 });
+// Index cho analytics: lọc theo ngày + trạng thái
+bookingSchema.index({ date: 1, status: 1 });
+// Index cho analytics: lọc theo loại đặt + ngày
+bookingSchema.index({ bookingType: 1, date: 1, status: 1 });
+// Index cho analytics: user + status (top khách hàng)
+bookingSchema.index({ user: 1, status: 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);

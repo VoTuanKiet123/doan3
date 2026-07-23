@@ -1,13 +1,65 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Volleyball, ClipboardList, DollarSign, Users, Globe, LogOut, Activity } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  LayoutDashboard,
+  Volleyball,
+  ClipboardList,
+  DollarSign,
+  Users,
+  Globe,
+  LogOut,
+  Activity,
+  Wrench,
+  ShoppingCart,
+  Package,
+  RotateCcw,
+  BarChart3,
+} from "lucide-react";
 
 const sidebarLinks = [
-  { to: '/admin', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
-  { to: '/admin/courts', icon: <Volleyball size={18} />, label: 'Quản lý sân' },
-  { to: '/admin/bookings', icon: <ClipboardList size={18} />, label: 'Đặt sân' },
-  { to: '/admin/pricing', icon: <DollarSign size={18} />, label: 'Quản lý giá' },
-  { to: '/admin/users', icon: <Users size={18} />, label: 'Người dùng' },
+  {
+    to: "/admin",
+    icon: <LayoutDashboard size={18} />,
+    label: "Dashboard",
+    end: true,
+  },
+  { to: "/admin/courts", icon: <Volleyball size={18} />, label: "Quản lý sân" },
+  {
+    to: "/admin/bookings",
+    icon: <ClipboardList size={18} />,
+    label: "Đặt sân",
+  },
+  {
+    to: "/admin/pricing",
+    icon: <DollarSign size={18} />,
+    label: "Quản lý giá",
+  },
+  {
+    to: "/admin/maintenance",
+    icon: <Wrench size={18} />,
+    label: "Bảo trì sân",
+  },
+  {
+    to: "/admin/analytics",
+    icon: <BarChart3 size={18} />,
+    label: "Thống kê",
+  },
+  {
+    to: "/admin/pos",
+    icon: <ShoppingCart size={18} />,
+    label: "Bán hàng (POS)",
+  },
+  {
+    to: "/admin/products",
+    icon: <Package size={18} />,
+    label: "Sản phẩm & Kho",
+  },
+  {
+    to: "/admin/rentals",
+    icon: <RotateCcw size={18} />,
+    label: "Thuê thiết bị",
+  },
+  { to: "/admin/users", icon: <Users size={18} />, label: "Người dùng" },
 ];
 
 export default function AdminLayout() {
@@ -16,7 +68,7 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -41,7 +93,7 @@ export default function AdminLayout() {
               to={link.to}
               end={link.end}
               className={({ isActive }) =>
-                `admin-sidebar-link ${isActive ? 'admin-sidebar-link--active' : ''}`
+                `admin-sidebar-link ${isActive ? "admin-sidebar-link--active" : ""}`
               }
             >
               <span className="admin-sidebar-link-icon">{link.icon}</span>
@@ -51,13 +103,18 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar-footer">
-          <NavLink to="/" className="admin-sidebar-link admin-sidebar-link--back">
-            <span className="admin-sidebar-link-icon"><Globe size={18} /></span>
+          <NavLink
+            to="/"
+            className="admin-sidebar-link admin-sidebar-link--back"
+          >
+            <span className="admin-sidebar-link-icon">
+              <Globe size={18} />
+            </span>
             <span>Về trang chính</span>
           </NavLink>
           <div className="admin-sidebar-user">
             <div className="admin-sidebar-avatar">
-              {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+              {user?.name?.charAt(0)?.toUpperCase() || "A"}
             </div>
             <div className="admin-sidebar-user-info">
               <div className="admin-sidebar-user-name">{user?.name}</div>
@@ -67,7 +124,11 @@ export default function AdminLayout() {
               onClick={handleLogout}
               className="admin-sidebar-logout"
               title="Đăng xuất"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               <LogOut size={16} />
             </button>

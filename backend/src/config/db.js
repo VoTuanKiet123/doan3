@@ -132,6 +132,8 @@ const setupMockDB = () => {
           updatedAt: new Date().toISOString(),
         },
       ],
+      products: [],
+      serviceorders: [],
     };
     fs.writeFileSync(dbFile, JSON.stringify(initialData, null, 2), "utf8");
   }
@@ -298,6 +300,46 @@ const setupMockDB = () => {
           writeData(data);
         }
       }
+      if (modelName === "Product") {
+        const list = data.products || [];
+        const idx = list.findIndex(
+          (p) =>
+            p._id === this._id || p._id?.toString() === this._id?.toString(),
+        );
+        if (idx !== -1) {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list[idx] = rawDoc;
+        } else {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list.push(rawDoc);
+        }
+        data.products = list;
+        writeData(data);
+      }
+      if (modelName === "ServiceOrder") {
+        const list = data.serviceorders || [];
+        const idx = list.findIndex(
+          (o) =>
+            o._id === this._id || o._id?.toString() === this._id?.toString(),
+        );
+        if (idx !== -1) {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list[idx] = rawDoc;
+        } else {
+          const rawDoc = { ...this };
+          delete rawDoc.populate;
+          delete rawDoc.save;
+          list.push(rawDoc);
+        }
+        data.serviceorders = list;
+        writeData(data);
+      }
       return this;
     };
 
@@ -405,6 +447,49 @@ const setupMockDB = () => {
           continue;
         }
 
+        // Xử lý $expr (so sánh 2 field trong cùng document)
+        if (
+          key === "$expr" &&
+          typeof queryVal === "object" &&
+          queryVal !== null
+        ) {
+          const exprKey = Object.keys(queryVal)[0]; // $lte, $gte, $lt, $gt, $eq
+          if (
+            exprKey &&
+            Array.isArray(queryVal[exprKey]) &&
+            queryVal[exprKey].length === 2
+          ) {
+            const fieldA = queryVal[exprKey][0]; // "$stockQuantity"
+            const fieldB = queryVal[exprKey][1]; // "$lowStockThreshold"
+            const valA = fieldA.startsWith("$")
+              ? item[fieldA.slice(1)]
+              : fieldA;
+            const valB = fieldB.startsWith("$")
+              ? item[fieldB.slice(1)]
+              : fieldB;
+            switch (exprKey) {
+              case "$lte":
+                if (!(valA <= valB)) return false;
+                break;
+              case "$gte":
+                if (!(valA >= valB)) return false;
+                break;
+              case "$lt":
+                if (!(valA < valB)) return false;
+                break;
+              case "$gt":
+                if (!(valA > valB)) return false;
+                break;
+              case "$eq":
+                if (valA !== valB) return false;
+                break;
+              default:
+                return false;
+            }
+          }
+          continue;
+        }
+
         // Xử lý $and
         if (key === "$and" && Array.isArray(queryVal)) {
           const allMatch = queryVal.every((subQuery) =>
@@ -443,6 +528,10 @@ const setupMockDB = () => {
           }
           if ("$in" in queryVal) {
             if (!queryVal.$in.includes(itemVal)) return false;
+          }
+          if ("$regex" in queryVal) {
+            const regex = new RegExp(queryVal.$regex, queryVal.$options || "");
+            if (!regex.test(String(itemVal || ""))) return false;
           }
           continue;
         }
@@ -599,15 +688,76 @@ const setupMockDB = () => {
       }
       return makeQueryChain(null, modelName);
     };
+
+    // findOneAndUpdate: dùng cho atomic stock deduction
+    Model.findOneAndUpdate = function (query, update, options = {}) {
+      const data = readData();
+      const list = data[collectionName] || [];
+      const item = list.find((item) => matchItem(item, query));
+      if (item) {
+        // Hỗ trợ $inc
+        if (update.$inc) {
+          for (const key in update.$inc) {
+            item[key] = (item[key] || 0) + update.$inc[key];
+          }
+        }
+        // Merge các field khác
+        for (const key in update) {
+          if (key !== "$inc" && key !== "$set") {
+            item[key] = update[key];
+          }
+        }
+        if (update.$set) {
+          Object.assign(item, update.$set);
+        }
+        item.updatedAt = new Date().toISOString();
+        data[collectionName] = list;
+        writeData(data);
+        return makeQueryChain(item, modelName);
+      }
+      return makeQueryChain(null, modelName);
+    };
+
+    // deleteMany: dùng cho seed / cleanup
+    Model.deleteMany = function (query = {}) {
+      const data = readData();
+      const oldList = data[collectionName] || [];
+      if (Object.keys(query).length === 0) {
+        data[collectionName] = [];
+        writeData(data);
+        return Promise.resolve({ deletedCount: oldList.length });
+      }
+      const newList = [];
+      let deletedCount = 0;
+      for (const item of oldList) {
+        if (matchItem(item, query)) {
+          deletedCount++;
+        } else {
+          newList.push(item);
+        }
+      }
+      data[collectionName] = newList;
+      writeData(data);
+      return Promise.resolve({ deletedCount });
+    };
   };
 
   // Patch each model (chỉ patch nếu model đã được mongoose đăng ký)
-  const modelNames = ["Court", "User", "Booking", "PricingRule"];
+  const modelNames = [
+    "Court",
+    "User",
+    "Booking",
+    "PricingRule",
+    "Product",
+    "ServiceOrder",
+  ];
   const collectionMap = {
     Court: "courts",
     User: "users",
     Booking: "bookings",
     PricingRule: "pricingrules",
+    Product: "products",
+    ServiceOrder: "serviceorders",
   };
 
   for (const name of modelNames) {
