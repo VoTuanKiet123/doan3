@@ -1,11 +1,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
-import { PrivateRoute, AdminRoute } from "./components/ProtectedRoute";
+import {
+  PrivateRoute,
+  AdminRoute,
+  StaffRoute,
+} from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import BottomNav from "./components/BottomNav";
 import AdminLayout from "./components/AdminLayout";
+import POSLayout from "./components/POSLayout";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -24,6 +29,12 @@ import AdminPOS from "./pages/admin/AdminPOS";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminRentals from "./pages/admin/AdminRentals";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminCancellationPolicy from "./pages/admin/AdminCancellationPolicy";
+import POSDashboard from "./pages/pos/POSDashboard";
+import POSCheckIn from "./pages/pos/POSCheckIn";
+import POSWalkIn from "./pages/pos/POSWalkIn";
+import POSOrders from "./pages/pos/POSOrders";
+import POSShift from "./pages/pos/POSShift";
 
 export default function App() {
   return (
@@ -93,6 +104,26 @@ export default function App() {
             <Route path="rentals" element={<AdminRentals />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route
+              path="cancellation-policy"
+              element={<AdminCancellationPolicy />}
+            />
+          </Route>
+
+          {/* POS Staff routes - dedicated compact layout */}
+          <Route
+            path="/pos"
+            element={
+              <StaffRoute>
+                <POSLayout />
+              </StaffRoute>
+            }
+          >
+            <Route index element={<POSDashboard />} />
+            <Route path="checkin" element={<POSCheckIn />} />
+            <Route path="walkin" element={<POSWalkIn />} />
+            <Route path="orders" element={<POSOrders />} />
+            <Route path="shift" element={<POSShift />} />
           </Route>
         </Routes>
         <Toaster

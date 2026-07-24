@@ -21,6 +21,8 @@ const maintenanceRoutes = require("./src/routes/maintenanceRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const serviceOrderRoutes = require("./src/routes/serviceOrderRoutes");
 const analyticsRoutes = require("./src/routes/analyticsRoutes");
+const posRoutes = require("./src/routes/posRoutes");
+const cancellationPolicyRoutes = require("./src/routes/cancellationPolicyRoutes");
 const {
   cleanupExpiredPendingBookings,
 } = require("./src/controllers/bookingController");
@@ -53,6 +55,8 @@ app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/service-orders", serviceOrderRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/pos", posRoutes);
+app.use("/api/cancellation-policy", cancellationPolicyRoutes);
 
 // Health check
 app.get("/", (req, res) => {

@@ -17,11 +17,11 @@ const {
   getMyReviews,
   getReviewableBookings,
 } = require("../controllers/bookingController");
-const { protect, adminOnly } = require("../middleware/auth");
+const { protect, adminOnly, adminOrPosStaff } = require("../middleware/auth");
 
 // ========== Đặt sân vãng lai ==========
 router.get("/", protect, getBookings);
-router.get("/my-reviews", protect, getMyReviews);       // phải đặt trước /:id
+router.get("/my-reviews", protect, getMyReviews); // phải đặt trước /:id
 router.get("/reviewable", protect, getReviewableBookings); // phải đặt trước /:id
 router.get("/batch/:batchId", protect, getBookingsByBatch); // phải đặt trước /:id
 router.get("/:id", protect, getBookingById);
@@ -33,9 +33,9 @@ router.post("/fixed-monthly", protect, createFixedMonthlyBooking);
 router.post("/preview-fixed-schedule", protect, previewFixedSchedule);
 router.put("/batch/:batchId/cancel", protect, cancelBookingByBatch);
 
-// ========== Quản lý (admin) ==========
-router.put("/:id/status", protect, adminOnly, updateBookingStatus);
-router.delete("/:id", protect, cancelBooking);
+// ========== Quản lý (admin + pos_staff) ==========
+router.put("/:id/status", protect, adminOrPosStaff, updateBookingStatus);
+router.delete("/:id", protect, adminOrPosStaff, cancelBooking);
 router.put("/:id/payment/confirm", protect, confirmBookingPayment);
 
 // ========== Check-in & Đánh giá (khách hàng) ==========

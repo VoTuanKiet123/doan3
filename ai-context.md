@@ -14,60 +14,65 @@
   - [x] Đăng ký / Đăng nhập (Frontend + Backend Node.js/MongoDB cơ bản).
   - [x] Giao diện Admin cơ bản (CRUD Sân, CRUD Người dùng).
   - [x] Giao diện Trang chủ và luồng Đặt sân vãng lai (Đặt theo ngày/giờ cụ thể).
-  - [x] **Tính năng Đặt lịch cố định (Theo tháng):** sinh lịch tự động theo thứ trong tuần, Bulk Conflict Check trong `Bookings`.
-  - [x] **Tính năng Bảo trì sân (Maintenance):** Quy trình Phiếu bảo trì (Pending → In Progress → Completed/Cancelled), xử lý xung đột lịch đặt khi bảo trì, đồng bộ trạng thái Sân trên UI.
-  - [x] **Tính năng Bán dịch vụ sân (Court Services & POS):** Bán nước/đồ ăn nhẹ, thuê vợt/thiết bị (có cọc), quản lý tồn kho, POS bán tại quầy. _(Sẽ bổ sung chi tiết sau — tạm ổn ở mức cơ bản)_.
+  - [x] **Tính năng Đặt lịch cố định (Theo tháng):** sinh lịch tự động theo thứ trong tuần, Bulk Conflict Check.
+  - [x] **Tính năng Bảo trì sân (Maintenance):** Quy trình Phiếu bảo trì, xử lý xung đột lịch đặt, đồng bộ trạng thái Sân.
+  - [x] **Tính năng Bán dịch vụ sân (Court Services & POS Product):** Bán nước/đồ ăn, thuê vợt (có cọc), quản lý tồn kho.
+  - [x] **Tính năng Thống kê & Báo cáo doanh thu (Analytics & Reporting):** Doanh thu ngày/tháng, công suất lấp đầy, lợi nhuận ròng, xuất Excel/PDF, Aggregation Pipeline + `DailyStats` pre-aggregate.
 
 - [/] **ĐANG LÀM (TẬP TRUNG CHÍNH):**
-  - [ ] **Tính năng Thống kê & Báo cáo doanh thu (Analytics & Reporting):**
-    - **Nguồn dữ liệu tổng hợp (Data Sources — cần join/aggregate từ nhiều Collection):**
-      - `Bookings` (tiền sân: vãng lai + cố định theo tháng).
-      - `ServiceOrders` (tiền dịch vụ: nước, đồ ăn, thuê vợt, cọc).
-      - `Maintenance` (chi phí sửa chữa — được tính là **chi phí**, trừ ngược vào lợi nhuận, không phải doanh thu).
-      - `Payments`/`Transactions` (nếu tách riêng bảng giao dịch thanh toán — khuyến nghị có, để xử lý hoàn tiền/refund dễ dàng).
+  - [ ] **Actor mới: Nhân viên POS (Front-desk Staff) — Quản lý vận hành tại quầy:**
+    - **Vai trò & Phân quyền (Role & Middleware):**
+      - Thêm role `pos_staff` vào `User` schema (bên cạnh `admin`, `customer`).
+      - Middleware giới hạn: Nhân viên POS **chỉ** được truy cập các API check-in, bán dịch vụ, hủy/dời lịch tại sân của mình phụ trách — **không** được xem báo cáo lợi nhuận ròng toàn hệ thống hay CRUD Sân/Người dùng (phân quyền chặt hơn Admin).
+      - Mỗi thao tác của POS Staff cần lưu `staffId` vào bản ghi (Booking, ServiceOrder, Transaction) để phục vụ đối soát ca sau này.
 
-    - **Các loại báo cáo cần có (theo đúng luồng thực tế quản lý sân thể thao):**
-      1. **Báo cáo doanh thu theo ngày (Daily Revenue):**
-         - Tổng doanh thu = Tiền sân + Tiền dịch vụ (không tính cọc thuê đồ vì cọc là tiền giữ, không phải doanh thu thật sự cho đến khi bị trừ do hư/mất).
-         - Breakdown theo khung giờ (sáng/chiều/tối) → xác định khung giờ vàng (peak hours).
-         - Breakdown theo hình thức thanh toán (Tiền mặt / Chuyển khoản / Ví điện tử) — rất quan trọng để đối soát quỹ cuối ngày (đóng ca/end-of-shift reconciliation), sân thể thao ngoài đời luôn có bước này.
-      2. **Báo cáo doanh thu theo tháng (Monthly Revenue):**
-         - Tổng hợp theo tuần/theo ngày trong tháng (dạng biểu đồ đường/cột).
-         - So sánh với tháng trước (tăng/giảm bao nhiêu %) — chủ sân luôn cần con số so sánh (MoM growth).
-         - Tỷ trọng doanh thu: % từ Tiền sân vs % từ Dịch vụ đi kèm (giúp chủ sân biết dịch vụ có đáng đầu tư thêm không).
-      3. **Báo cáo công suất sử dụng sân (Occupancy Rate):**
-         - Tỷ lệ lấp đầy = (Số giờ có khách đặt / Tổng số giờ sân mở cửa) × 100%.
-         - Theo từng sân riêng lẻ → phát hiện sân nào ế (để có chính sách giảm giá) và sân nào luôn full (cân nhắc tăng giá giờ vàng hoặc mở thêm sân).
-         - Tách riêng thời gian sân bị "Bảo trì" ra khỏi mẫu số tính công suất (tránh làm sai lệch số liệu — sân đang sửa không tính là "sân trống ế khách").
-      4. **Báo cáo lợi nhuận ròng (Net Profit):**
-         - Lợi nhuận = Tổng doanh thu − Chi phí bảo trì − Giá vốn hàng bán dịch vụ (COGS, ví dụ giá nhập nước/cầu) − Chi phí vận hành khác (nếu có nhập tay).
-         - Đây là báo cáo "thật" mà chủ sân quan tâm nhất, không chỉ là doanh thu gộp.
-      5. **Báo cáo Top khách hàng / Khách quen (Customer Insight):**
-         - Khách đặt cố định theo tháng nào sắp hết hạn gói → nhắc gia hạn (rất phổ biến ở mô hình sân cầu lông/pickleball ngoài đời, vì khách tháng là nguồn thu ổn định nhất).
-         - Khách chi tiêu nhiều nhất (VIP) để có chính sách ưu đãi giữ chân.
-      6. **Xuất báo cáo (Export):**
-         - Xuất Excel (.xlsx) và PDF theo khoảng thời gian tùy chọn (date range picker) — dùng để chủ sân gửi kế toán hoặc lưu trữ nội bộ.
-         - Cho phép lọc export theo: 1 sân cụ thể / tất cả sân, theo loại doanh thu (chỉ tiền sân / chỉ dịch vụ / tất cả).
+    - **Quy trình nghiệp vụ tổng quát (Workflow — bám theo thực tế sân thể thao):**
+      `Khách đến sân` → `Nhân viên xác định loại khách (Đã đặt / Chưa đặt)` → `Thực hiện Check-in tương ứng` → `(Tùy chọn) Bán thêm dịch vụ tại quầy` → `Khách chơi xong` → `Trả sân / Trả đồ thuê` → `Đóng phiên (Session) sân đó`.
 
-    - **Giải thuật MongoDB (trọng tâm kỹ thuật):**
-      - Dùng **Aggregation Pipeline** (`$match` theo khoảng ngày → `$group` theo ngày/tháng/sân → `$sum` doanh thu) thay vì query rồi tính tay ở Node.js, để tối ưu hiệu năng khi dữ liệu lớn.
-      - Index bắt buộc trên trường `createdAt`/`bookingDate` ở các Collection `Bookings`, `ServiceOrders`, `Maintenance` để pipeline lọc theo ngày chạy nhanh.
-      - Cân nhắc dùng `$facet` để chạy nhiều loại thống kê (doanh thu, công suất, top khách hàng) trong **1 lần query duy nhất**, tránh gọi DB nhiều lần cho 1 dashboard.
-      - Với hệ thống lớn, cân nhắc job cron (chạy lúc nửa đêm) để **pre-aggregate** dữ liệu ngày hôm đó vào 1 Collection `DailyStats` riêng — tránh việc mỗi lần Admin mở Dashboard phải quét toàn bộ Bookings/ServiceOrders lịch sử.
+    - **Case 1 — Khách ĐÃ đặt trước (Có Booking) → Check-in:**
+      - Nhân viên tra cứu booking bằng SĐT/mã đặt lịch/tên khách (search nhanh, không bắt gõ chính xác).
+      - **Nếu đã thanh toán online (status = `Paid`):** chỉ cần xác nhận check-in → chuyển `Booking.status` từ `Confirmed` → `Checked-in`. Đây là tình huống cần chú ý: _"Đặt & đã trả tiền vẫn phải làm thủ tục nhận sân"_ — vì hệ thống cần biết chính xác giờ khách **thực sự** có mặt và bắt đầu sử dụng sân (khác với giờ đặt trên hệ thống), phục vụ cho việc: xử lý trễ giờ, đối soát công suất thực tế, và làm bằng chứng nếu có tranh chấp.
+      - **Nếu đặt giữ chỗ nhưng chưa thanh toán (status = `Pending`):** nhân viên thu tiền tại quầy (tiền mặt/chuyển khoản/quét QR) → hệ thống ghi nhận `Transaction` → sau đó mới cho check-in.
+      - **No-show:** nếu quá X phút (config được, VD 15 phút) kể từ giờ đặt mà khách chưa đến và chưa liên hệ → nhân viên có thể đánh dấu `No-show` → áp dụng chính sách phạt (mất cọc/giữ % tiền tùy rule đã cấu hình).
+
+    - **Case 2 — Khách CHƯA đặt trước (Walk-in) → Đặt & Check-in gộp làm 1 bước:**
+      - Nhân viên chọn sân trống theo khung giờ hiện tại (dùng lại giải thuật check trùng lịch đã có) → tạo nhanh 1 `Booking` tại chỗ (gắn `createdBy: staffId`, `bookingType: "walk-in"`) → thu tiền ngay → hệ thống tự động set `status = Checked-in` luôn (bỏ qua bước `Confirmed` trung gian vì không cần vì khách đã đứng tại quầy).
+      - Đây là **luồng ngắn hơn** Case 1 vì không có độ trễ giữa "đặt" và "đến" — đúng bản chất khách vãng lai.
+
+    - **Case 3 — Hủy lịch: Xử lý trả giờ / trả tiền (Cancellation & Refund):**
+      - **Chính sách hủy (Cancellation Policy — cấu hình được ở Admin):** ví dụ hủy trước ≥ 24h hoàn 100%, trước 2–24h hoàn 50%, dưới 2h không hoàn.
+      - Nhân viên POS thực hiện hủy theo yêu cầu khách tại quầy hoặc qua điện thoại → hệ thống tự tính % hoàn tiền theo policy và thời điểm hủy so với giờ đặt → tạo `Transaction` loại `refund` → **giải phóng khung giờ đó** trong `Bookings` để khách khác có thể đặt lại.
+      - **Trả giờ / Đổi giờ (Slot swap):** nếu khách muốn đổi sang khung giờ khác cùng ngày (VD đến trễ, xin đổi ca sau) → nhân viên kiểm tra sân trống ở giờ mới → nếu có, dời lịch (update `Bookings`) mà **không cần** hủy + tạo lại từ đầu, tránh phát sinh 2 giao dịch thanh toán không cần thiết.
+
+    - **Case 4 — Bán dịch vụ trực tiếp tại sân (POS Sales):**
+      - Dùng lại `Products`/`ServiceOrders` đã có, nhưng UI tối giản hóa cho thao tác nhanh (giống máy POS thật: bấm số lượng, quét mã hoặc chọn nhanh top sản phẩm bán chạy) — vì nhân viên thao tác trong lúc khách đang đứng chờ, cần tốc độ cao hơn giao diện Admin thông thường.
+      - Gắn `staffId` vào mỗi `ServiceOrder` để đối soát doanh thu theo từng nhân viên trong ca.
+
+    - **Đối soát ca làm (Shift/Cash Reconciliation) — phần bắt buộc phải có với actor POS:**
+      - Đầu ca: nhân viên nhập số tiền mặt tồn quỹ ban đầu (`openingCash`).
+      - Trong ca: mọi giao dịch tiền mặt (booking + dịch vụ + hoàn tiền) được cộng/trừ tự động vào quỹ ca đó.
+      - Cuối ca: hệ thống tính `expectedCash = openingCash + tổng thu tiền mặt - tổng hoàn tiền mặt`, nhân viên nhập số tiền mặt thực đếm được (`actualCash`) → hệ thống so sánh, nếu lệch thì ghi chú lý do (thất thoát/nhầm lẫn) để Admin xem báo cáo.
 
     - **Trải nghiệm người dùng (UX/UI):**
-      - _Admin/Chủ sân (Dashboard):_
-        - Trang tổng quan (Overview) hiển thị 4 chỉ số nhanh dạng card: Doanh thu hôm nay, Doanh thu tháng này, Công suất lấp đầy, Số phiếu bảo trì đang xử lý.
-        - Biểu đồ đường (Line Chart) doanh thu theo ngày trong tháng + biểu đồ tròn (Pie Chart) tỷ trọng Tiền sân/Dịch vụ.
-        - Bảng chi tiết có thể lọc theo khoảng ngày tùy chỉnh + nút "Xuất báo cáo".
-      - _Nhân viên (nếu có phân quyền riêng):_ Chỉ xem được báo cáo đối soát ca làm của mình (tiền mặt thu trong ca), không xem được lợi nhuận ròng toàn hệ thống — cần phân quyền Middleware chặn theo role.
+      - Giao diện tối giản, thao tác nhanh (giống POS thật): màn hình chính chia 2 nút lớn **"Check-in khách đã đặt"** và **"Khách vãng lai / Đặt mới"**.
+      - Sơ đồ sân trực quan (dùng lại từ tính năng Bảo trì) để nhân viên nhìn nhanh sân nào đang trống/đang có khách/đang bảo trì mà không cần tra cứu.
+      - Nút "Hủy/Đổi giờ" chỉ hiện ra khi tra được đúng booking, kèm cảnh báo rõ % hoàn tiền trước khi nhân viên xác nhận (tránh sai sót thao tác).
+
+    - **Giải thuật MongoDB liên quan:**
+      - Query tra cứu booking theo SĐT/tên nên index trên field `customerPhone` để tìm nhanh khi khách đứng chờ tại quầy.
+      - Transaction (Mongoose Session) bắt buộc khi vừa update `Booking.status`, vừa trừ kho `Products`, vừa ghi `Transaction` cùng lúc — tránh trường hợp lỗi giữa chừng làm sai lệch dữ liệu (VD: đã trừ tiền nhưng chưa check-in).
 
     - **Tính năng mở rộng (Advanced):**
-      - Dự báo doanh thu tháng tới dựa trên xu hướng lịch sử (đơn giản: trung bình trượt/moving average, chưa cần AI phức tạp).
-      - Cảnh báo tự động: nếu doanh thu ngày hôm nay giảm quá X% so với trung bình cùng thứ trong 4 tuần gần nhất → gửi thông báo cho chủ sân kiểm tra.
+      - Chấm công nhân viên POS theo ca (Time tracking) tích hợp luôn với bước mở ca/đóng ca.
+      - In hóa đơn/biên nhận tại quầy (kết nối máy in nhiệt qua Web Bluetooth/USB — có thể để giai đoạn sau).
+
+    - **Lưu ý kỹ thuật**:
+      - Nên thêm state Checked-in riêng vào enum Booking.status (không gộp chung với Paid/Confirmed), vì đây là 2 khái niệm khác nhau: đã trả tiền ≠ đã thực sự có mặt sử dụng sân.
+      - Transaction nên là Collection độc lập (không suy ra từ status), để lưu được cả lịch sử refund — vì nghiệp vụ hủy/trả giờ ở Case 3 bắt buộc phải có bằng chứng giao dịch hoàn tiền tách biệt.
+      - Đối soát ca (ShiftReport) nên là 1 Collection riêng, snapshot dữ liệu tại thời điểm đóng ca — không nên tính real-time mỗi lần xem, tránh sai lệch nếu có giao dịch phát sinh sau khi đã đóng ca.
 
 - [ ] **SẮP LÀM (BACKLOG):**
-  - [ ] Làm chuẩn chỉnh lại phần Auth (JWT, Refresh Token, Quên mật khẩu, OTP, Phân quyền Middleware).
+  - [ ] Làm chuẩn chỉnh lại phần Auth (JWT, Refresh Token, Quên mật khẩu, OTP, Phân quyền Middleware — cần mở rộng thêm role `pos_staff`).
   - [ ] Tích hợp cổng thanh toán (VNPay / Momo / Chuyển khoản QR).
 
 ## 3. Quy ước viết code (Coding Standards)

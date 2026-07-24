@@ -101,7 +101,7 @@ const checkMaintenanceConflict = async (courtId, date, startTime, endTime) => {
 const getBookings = async (req, res) => {
   try {
     let query = {};
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "pos_staff") {
       query.user = req.user._id;
     }
     const bookings = await Booking.find(query)
@@ -128,7 +128,8 @@ const getBookingById = async (req, res) => {
     }
     if (
       booking.user._id.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
     ) {
       return res
         .status(403)
@@ -191,7 +192,8 @@ const getBookingPaymentInfo = async (req, res) => {
     }
     if (
       booking.user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
     ) {
       return res
         .status(403)
@@ -230,7 +232,8 @@ const confirmBookingPayment = async (req, res) => {
     }
     if (
       booking.user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
     ) {
       return res
         .status(403)
@@ -298,7 +301,8 @@ const cancelBooking = async (req, res) => {
     }
     if (
       booking.user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
     ) {
       return res
         .status(403)
@@ -679,47 +683,17 @@ const getBookingsByBatch = async (req, res) => {
     }
     if (
       bookings[0].user._id.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
     ) {
       return res
         .status(403)
         .json({ success: false, message: "Không có quyền truy cập" });
     }
 
-    res.json({ success: true, count: bookings.length, bookings });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// @desc    Huỷ toàn bộ booking trong 1 batch
-// @route   PUT /api/bookings/batch/:batchId/cancel
-const cancelBookingByBatch = async (req, res) => {
-  try {
-    const bookings = await Booking.find({ batchId: req.params.batchId });
-    if (bookings.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy batch" });
-    }
-    if (
-      bookings[0].user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
-    ) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Không có quyền thực hiện" });
-    }
-
-    const result = await Booking.updateMany(
-      { batchId: req.params.batchId, status: { $ne: "cancelled" } },
-      { status: "cancelled" },
-    );
-
     res.json({
       success: true,
-      message: `Đã huỷ ${result.modifiedCount} booking trong lịch cố định`,
-      cancelledCount: result.modifiedCount,
+      bookings,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -730,18 +704,35 @@ const cancelBookingByBatch = async (req, res) => {
 // @route   PUT /api/bookings/:id/checkin
 const checkInBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id).populate("court", "name");
+    const booking = await Booking.findById(req.params.id).populate(
+      "court",
+      "name",
+    );
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy booking" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy booking" });
     }
-    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-      return res.status(403).json({ success: false, message: "Không có quyền thực hiện" });
+    if (
+      booking.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền thực hiện" });
     }
     if (booking.status !== "confirmed") {
-      return res.status(400).json({ success: false, message: "Chỉ có thể check-in khi booking đã được xác nhận" });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể check-in khi booking đã được xác nhận",
+      });
     }
     if (booking.checkedIn) {
-      return res.status(400).json({ success: false, message: "Booking này đã được check-in trước đó" });
+      return res.status(400).json({
+        success: false,
+        message: "Booking này đã được check-in trước đó",
+      });
     }
     booking.checkedIn = true;
     booking.checkedInAt = getVietnamTime();
@@ -758,28 +749,45 @@ const submitReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: "Đánh giá phải từ 1 đến 5 sao" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Đánh giá phải từ 1 đến 5 sao" });
     }
-    const booking = await Booking.findById(req.params.id).populate("court", "name");
+    const booking = await Booking.findById(req.params.id).populate(
+      "court",
+      "name",
+    );
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy booking" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy booking" });
     }
     if (booking.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Không có quyền thực hiện" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền thực hiện" });
     }
     if (booking.status !== "confirmed") {
-      return res.status(400).json({ success: false, message: "Chỉ có thể đánh giá booking đã xác nhận" });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể đánh giá booking đã xác nhận",
+      });
     }
 
     // Kiểm tra ngày chơi đã qua chưa (cho phép đánh giá từ ngày chơi trở đi)
     const vnNow = getVietnamTime();
     const todayStr = `${vnNow.getFullYear()}-${String(vnNow.getMonth() + 1).padStart(2, "0")}-${String(vnNow.getDate()).padStart(2, "0")}`;
     if (booking.date > todayStr) {
-      return res.status(400).json({ success: false, message: "Chỉ có thể đánh giá sau khi đã chơi xong" });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể đánh giá sau khi đã chơi xong",
+      });
     }
 
     if (booking.review && booking.review.rating) {
-      return res.status(400).json({ success: false, message: "Bạn đã đánh giá sân này rồi" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Bạn đã đánh giá sân này rồi" });
     }
 
     booking.review = {
@@ -862,8 +870,12 @@ const getCourtReviews = async (req, res) => {
       .select("review date user checkedIn")
       .sort({ "review.createdAt": -1 });
 
-    const totalRating = reviews.reduce((sum, b) => sum + (b.review?.rating || 0), 0);
-    const avgRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
+    const totalRating = reviews.reduce(
+      (sum, b) => sum + (b.review?.rating || 0),
+      0,
+    );
+    const avgRating =
+      reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
 
     res.json({
       success: true,
@@ -877,6 +889,41 @@ const getCourtReviews = async (req, res) => {
         comment: b.review.comment,
         createdAt: b.review.createdAt,
       })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Huỷ tất cả booking trong 1 batch (lịch cố định)
+// @route   PUT /api/bookings/batch/:batchId/cancel
+const cancelBookingByBatch = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ batchId: req.params.batchId });
+    if (bookings.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy batch" });
+    }
+    if (
+      bookings[0].user._id.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin" &&
+      req.user.role !== "pos_staff"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền thực hiện" });
+    }
+
+    const result = await Booking.updateMany(
+      { batchId: req.params.batchId, status: { $ne: "cancelled" } },
+      { status: "cancelled" },
+    );
+
+    res.json({
+      success: true,
+      message: `Đã huỷ ${result.modifiedCount} booking trong lịch cố định`,
+      cancelledCount: result.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

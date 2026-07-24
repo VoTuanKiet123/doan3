@@ -14,6 +14,7 @@ import {
   Package,
   RotateCcw,
   BarChart3,
+  ShieldAlert,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -59,7 +60,16 @@ const sidebarLinks = [
     icon: <RotateCcw size={18} />,
     label: "Thuê thiết bị",
   },
-  { to: "/admin/users", icon: <Users size={18} />, label: "Người dùng" },
+  {
+    to: "/admin/users",
+    icon: <Users size={18} />,
+    label: "Người dùng",
+  },
+  {
+    to: "/admin/cancellation-policy",
+    icon: <ShieldAlert size={18} />,
+    label: "Chính sách huỷ",
+  },
 ];
 
 export default function AdminLayout() {
