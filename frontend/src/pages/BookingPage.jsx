@@ -18,6 +18,10 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
+  CreditCard,
+  Banknote,
+  X,
+  ExternalLink,
 } from "lucide-react";
 
 const TIME_SLOTS = [
@@ -106,6 +110,12 @@ export default function BookingPage() {
   const [serviceCart, setServiceCart] = useState([]);
   const [showServices, setShowServices] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
+
+  // ========== VNPay Payment ==========
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState(null);
+  const [vnpayLoading, setVnpayLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("vnpay"); // "vnpay" | "later"
 
   // ========== Load court ==========
   useEffect(() => {
@@ -459,12 +469,47 @@ export default function BookingPage() {
       }
 
       toast.success("Đặt sân thành công!");
-      navigate("/my-bookings");
+      // Hiển thị modal chọn phương thức thanh toán
+      setPendingBooking({
+        bookingId,
+        totalPrice: bookingRes.data.booking?.totalPrice || totalPrice,
+        courtName: court?.name,
+        date,
+        startTime,
+        endTime,
+      });
+      setShowPaymentModal(true);
     } catch (err) {
       toast.error(err.response?.data?.message || "Đặt sân thất bại");
     } finally {
       setLoading(false);
     }
+  };
+
+  // ========== VNPay Payment handler ==========
+  const handleVnpayPayment = async () => {
+    if (!pendingBooking) return;
+    setVnpayLoading(true);
+    try {
+      const res = await api.post("/vnpay/create-payment", {
+        bookingId: pendingBooking.bookingId,
+        amount: pendingBooking.totalPrice + serviceSubtotal + serviceDeposit,
+        orderInfo: `Dat san ${pendingBooking.courtName} ${pendingBooking.date} ${pendingBooking.startTime}-${pendingBooking.endTime}`,
+      });
+      if (res.data.paymentUrl) {
+        // Redirect sang VNPay
+        window.location.href = res.data.paymentUrl;
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi tạo thanh toán VNPay");
+      setVnpayLoading(false);
+    }
+  };
+
+  const handleSkipPayment = () => {
+    setShowPaymentModal(false);
+    setPendingBooking(null);
+    navigate("/my-bookings");
   };
 
   // ========== Submit fixed monthly ==========
@@ -1563,6 +1608,135 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* ========== VNPAY PAYMENT MODAL ========== */}
+      {showPaymentModal && pendingBooking && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => {
+                setShowPaymentModal(false);
+                setPendingBooking(null);
+              }}
+              className="absolute top-4 right-4 p-1 hover:bg-slate-100 rounded-lg cursor-pointer"
+            >
+              <X size={20} className="text-slate-400" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CreditCard size={28} className="text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Xác nhận đặt sân
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                {pendingBooking.courtName} · {pendingBooking.date}
+              </p>
+              <p className="text-sm text-slate-500">
+                {pendingBooking.startTime} - {pendingBooking.endTime}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-slate-600">Tiền sân:</span>
+                <span className="font-bold text-slate-800">
+                  {pendingBooking.totalPrice.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+              {serviceSubtotal > 0 && (
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600">Dịch vụ:</span>
+                  <span className="font-bold text-slate-800">
+                    {serviceSubtotal.toLocaleString("vi-VN")}đ
+                  </span>
+                </div>
+              )}
+              {serviceDeposit > 0 && (
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600">Cọc thiết bị:</span>
+                  <span className="font-bold text-amber-600">
+                    {serviceDeposit.toLocaleString("vi-VN")}đ
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-base pt-3 border-t border-slate-200 mt-2">
+                <span className="font-bold text-slate-700">Tổng cộng:</span>
+                <span className="font-black text-xl text-green-600">
+                  {(
+                    pendingBooking.totalPrice +
+                    serviceSubtotal +
+                    serviceDeposit
+                  ).toLocaleString("vi-VN")}
+                  đ
+                </span>
+              </div>
+            </div>
+
+            <p className="text-sm font-semibold text-slate-700 mb-3">
+              Chọn phương thức thanh toán:
+            </p>
+
+            <div className="space-y-3">
+              {/* VNPay Online */}
+              <button
+                onClick={handleVnpayPayment}
+                disabled={vnpayLoading}
+                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-green-500 bg-green-50 hover:bg-green-100 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                    <ExternalLink size={20} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-green-800 text-sm">
+                      Thanh toán online qua VNPay
+                    </div>
+                    <div className="text-xs text-green-600">
+                      Chuyển hướng đến cổng VNPay
+                    </div>
+                  </div>
+                </div>
+                {vnpayLoading ? (
+                  <span className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <ChevronDown
+                    size={18}
+                    className="text-green-500 -rotate-90"
+                  />
+                )}
+              </button>
+
+              {/* Pay later */}
+              <button
+                onClick={handleSkipPayment}
+                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                    <Banknote size={20} className="text-slate-500" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-slate-700 text-sm">
+                      Thanh toán sau
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Thanh toán tại quầy khi đến sân
+                    </div>
+                  </div>
+                </div>
+                <ChevronDown size={18} className="text-slate-400 -rotate-90" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 text-center mt-4">
+              Bạn có 15 phút để hoàn tất thanh toán online. Sau thời gian này,
+              lịch đặt sẽ tự động hủy.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

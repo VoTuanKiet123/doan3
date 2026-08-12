@@ -36,6 +36,7 @@ import POSCheckIn from "./pages/pos/POSCheckIn";
 import POSWalkIn from "./pages/pos/POSWalkIn";
 import POSOrders from "./pages/pos/POSOrders";
 import POSShift from "./pages/pos/POSShift";
+import PaymentResult from "./pages/PaymentResult";
 
 export default function App() {
   return (
@@ -78,6 +79,8 @@ export default function App() {
                         </PrivateRoute>
                       }
                     />
+                    <Route path="/payment/result" element={<PaymentResult />} />
+                    <Route path="/payment/return" element={<PaymentResult />} />
                   </Routes>
                 </main>
                 <Footer />

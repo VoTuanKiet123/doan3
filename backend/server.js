@@ -24,9 +24,13 @@ const analyticsRoutes = require("./src/routes/analyticsRoutes");
 const posRoutes = require("./src/routes/posRoutes");
 const cancellationPolicyRoutes = require("./src/routes/cancellationPolicyRoutes");
 const settingsRoutes = require("./src/routes/settingsRoutes");
+const vnpayRoutes = require("./src/routes/vnpayRoutes");
 const {
   cleanupExpiredPendingBookings,
 } = require("./src/controllers/bookingController");
+const {
+  cleanupExpiredTransactions,
+} = require("./src/controllers/vnpayController");
 
 // Connect to MongoDB
 connectDB();
@@ -59,6 +63,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/pos", posRoutes);
 app.use("/api/cancellation-policy", cancellationPolicyRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/vnpay", vnpayRoutes);
 
 // Health check
 app.get("/", (req, res) => {
@@ -84,8 +89,15 @@ const cleanupInterval = setInterval(async () => {
     if (expiredCount > 0) {
       console.log(`[cleanup] Đã hủy ${expiredCount} giữ chỗ hết hạn.`);
     }
+    // Dọn dẹp giao dịch VNPay hết hạn
+    const expiredTxns = await cleanupExpiredTransactions();
+    if (expiredTxns > 0) {
+      console.log(
+        `[cleanup] Đã chuyển ${expiredTxns} giao dịch VNPay hết hạn.`,
+      );
+    }
   } catch (error) {
-    console.error("[cleanup] Lỗi khi dọn dẹp giữ chỗ hết hạn:", error.message);
+    console.error("[cleanup] Lỗi khi dọn dẹp:", error.message);
   }
 }, 60 * 1000);
 

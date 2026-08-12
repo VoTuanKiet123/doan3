@@ -12,6 +12,13 @@ const transactionSchema = new mongoose.Schema(
       unique: true, // TXN-20260724-XXXX
     },
 
+    // ============ MÃ ĐƠN HÀNG (dùng làm vnp_TxnRef cho VNPay) ============
+    orderId: {
+      type: String,
+      unique: true,
+      sparse: true, // Chỉ unique khi có giá trị (cash/transfer không cần)
+    },
+
     // ============ LOẠI GIAO DỊCH ============
     type: {
       type: String,
@@ -22,6 +29,7 @@ const transactionSchema = new mongoose.Schema(
         "deposit_return", // Hoàn cọc
         "refund", // Hoàn tiền huỷ booking
         "damage_fee", // Phí hư hỏng đồ thuê
+        "payment", // Thanh toán VNPay (online)
         "other", // Khác
       ],
       required: true,
@@ -41,7 +49,7 @@ const transactionSchema = new mongoose.Schema(
     // ============ PHƯƠNG THỨC THANH TOÁN ============
     paymentMethod: {
       type: String,
-      enum: ["cash", "transfer", "qr", "other"],
+      enum: ["cash", "transfer", "qr", "vnpay", "other"],
       default: "cash",
     },
 
@@ -91,8 +99,26 @@ const transactionSchema = new mongoose.Schema(
     // ============ TRẠNG THÁI ============
     status: {
       type: String,
-      enum: ["completed", "pending", "failed"],
+      enum: ["completed", "pending", "success", "failed"],
       default: "completed",
+    },
+
+    // ============ VNPAY METADATA ============
+    vnpTransactionNo: {
+      type: String, // Mã giao dịch bên VNPay trả về
+      default: null,
+    },
+    vnpResponseCode: {
+      type: String, // Mã phản hồi ("00" = thành công)
+      default: null,
+    },
+    vnpBankCode: {
+      type: String, // Mã ngân hàng thanh toán
+      default: null,
+    },
+    paidAt: {
+      type: Date, // Thời điểm thanh toán thực tế (từ VNPay)
+      default: null,
     },
 
     // ============ METADATA (mở rộng) ============
@@ -111,7 +137,7 @@ transactionSchema.index({ staff: 1, createdAt: -1 });
 transactionSchema.index({ shift: 1 });
 transactionSchema.index({ type: 1, createdAt: -1 });
 transactionSchema.index({ createdAt: -1 });
-transactionSchema.index({ transactionCode: 1 });
+transactionSchema.index({ status: 1, createdAt: 1 });
 
 // ============ PRE-SAVE: Tự sinh mã giao dịch ============
 transactionSchema.pre("save", async function (next) {

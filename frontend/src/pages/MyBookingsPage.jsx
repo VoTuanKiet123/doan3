@@ -22,6 +22,8 @@ import {
   ChevronRight,
   ThumbsUp,
   ArrowLeft,
+  CreditCard,
+  ExternalLink,
 } from "lucide-react";
 
 const STATUS_MAP = {
@@ -684,6 +686,22 @@ export default function MyBookingsPage() {
     }
   };
 
+  // Thanh toán VNPay cho booking đang pending
+  const handleVnpayPayment = async (booking) => {
+    try {
+      const res = await api.post("/vnpay/create-payment", {
+        bookingId: booking._id,
+        amount: booking.totalPrice,
+        orderInfo: `Dat san ${booking.court?.name || ""} ${booking.date} ${booking.startTime}-${booking.endTime}`,
+      });
+      if (res.data.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi tạo thanh toán VNPay");
+    }
+  };
+
   const handleReviewSubmitted = () => {
     setSubmitSuccess(true);
     setSelectedBooking(null);
@@ -1247,6 +1265,29 @@ export default function MyBookingsPage() {
                               }}
                             >
                               Hủy lịch
+                            </button>
+                          )}
+                          {/* VNPay Payment cho booking pending */}
+                          {b.status === "pending" && (
+                            <button
+                              onClick={() => handleVnpayPayment(b)}
+                              style={{
+                                background: "#1a56db",
+                                color: "#fff",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: 999,
+                                fontSize: 12,
+                                fontWeight: 800,
+                                cursor: "pointer",
+                                fontFamily: "Nunito, sans-serif",
+                                transition: "all 0.2s",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <CreditCard size={13} /> Thanh toán online
                             </button>
                           )}
                         </div>

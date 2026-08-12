@@ -18,6 +18,8 @@ import {
   LogOut,
   Timer,
   ChevronLeft,
+  QrCode,
+  ExternalLink,
 } from "lucide-react";
 
 // ============ HELPERS ============
@@ -70,6 +72,14 @@ export default function POSCheckIn() {
   // Cancel / No-show / Reschedule modals
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+
+  // VNPay QR Payment
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrPaymentUrl, setQrPaymentUrl] = useState("");
+  const [qrOrderId, setQrOrderId] = useState("");
+  const [qrPolling, setQrPolling] = useState(false);
+  const [qrStatus, setQrStatus] = useState(""); // waiting | success | failed
+  const [qrLoading, setQrLoading] = useState(false);
 
   // Timer for checked_in sessions
   useEffect(() => {
@@ -306,6 +316,75 @@ export default function POSCheckIn() {
     setCheckoutCancelMid(false);
     setCheckoutCancelReason("");
     setShowCheckoutModal(true);
+  };
+
+  // ============ VNPAY QR PAYMENT ============
+  const handleCreateQr = async () => {
+    if (!selectedBooking || !checkoutData) return;
+    setQrLoading(true);
+    try {
+      const lastShift = localStorage.getItem("currentShiftId");
+      const bill = checkoutData;
+
+      const res = await api.post("/vnpay/create-qr", {
+        bookingId: selectedBooking._id,
+        amount: bill.finalBillAmount,
+        orderInfo: `Check-out ${selectedBooking.court?.name || "San"} ${selectedBooking.date}`,
+        shiftId: lastShift || undefined,
+        customerName: selectedBooking.user?.name || "Khách",
+        customerPhone: selectedBooking.customerPhone || "",
+      });
+
+      if (res.data.paymentUrl) {
+        setQrPaymentUrl(res.data.paymentUrl);
+        setQrOrderId(res.data.transaction.orderId);
+        setQrStatus("waiting");
+        setShowQrModal(true);
+        startQrPolling(res.data.transaction.orderId);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi tạo QR thanh toán");
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const startQrPolling = (orderId) => {
+    setQrPolling(true);
+    let attempts = 0;
+    const maxAttempts = 60; // 60 x 2s = 120s
+
+    const poll = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await api.get(`/vnpay/check-status/${orderId}`);
+        if (res.data.status === "success") {
+          clearInterval(poll);
+          setQrStatus("success");
+          setQrPolling(false);
+          // Tự động đóng sau 2s
+          setTimeout(() => {
+            setShowQrModal(false);
+            setShowCheckoutModal(false);
+            setSelectedBooking(null);
+            handleSearch();
+            toast.success("Thanh toán QR thành công!");
+          }, 2000);
+        } else if (res.data.status === "failed") {
+          clearInterval(poll);
+          setQrStatus("failed");
+          setQrPolling(false);
+        }
+      } catch (err) {
+        // Ignore polling errors
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(poll);
+        setQrStatus("failed");
+        setQrPolling(false);
+      }
+    }, 2000);
   };
 
   const handleCheckOut = async () => {
@@ -1098,16 +1177,37 @@ export default function POSCheckIn() {
                   Phương thức thanh toán
                 </label>
                 <div className="flex gap-2">
-                  {["cash", "transfer"].map((m) => (
+                  {["cash", "transfer", "vnpay_qr"].map((m) => (
                     <button
                       key={m}
                       onClick={() => setCheckoutPaymentMethod(m)}
                       className={`flex-1 py-2.5 rounded-lg border-2 font-medium text-sm transition ${checkoutPaymentMethod === m ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-500"}`}
                     >
-                      {m === "cash" ? "💵 Tiền mặt" : "🏦 Chuyển khoản"}
+                      {m === "cash"
+                        ? "💵 Tiền mặt"
+                        : m === "transfer"
+                          ? "🏦 Chuyển khoản"
+                          : "📱 VNPay QR"}
                     </button>
                   ))}
                 </div>
+                {checkoutPaymentMethod === "vnpay_qr" &&
+                  checkoutData.finalBillAmount > 0 && (
+                    <button
+                      onClick={handleCreateQr}
+                      disabled={qrLoading}
+                      className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {qrLoading ? (
+                        <RefreshCw size={16} className="animate-spin" />
+                      ) : (
+                        <QrCode size={16} />
+                      )}
+                      {qrLoading
+                        ? "Đang tạo mã QR..."
+                        : `Tạo mã QR VNPay (${checkoutData.finalBillAmount.toLocaleString()}đ)`}
+                    </button>
+                  )}
               </div>
 
               {/* Split payment toggle */}
@@ -1164,7 +1264,7 @@ export default function POSCheckIn() {
                 </button>
                 <button
                   onClick={handleCheckOut}
-                  disabled={checkouting}
+                  disabled={checkouting || checkoutPaymentMethod === "vnpay_qr"}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {checkouting ? (
@@ -1267,6 +1367,106 @@ export default function POSCheckIn() {
                 Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== VNPAY QR MODAL ===== */}
+      {showQrModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]"
+          onClick={() => {
+            if (qrStatus !== "waiting") {
+              setShowQrModal(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full mx-4 p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {qrStatus === "waiting" && (
+              <>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  Quét mã QR để thanh toán
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Mở app ngân hàng bất kỳ và quét mã bên dưới
+                </p>
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4 inline-block mb-4">
+                  {/* QR Code từ VNPay URL - dùng Google Charts API */}
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPaymentUrl)}`}
+                    alt="VNPay QR Code"
+                    className="w-52 h-52"
+                  />
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 mb-4">
+                  <p className="text-sm font-bold text-blue-700">
+                    {checkoutData?.finalBillAmount?.toLocaleString()}đ
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1">Mã: {qrOrderId}</p>
+                </div>
+                {qrPolling && (
+                  <div className="flex items-center justify-center gap-2 text-amber-600">
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span className="text-sm">Đang chờ thanh toán...</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setShowQrModal(false);
+                  }}
+                  className="mt-4 text-sm text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  Đóng (khách sẽ tự thanh toán)
+                </button>
+              </>
+            )}
+
+            {qrStatus === "success" && (
+              <>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle size={32} className="text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-green-700 mb-2">
+                  Thanh toán thành công!
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Giao dịch đã được xác nhận. Đang tự động đóng...
+                </p>
+              </>
+            )}
+
+            {qrStatus === "failed" && (
+              <>
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <XCircle size={32} className="text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-red-700 mb-2">
+                  Thanh toán thất bại
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Khách chưa thanh toán hoặc giao dịch bị từ chối
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowQrModal(false);
+                    }}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-medium text-sm"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    onClick={handleCreateQr}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium text-sm"
+                  >
+                    Thử lại
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
