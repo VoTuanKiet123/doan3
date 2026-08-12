@@ -1,0 +1,99 @@
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
+const connectDB = require("./src/config/db");
+
+// Tạo thư mục uploads nếu chưa có
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Import routes
+const authRoutes = require("./src/routes/authRoutes");
+const courtRoutes = require("./src/routes/courtRoutes");
+const bookingRoutes = require("./src/routes/bookingRoutes");
+const userRoutes = require("./src/routes/userRoutes");
+const pricingRoutes = require("./src/routes/pricingRoutes");
+const maintenanceRoutes = require("./src/routes/maintenanceRoutes");
+const productRoutes = require("./src/routes/productRoutes");
+const serviceOrderRoutes = require("./src/routes/serviceOrderRoutes");
+const analyticsRoutes = require("./src/routes/analyticsRoutes");
+const posRoutes = require("./src/routes/posRoutes");
+const cancellationPolicyRoutes = require("./src/routes/cancellationPolicyRoutes");
+const settingsRoutes = require("./src/routes/settingsRoutes");
+const {
+  cleanupExpiredPendingBookings,
+} = require("./src/controllers/bookingController");
+
+// Connect to MongoDB
+connectDB();
+
+const app = express();
+
+// Middleware
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (uploaded images)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/courts", courtRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/pricing", pricingRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/service-orders", serviceOrderRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/pos", posRoutes);
+app.use("/api/cancellation-policy", cancellationPolicyRoutes);
+app.use("/api/settings", settingsRoutes);
+
+// Health check
+app.get("/", (req, res) => {
+  res.json({ message: "🏸 Badminton Court API is running!" });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Endpoint không tồn tại" });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: "Lỗi server nội bộ" });
+});
+
+const PORT = process.env.PORT || 5000;
+
+const cleanupInterval = setInterval(async () => {
+  try {
+    const expiredCount = await cleanupExpiredPendingBookings();
+    if (expiredCount > 0) {
+      console.log(`[cleanup] Đã hủy ${expiredCount} giữ chỗ hết hạn.`);
+    }
+  } catch (error) {
+    console.error("[cleanup] Lỗi khi dọn dẹp giữ chỗ hết hạn:", error.message);
+  }
+}, 60 * 1000);
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+});
+
+process.on("SIGINT", () => {
+  clearInterval(cleanupInterval);
+  process.exit(0);
+});
