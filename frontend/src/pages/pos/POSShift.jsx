@@ -166,131 +166,172 @@ export default function POSShift() {
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-        <Clock size={24} className="text-yellow-600" />
-        Quản lý ca làm việc
-      </h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Page Header */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+          borderRadius: 16,
+          padding: "20px 24px",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          boxShadow: "0 6px 20px rgba(245,158,11,0.35)",
+        }}
+      >
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Clock size={26} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Quản lý ca làm việc</h1>
+          <p style={{ fontSize: 13, opacity: 0.85, margin: "2px 0 0" }}>
+            Mở / đóng ca · Đối soát quỹ tiền mặt
+          </p>
+        </div>
+      </div>
 
       {/* Current Shift Status */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border">
+      <div
+        style={{
+          background: "white",
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+          border: "1px solid #d1fae5",
+        }}
+      >
         {currentShift ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Header row */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                    ĐANG MỞ
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span
+                    style={{
+                      background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+                      color: "#065f46",
+                      padding: "3px 10px",
+                      borderRadius: 99,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                      border: "1px solid #6ee7b7",
+                    }}
+                  >
+                    ● ĐANG MỞ
                   </span>
-                  <span className="text-gray-500 text-sm">
-                    Ca ngày {currentShift.shiftDate}
-                  </span>
+                  <span style={{ fontSize: 13, color: "#6b7280" }}>Ca ngày {currentShift.shiftDate}</span>
                 </div>
-                <div className="text-2xl font-bold mt-1">
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1f2937", marginBottom: 3 }}>
                   {currentShift.staffName}
                 </div>
-                <div className="text-sm text-gray-500">
-                  Mở ca:{" "}
-                  {new Date(currentShift.openedAt).toLocaleTimeString("vi-VN")}
+                <div style={{ fontSize: 13, color: "#9ca3af" }}>
+                  Mở ca lúc: {new Date(currentShift.openedAt).toLocaleTimeString("vi-VN")}
                 </div>
               </div>
               <button
                 onClick={() => setShowCloseModal(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition flex items-center gap-2"
+                style={{
+                  background: "linear-gradient(135deg, #dc2626, #ef4444)",
+                  color: "white",
+                  border: "none",
+                  padding: "12px 22px",
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontFamily: "inherit",
+                  boxShadow: "0 4px 14px rgba(239,68,68,0.35)",
+                  transition: "all 0.2s",
+                }}
               >
-                <XCircle size={20} />
+                <XCircle size={18} />
                 Đóng ca
               </button>
             </div>
 
-            {/* Imprest Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
-                <div className="text-xs text-purple-600 flex items-center gap-1">
-                  <Shield size={14} /> Quỹ định mức
+            {/* Imprest Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+              {[
+                { icon: <Shield size={16} />, label: "Quỹ định mức", value: `${currentShift.floatAmount?.toLocaleString()}đ`, bg: "#faf5ff", border: "#e9d5ff", color: "#7c3aed" },
+                { icon: <TrendingUp size={16} />, label: "Doanh thu TM", value: `+${(currentShift.cashRevenue || 0).toLocaleString()}đ`, bg: "#f0fdf4", border: "#bbf7d0", color: "#16a34a" },
+                { icon: <TrendingDown size={16} />, label: "Hoàn/Chi TM", value: `-${(currentShift.cashRefundOut || 0).toLocaleString()}đ`, bg: "#fef2f2", border: "#fecaca", color: "#dc2626" },
+                { icon: <DollarSign size={16} />, label: "Dự kiến tồn", value: `${((currentShift.floatAmount || 0) + (currentShift.cashRevenue || 0) - (currentShift.cashRefundOut || 0)).toLocaleString()}đ`, bg: "#eff6ff", border: "#bfdbfe", color: "#2563eb" },
+              ].map((s, i) => (
+                <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: "12px 14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: s.color, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                    {s.icon} {s.label}
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</div>
                 </div>
-                <div className="text-lg font-bold text-purple-700">
-                  {currentShift.floatAmount?.toLocaleString()}đ
-                </div>
-              </div>
-              <div className="bg-green-50 rounded-lg p-3">
-                <div className="text-xs text-green-600 flex items-center gap-1">
-                  <TrendingUp size={14} /> Doanh thu TM
-                </div>
-                <div className="text-lg font-bold text-green-700">
-                  +{(currentShift.cashRevenue || 0).toLocaleString()}đ
-                </div>
-              </div>
-              <div className="bg-red-50 rounded-lg p-3">
-                <div className="text-xs text-red-600 flex items-center gap-1">
-                  <TrendingDown size={14} /> Hoàn/Chi TM
-                </div>
-                <div className="text-lg font-bold text-red-700">
-                  -{(currentShift.cashRefundOut || 0).toLocaleString()}đ
-                </div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-3">
-                <div className="text-xs text-blue-600 flex items-center gap-1">
-                  <DollarSign size={14} /> Dự kiến tồn
-                </div>
-                <div className="text-lg font-bold text-blue-700">
-                  {(
-                    (currentShift.floatAmount || 0) +
-                    (currentShift.cashRevenue || 0) -
-                    (currentShift.cashRefundOut || 0)
-                  ).toLocaleString()}
-                  đ
-                </div>
-              </div>
+              ))}
             </div>
 
             {(currentShift.totalTransferIn || 0) > 0 && (
-              <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-100">
-                <span className="text-xs text-cyan-600">
-                  💳 Chuyển khoản: +
-                  {(currentShift.totalTransferIn || 0).toLocaleString()}đ
-                </span>
-                <span className="text-xs text-gray-400 ml-2">
-                  (không tính vào quỹ tiền mặt)
-                </span>
+              <div style={{ background: "#ecfeff", border: "1px solid #a5f3fc", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#0e7490", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>💳</span>
+                <span>Chuyển khoản: <strong>+{(currentShift.totalTransferIn || 0).toLocaleString()}đ</strong></span>
+                <span style={{ color: "#9ca3af", fontSize: 12 }}>(không tính vào quỹ tiền mặt)</span>
               </div>
             )}
 
-            <div className="grid grid-cols-4 gap-2 text-center text-sm">
-              <div className="bg-gray-50 rounded-lg p-2">
-                <div className="font-bold">
-                  {currentShift.bookingCount || 0}
+            {/* Mini stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, borderTop: "1px solid #f3f4f6", paddingTop: 16 }}>
+              {[
+                { label: "Đặt sân", value: currentShift.bookingCount || 0, emoji: "🏸" },
+                { label: "Walk-in", value: currentShift.walkInCount || 0, emoji: "🚶" },
+                { label: "Dịch vụ", value: currentShift.serviceOrderCount || 0, emoji: "🛒" },
+                { label: "Hoàn tiền", value: currentShift.refundCount || 0, emoji: "↩️" },
+              ].map((s, i) => (
+                <div key={i} style={{ background: "#f9fafb", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>{s.emoji}</div>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: "#1f2937" }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>{s.label}</div>
                 </div>
-                <div className="text-xs text-gray-500">Đặt sân</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <div className="font-bold">{currentShift.walkInCount || 0}</div>
-                <div className="text-xs text-gray-500">Walk-in</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <div className="font-bold">
-                  {currentShift.serviceOrderCount || 0}
-                </div>
-                <div className="text-xs text-gray-500">Dịch vụ</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <div className="font-bold">{currentShift.refundCount || 0}</div>
-                <div className="text-xs text-gray-500">Hoàn tiền</div>
-              </div>
+              ))}
             </div>
           </div>
         ) : (
-          <div className="text-center py-6">
-            <div className="text-5xl mb-3">🕐</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <div style={{ fontSize: 56, marginBottom: 12 }}>🕐</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#1f2937", marginBottom: 8 }}>
               Chưa mở ca làm việc
             </h3>
-            <p className="text-gray-500 text-sm mb-4">
+            <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
               Bạn cần mở ca trước khi thực hiện các giao dịch
             </p>
             <button
               onClick={handleOpenModal}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold transition inline-flex items-center gap-2"
+              style={{
+                background: "linear-gradient(135deg, #059669, #10b981)",
+                color: "white",
+                border: "none",
+                padding: "14px 32px",
+                borderRadius: 14,
+                fontWeight: 800,
+                fontSize: 15,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                fontFamily: "inherit",
+                boxShadow: "0 6px 20px rgba(16,185,129,0.4)",
+                transition: "all 0.2s",
+              }}
             >
               <CheckCircle size={20} />
               Mở ca ngay
@@ -301,54 +342,68 @@ export default function POSShift() {
 
       {/* Shift History */}
       {shiftHistory.length > 0 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="font-bold text-gray-800 mb-3">📋 Lịch sử ca làm</h3>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+        <div
+          style={{
+            background: "white",
+            borderRadius: 16,
+            padding: 20,
+            boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+            border: "1px solid #d1fae5",
+          }}
+        >
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "#064e3b", marginBottom: 14 }}>📋 Lịch sử ca làm</h3>
+          <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
             {shiftHistory.map((shift) => (
               <div
                 key={shift._id}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderRadius: 12,
+                  border: "1px solid #f3f4f6",
+                  background: "#fafafa",
+                  transition: "background 0.2s",
+                  gap: 12,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#fafafa")}
               >
-                <div className="flex-1">
-                  <div className="font-medium text-sm flex items-center gap-2">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1f2937", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
                     {shift.staffName || shift.staff?.name}
                     {shift.handoverStatus === "confirmed" && (
-                      <span className="text-green-500 text-xs">✓ Bàn giao</span>
+                      <span style={{ background: "#d1fae5", color: "#065f46", padding: "1px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700 }}>✓ Bàn giao</span>
                     )}
                     {shift.handoverStatus === "disputed" && (
-                      <span className="text-red-500 text-xs">⚠ Tranh chấp</span>
+                      <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "1px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700 }}>⚠ Tranh chấp</span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {shift.shiftDate} ·{" "}
-                    {new Date(shift.openedAt).toLocaleTimeString("vi-VN")}
-                    {shift.closedAt &&
-                      ` → ${new Date(shift.closedAt).toLocaleTimeString("vi-VN")}`}
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>
+                    {shift.shiftDate} · {new Date(shift.openedAt).toLocaleTimeString("vi-VN")}
+                    {shift.closedAt && ` → ${new Date(shift.closedAt).toLocaleTimeString("vi-VN")}`}
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    Quỹ: {shift.floatAmount?.toLocaleString()}đ | DT: +
-                    {(shift.cashRevenue || 0).toLocaleString()}đ | Rút:{" "}
-                    {(shift.amountWithdrawn || 0).toLocaleString()}đ
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                    Quỹ: {shift.floatAmount?.toLocaleString()}đ · DT: +{(shift.cashRevenue || 0).toLocaleString()}đ · Rút: {(shift.amountWithdrawn || 0).toLocaleString()}đ
                   </div>
                 </div>
-                <div className="text-right ml-3">
-                  <div className="font-bold text-sm">
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 3 }}>
                     {shift.status === "closed" ? (
                       (shift.discrepancy ?? 0) === 0 ? (
-                        <span className="text-green-600">Khớp ✅</span>
+                        <span style={{ color: "#16a34a" }}>Khớp ✅</span>
                       ) : (
-                        <span className="text-red-600">
+                        <span style={{ color: "#dc2626" }}>
                           {(shift.discrepancy ?? 0) > 0 ? "+" : ""}
                           {(shift.discrepancy ?? 0).toLocaleString()}đ
                         </span>
                       )
                     ) : (
-                      <span className="text-yellow-600">Đang mở</span>
+                      <span style={{ color: "#d97706" }}>Đang mở</span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Dự kiến: {(shift.expectedCash || 0).toLocaleString()}đ
-                  </div>
+                  <div style={{ fontSize: 11, color: "#9ca3af" }}>Dự kiến: {(shift.expectedCash || 0).toLocaleString()}đ</div>
                 </div>
               </div>
             ))}
@@ -359,88 +414,248 @@ export default function POSShift() {
       {/* Open Shift Modal */}
       {showOpenModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            padding: 16,
+          }}
           onClick={() => setShowOpenModal(false)}
         >
           <div
-            className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+            style={{
+              background: "white",
+              borderRadius: 24,
+              padding: 28,
+              maxWidth: 460,
+              width: "100%",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              position: "relative",
+              fontFamily: "inherit",
+              animation: "fadeInUp 0.25s ease",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center gap-2">
-              <CheckCircle size={24} /> Mở ca làm việc
-            </h3>
-
-            <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
-              <div className="text-sm text-purple-600 mb-1">
-                Quỹ định mức (cố định)
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 20,
+                paddingBottom: 14,
+                borderBottom: "1.5px solid #f0fdf4",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <CheckCircle size={22} color="#059669" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "#064e3b", margin: 0 }}>
+                    Mở ca làm việc
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>
+                    Xác nhận số tiền quỹ để bắt đầu phiên
+                  </p>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-purple-700">
+              <button
+                onClick={() => {
+                  setShowOpenModal(false);
+                  setHandoverConfirmed(false);
+                  setLastShift(null);
+                }}
+                style={{
+                  background: "#f3f4f6",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 32,
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quỹ định mức card */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #faf5ff, #f3e8ff)",
+                borderRadius: 16,
+                padding: "16px 20px",
+                marginBottom: 16,
+                border: "1.5px solid #e9d5ff",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#7c3aed",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Shield size={14} /> Quỹ định mức (cố định)
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "#6d28d9" }}>
                 {floatAmount.toLocaleString()}đ
               </div>
-              <div className="text-xs text-purple-500 mt-1">
-                Quỹ này do Admin cấu hình, dùng để thối tiền khách — không phải
-                doanh thu
+              <div style={{ fontSize: 11, color: "#8b5cf6", marginTop: 4, lineHeight: 1.4 }}>
+                Quỹ do Admin cấu hình, dùng để thối tiền lẻ cho khách (không tính vào doanh thu).
               </div>
             </div>
 
+            {/* Bàn giao ca trước (Pending) */}
             {lastShift && lastShift.handoverStatus === "pending" && (
-              <div className="bg-yellow-50 rounded-lg p-4 mb-4 border border-yellow-200">
-                <div className="flex items-center gap-2 text-yellow-700 font-medium mb-2">
-                  <ArrowRightLeft size={18} />
-                  Bàn giao từ ca trước
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #fffbeb, #fef3c7)",
+                  borderRadius: 16,
+                  padding: "16px 20px",
+                  marginBottom: 20,
+                  border: "1.5px solid #fde68a",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "#b45309",
+                    fontWeight: 800,
+                    fontSize: 14,
+                    marginBottom: 10,
+                  }}
+                >
+                  <ArrowRightLeft size={16} /> Bàn giao từ ca trước
                 </div>
-                <div className="text-sm text-yellow-700 space-y-1">
+                <div style={{ fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
                   <div>
-                    Ca trước: <strong>{lastShift.staffName}</strong> (
-                    {lastShift.shiftDate})
+                    Ca trước: <strong>{lastShift.staffName}</strong> ({lastShift.shiftDate})
                   </div>
                   <div>
-                    Quỹ để lại:{" "}
-                    <strong>{lastShift.floatAmount?.toLocaleString()}đ</strong>
+                    Quỹ để lại: <strong>{lastShift.floatAmount?.toLocaleString()}đ</strong>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={handoverConfirmed}
-                      onChange={(e) => setHandoverConfirmed(e.target.checked)}
-                      className="w-4 h-4 text-green-600 rounded"
-                    />
-                    <span className="text-sm text-yellow-800">
-                      Tôi xác nhận đã đếm và nhận đủ quỹ{" "}
-                      {lastShift.floatAmount?.toLocaleString()}đ
-                    </span>
-                  </label>
-                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginTop: 12,
+                    paddingTop: 10,
+                    borderTop: "1px dashed #fcd34d",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={handoverConfirmed}
+                    onChange={(e) => setHandoverConfirmed(e.target.checked)}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      accentColor: "#10b981",
+                      cursor: "pointer",
+                    }}
+                  />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#78350f" }}>
+                    Tôi xác nhận đã đếm và nhận đủ quỹ {lastShift.floatAmount?.toLocaleString()}đ
+                  </span>
+                </label>
               </div>
             )}
 
+            {/* Bàn giao ca trước (Confirmed) */}
             {lastShift && lastShift.handoverStatus === "confirmed" && (
-              <div className="bg-green-50 rounded-lg p-4 mb-4 border border-green-200">
-                <div className="text-sm text-green-700">
-                  ✅ Bàn giao ca trước đã được xác nhận. Quỹ{" "}
-                  {lastShift.floatAmount?.toLocaleString()}đ đã sẵn sàng.
-                </div>
+              <div
+                style={{
+                  background: "#ecfdf5",
+                  borderRadius: 14,
+                  padding: "12px 16px",
+                  marginBottom: 20,
+                  border: "1px solid #a7f3d0",
+                  fontSize: 13,
+                  color: "#065f46",
+                  fontWeight: 600,
+                }}
+              >
+                ✅ Bàn giao ca trước đã được xác nhận. Quỹ{" "}
+                <strong>{lastShift.floatAmount?.toLocaleString()}đ</strong> đã sẵn sàng.
               </div>
             )}
 
+            {/* Ca đầu tiên */}
             {!lastShift && (
-              <div className="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-200">
-                <div className="text-sm text-blue-700">
-                  ℹ️ Đây là ca đầu tiên. Hãy đảm bảo có đủ{" "}
-                  {floatAmount.toLocaleString()}đ tiền lẻ trong quầy.
-                </div>
+              <div
+                style={{
+                  background: "#eff6ff",
+                  borderRadius: 14,
+                  padding: "12px 16px",
+                  marginBottom: 20,
+                  border: "1px solid #bfdbfe",
+                  fontSize: 13,
+                  color: "#1e40af",
+                  fontWeight: 600,
+                }}
+              >
+                ℹ️ Đây là ca đầu tiên. Hãy đảm bảo có đủ <strong>{floatAmount.toLocaleString()}đ</strong> tiền lẻ trong quầy.
               </div>
             )}
 
-            <div className="flex gap-2">
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 12 }}>
               <button
                 onClick={handleOpenShift}
                 disabled={processing}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-2.5 rounded-lg font-medium transition"
+                style={{
+                  flex: 1,
+                  background: processing
+                    ? "#9ca3af"
+                    : "linear-gradient(135deg, #059669, #10b981)",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  borderRadius: 14,
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  boxShadow: processing
+                    ? "none"
+                    : "0 6px 20px rgba(16,185,129,0.35)",
+                  transition: "all 0.2s",
+                }}
               >
-                {processing ? "Đang xử lý..." : "Mở ca"}
+                {processing ? "Đang xử lý..." : "Mở ca ngay"}
               </button>
               <button
                 onClick={() => {
@@ -448,7 +663,19 @@ export default function POSShift() {
                   setHandoverConfirmed(false);
                   setLastShift(null);
                 }}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 py-2.5 rounded-lg font-medium transition"
+                style={{
+                  flex: 1,
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1.5px solid #e5e7eb",
+                  padding: "14px",
+                  borderRadius: 14,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "all 0.2s",
+                }}
               >
                 Huỷ
               </button>
@@ -460,74 +687,147 @@ export default function POSShift() {
       {/* Close Shift Modal */}
       {showCloseModal && currentShift && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            padding: 16,
+          }}
           onClick={() => setShowCloseModal(false)}
         >
           <div
-            className="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+            style={{
+              background: "white",
+              borderRadius: 24,
+              padding: 28,
+              maxWidth: 480,
+              width: "100%",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              position: "relative",
+              fontFamily: "inherit",
+              animation: "fadeInUp 0.25s ease",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center gap-2">
-              <XCircle size={24} /> Đóng ca làm việc
-            </h3>
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 20,
+                paddingBottom: 14,
+                borderBottom: "1.5px solid #fef2f2",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "linear-gradient(135deg, #fecaca, #fee2e2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <XCircle size={22} color="#dc2626" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "#991b1b", margin: 0 }}>
+                    Đóng ca làm việc
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>
+                    Đối soát quỹ và bàn giao ca
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCloseModal(false);
+                  setActualCashCounted("");
+                  setDiscrepancyNote("");
+                  setConfirmedLeaveFloat(false);
+                }}
+                style={{
+                  background: "#f3f4f6",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 32,
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+            </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 text-sm border">
-              <h4 className="font-bold text-gray-700 mb-3">
+            {/* Đối soát quỹ Card */}
+            <div
+              style={{
+                background: "#f9fafb",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 16,
+                border: "1.5px solid #e5e7eb",
+              }}
+            >
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: "#374151", margin: "0 0 10px" }}>
                 📊 Đối soát quỹ (Imprest System)
               </h4>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">🏦 Quỹ định mức:</span>
-                  <span className="font-bold text-purple-700">
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
+                <div style={{ display: "flex", justifyBetween: "space-between", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>🏦 Quỹ định mức:</span>
+                  <strong style={{ color: "#7c3aed" }}>
                     {currentShift.floatAmount?.toLocaleString()}đ
-                  </span>
+                  </strong>
                 </div>
-                <div className="flex justify-between items-center text-green-700">
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a" }}>
                   <span>💰 Doanh thu tiền mặt:</span>
-                  <span className="font-bold">
-                    +{(currentShift.cashRevenue || 0).toLocaleString()}đ
-                  </span>
+                  <strong>+{(currentShift.cashRevenue || 0).toLocaleString()}đ</strong>
                 </div>
-                <div className="flex justify-between items-center text-red-700">
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#dc2626" }}>
                   <span>💸 Hoàn/Chi tiền mặt:</span>
-                  <span className="font-bold">
-                    -{(currentShift.cashRefundOut || 0).toLocaleString()}đ
-                  </span>
+                  <strong>-{(currentShift.cashRefundOut || 0).toLocaleString()}đ</strong>
                 </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-blue-700">
-                      📋 Dự kiến tồn quỹ:
-                    </span>
-                    <span className="font-bold text-lg text-blue-700">
+                <div style={{ borderTop: "1px dashed #d1d5db", paddingTop: 8, marginTop: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontWeight: 700, color: "#2563eb" }}>📋 Dự kiến tồn quỹ:</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: "#2563eb" }}>
                       {(
                         (currentShift.floatAmount || 0) +
                         (currentShift.cashRevenue || 0) -
                         (currentShift.cashRefundOut || 0)
-                      ).toLocaleString()}
-                      đ
+                      ).toLocaleString()}đ
                     </span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    = Quỹ định mức + Doanh thu TM − Hoàn/Chi TM
                   </div>
                 </div>
 
                 {closePreview && actualCashCounted && (
                   <>
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-gray-700">
-                          🔢 Thực tế đếm được:
-                        </span>
-                        <span className="font-bold text-lg">
+                    <div style={{ borderTop: "1px dashed #d1d5db", paddingTop: 8, marginTop: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontWeight: 700, color: "#374151" }}>🔢 Thực tế đếm được:</span>
+                        <strong style={{ fontSize: 15 }}>
                           {parseInt(actualCashCounted).toLocaleString()}đ
-                        </span>
+                        </strong>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontWeight: 700 }}>
                         {closePreview.disc === 0
                           ? "✅ Chênh lệch:"
                           : closePreview.disc > 0
@@ -535,73 +835,108 @@ export default function POSShift() {
                             : "🔴 Thiếu:"}
                       </span>
                       <span
-                        className={`font-bold text-lg ${closePreview.disc === 0 ? "text-green-600" : closePreview.disc > 0 ? "text-yellow-600" : "text-red-600"}`}
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 900,
+                          color:
+                            closePreview.disc === 0
+                              ? "#16a34a"
+                              : closePreview.disc > 0
+                                ? "#d97706"
+                                : "#dc2626",
+                        }}
                       >
                         {closePreview.disc === 0
                           ? "0đ"
                           : `${closePreview.disc > 0 ? "+" : ""}${closePreview.disc.toLocaleString()}đ`}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center border-t pt-2 mt-2">
-                      <span className="font-semibold text-green-700">
-                        📤 Số tiền rút nộp:
-                      </span>
-                      <span className="font-bold text-lg text-green-700">
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed #d1d5db", paddingTop: 8, marginTop: 4 }}>
+                      <span style={{ fontWeight: 700, color: "#16a34a" }}>📤 Số tiền rút nộp:</span>
+                      <strong style={{ fontSize: 15, color: "#16a34a" }}>
                         {closePreview.withdrawn > 0
                           ? closePreview.withdrawn.toLocaleString()
-                          : "0"}
-                        đ
-                      </span>
+                          : "0"}đ
+                      </strong>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-purple-700">
-                        🏦 Để lại quỹ ca sau:
-                      </span>
-                      <span className="font-bold text-purple-700">
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontWeight: 700, color: "#7c3aed" }}>🏦 Để lại quỹ ca sau:</span>
+                      <strong style={{ color: "#7c3aed" }}>
                         {currentShift.floatAmount?.toLocaleString()}đ
-                      </span>
+                      </strong>
                     </div>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="mb-3">
-              <label className="text-sm text-gray-600 mb-1 block font-medium">
+            {/* Input thực tế đếm */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>
                 🔢 Số tiền mặt thực tế đếm được trong quầy
               </label>
               <input
                 type="number"
                 min="0"
-                placeholder="Nhập số tiền thực tế đếm được"
+                placeholder="Nhập số tiền thực tế đếm được..."
                 value={actualCashCounted}
                 onChange={(e) => setActualCashCounted(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2.5 text-lg focus:ring-2 focus:ring-red-500 outline-none"
+                style={{
+                  width: "100%",
+                  border: "1.5px solid #fecaca",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  fontSize: 16,
+                  fontWeight: 800,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  background: "#fff5f5",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#ef4444")}
+                onBlur={(e) => (e.target.style.borderColor = "#fecaca")}
                 autoFocus
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
                 Đếm toàn bộ tiền mặt trong quầy (bao gồm cả quỹ định mức)
               </p>
             </div>
 
-            <div className="mb-3">
-              <label className="flex items-center gap-2 cursor-pointer bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+            {/* Checkbox xác nhận để lại quỹ */}
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  background: "#fffbeb",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  border: "1px solid #fde68a",
+                  cursor: "pointer",
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={confirmedLeaveFloat}
                   onChange={(e) => setConfirmedLeaveFloat(e.target.checked)}
-                  className="w-4 h-4 text-red-600 rounded"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    accentColor: "#dc2626",
+                    cursor: "pointer",
+                  }}
                 />
-                <span className="text-sm text-yellow-800">
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#78350f" }}>
                   Tôi xác nhận đã để lại đúng{" "}
-                  <strong>{currentShift.floatAmount?.toLocaleString()}đ</strong>{" "}
-                  quỹ định mức trong quầy cho ca sau
+                  <strong>{currentShift.floatAmount?.toLocaleString()}đ</strong> quỹ định mức trong quầy
                 </span>
               </label>
             </div>
 
-            <div className="mb-4">
-              <label className="text-sm text-gray-600 mb-1 block">
+            {/* Ghi chú */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 4 }}>
                 Ghi chú (nếu có chênh lệch)
               </label>
               <input
@@ -609,30 +944,63 @@ export default function POSShift() {
                 placeholder="Lý do chênh lệch..."
                 value={discrepancyNote}
                 onChange={(e) => setDiscrepancyNote(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-red-500 outline-none"
+                style={{
+                  width: "100%",
+                  border: "1.5px solid #e5e7eb",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                }}
               />
             </div>
 
-            {closePreview &&
-              actualCashCounted &&
-              closePreview.withdrawn < 0 && (
-                <div className="bg-red-50 rounded-lg p-3 mb-4 border border-red-200">
-                  <div className="flex items-center gap-2 text-red-700 font-medium">
-                    <AlertCircle size={18} />
-                    ⚠️ CẢNH BÁO: Không đủ quỹ để lại cho ca sau!
-                  </div>
-                  <div className="text-sm text-red-600 mt-1">
-                    Thiếu {Math.abs(closePreview.withdrawn).toLocaleString()}đ
-                    so với quỹ định mức. Cần Admin duyệt.
-                  </div>
+            {closePreview && actualCashCounted && closePreview.withdrawn < 0 && (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  marginBottom: 20,
+                  border: "1px solid #fecaca",
+                  fontSize: 12,
+                  color: "#991b1b",
+                }}
+              >
+                <div style={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertCircle size={16} /> ⚠️ CẢNH BÁO: Không đủ quỹ để lại!
                 </div>
-              )}
+                <div style={{ marginTop: 2 }}>
+                  Thiếu {Math.abs(closePreview.withdrawn).toLocaleString()}đ so với quỹ định mức.
+                </div>
+              </div>
+            )}
 
-            <div className="flex gap-2">
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 12 }}>
               <button
                 onClick={handleCloseShift}
                 disabled={processing}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white py-2.5 rounded-lg font-medium transition"
+                style={{
+                  flex: 1,
+                  background: processing
+                    ? "#9ca3af"
+                    : "linear-gradient(135deg, #dc2626, #ef4444)",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  borderRadius: 14,
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  boxShadow: processing
+                    ? "none"
+                    : "0 6px 20px rgba(239,68,68,0.35)",
+                  transition: "all 0.2s",
+                }}
               >
                 {processing ? "Đang xử lý..." : "Xác nhận đóng ca"}
               </button>
@@ -643,7 +1011,19 @@ export default function POSShift() {
                   setDiscrepancyNote("");
                   setConfirmedLeaveFloat(false);
                 }}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 py-2.5 rounded-lg font-medium transition"
+                style={{
+                  flex: 1,
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1.5px solid #e5e7eb",
+                  padding: "14px",
+                  borderRadius: 14,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "all 0.2s",
+                }}
               >
                 Huỷ
               </button>

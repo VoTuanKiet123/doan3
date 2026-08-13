@@ -501,46 +501,134 @@ export default function POSCheckIn() {
 
   // ============ RENDER ============
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-        <CheckCircle size={24} className="text-green-600" />
-        Quản lý phiên · Check-in / Check-out
-      </h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Page Header */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+          borderRadius: 16,
+          padding: "20px 24px",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          boxShadow: "0 6px 20px rgba(16,185,129,0.35)",
+        }}
+      >
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CheckCircle size={26} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+            Quản lý phiên · Check-in / Check-out
+          </h1>
+          <p style={{ fontSize: 13, opacity: 0.85, margin: "2px 0 0" }}>
+            Tra cứu booking, mở phiên cho khách vào sân và thanh toán
+          </p>
+        </div>
+      </div>
 
       {/* ===== SEARCH BAR ===== */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
+      <div
+        style={{
+          background: "white",
+          borderRadius: 16,
+          padding: 20,
+          boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+          border: "1px solid #d1fae5",
+        }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 240, position: "relative" }}>
             <Search
               size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#9ca3af",
+              }}
             />
             <input
               type="text"
               placeholder="Nhập SĐT, tên khách hoặc mã booking..."
-              className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              style={{
+                width: "100%",
+                paddingLeft: 38,
+                paddingRight: 16,
+                paddingTop: 10,
+                paddingBottom: 10,
+                border: "1.5px solid #d1fae5",
+                borderRadius: 10,
+                fontSize: 13,
+                outline: "none",
+                fontFamily: "inherit",
+                background: "#f9fffe",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+              onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
             />
           </div>
           <input
             type="date"
-            className="border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-green-500 outline-none"
             value={searchDate}
             onChange={(e) => setSearchDate(e.target.value)}
+            style={{
+              border: "1.5px solid #d1fae5",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 13,
+              outline: "none",
+              fontFamily: "inherit",
+              color: "#064e3b",
+              background: "#f9fffe",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+            onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
           />
           <button
             onClick={handleSearch}
             disabled={searching}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium transition flex items-center gap-2 disabled:opacity-50"
+            style={{
+              background: searching
+                ? "#e5e7eb"
+                : "linear-gradient(135deg, #059669, #10b981)",
+              color: searching ? "#9ca3af" : "white",
+              border: "none",
+              borderRadius: 10,
+              padding: "10px 24px",
+              fontWeight: 800,
+              fontSize: 14,
+              cursor: searching ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "inherit",
+              boxShadow: searching ? "none" : "0 4px 14px rgba(16,185,129,0.35)",
+              transition: "all 0.2s",
+            }}
           >
             {searching ? (
               <RefreshCw size={18} className="animate-spin" />
             ) : (
               <Search size={18} />
             )}
-            Tìm
+            Tìm kiếm
           </button>
         </div>
       </div>

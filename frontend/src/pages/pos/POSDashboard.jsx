@@ -8,28 +8,44 @@ import {
   Users,
   ShoppingCart,
   AlertTriangle,
+  ClipboardCheck,
+  UserPlus,
+  TrendingUp,
+  CalendarCheck,
 } from "lucide-react";
 
 const statusConfig = {
   available: {
     label: "Trống",
-    color: "bg-green-100 text-green-800 border-green-300",
-    icon: "🟢",
+    bg: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+    border: "#a7f3d0",
+    textColor: "#065f46",
+    badge: "bg-emerald-100 text-emerald-700",
+    dot: "#10b981",
   },
   reserved: {
     label: "Đã đặt",
-    color: "bg-blue-100 text-blue-800 border-blue-300",
-    icon: "📅",
+    bg: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+    border: "#bfdbfe",
+    textColor: "#1d4ed8",
+    badge: "bg-blue-100 text-blue-700",
+    dot: "#3b82f6",
   },
   in_use: {
     label: "Đang mở phiên",
-    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    icon: "🟡",
+    bg: "linear-gradient(135deg, #fffbeb, #fef3c7)",
+    border: "#fde68a",
+    textColor: "#b45309",
+    badge: "bg-amber-100 text-amber-700",
+    dot: "#f59e0b",
   },
   maintenance: {
     label: "Bảo trì",
-    color: "bg-red-100 text-red-800 border-red-300",
-    icon: "🔧",
+    bg: "linear-gradient(135deg, #fef2f2, #fee2e2)",
+    border: "#fecaca",
+    textColor: "#b91c1c",
+    badge: "bg-red-100 text-red-700",
+    dot: "#ef4444",
   },
 };
 
@@ -55,14 +71,13 @@ export default function POSDashboard() {
       setCurrentTime(courtsRes.data.currentTime);
       setCurrentShift(shiftRes.data.shift);
 
-      // Tính stats
       const stats = courtsRes.data.courts.reduce(
         (acc, c) => ({
           bookings: acc.bookings + c.totalBookingsToday,
           walkins: acc.walkins + (c.currentStatus === "in_use" ? 1 : 0),
           revenue: acc.revenue,
         }),
-        { bookings: 0, walkins: 0, revenue: 0 },
+        { bookings: 0, walkins: 0, revenue: 0 }
       );
 
       if (shiftRes.data.shift) {
@@ -79,149 +94,369 @@ export default function POSDashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh mỗi 30s
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 240,
+          gap: 12,
+          color: "#047857",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            border: "3px solid #a7f3d0",
+            borderTopColor: "#10b981",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <span style={{ fontWeight: 600, fontSize: 14 }}>Đang tải dữ liệu...</span>
       </div>
     );
   }
 
+  const statCards = [
+    {
+      icon: <Volleyball size={22} color="#065f46" />,
+      iconBg: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+      value: courts.length,
+      label: "Tổng số sân",
+      sub: `${courts.filter((c) => c.currentStatus === "available").length} sân đang trống`,
+    },
+    {
+      icon: <CalendarCheck size={22} color="#1d4ed8" />,
+      iconBg: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
+      value: todayStats.bookings,
+      label: "Đặt sân hôm nay",
+      sub: "lượt booking",
+    },
+    {
+      icon: <Users size={22} color="#b45309" />,
+      iconBg: "linear-gradient(135deg, #fef3c7, #fde68a)",
+      value: courts.filter((c) => c.currentStatus === "in_use").length,
+      label: "Đang mở phiên",
+      sub: "sân đang có khách",
+    },
+    {
+      icon: <TrendingUp size={22} color="#7c3aed" />,
+      iconBg: "linear-gradient(135deg, #ede9fe, #ddd6fe)",
+      value: todayStats.revenue.toLocaleString() + "đ",
+      label: "Doanh thu ca",
+      sub: currentShift ? "Ca đang mở" : "Chưa mở ca",
+    },
+  ];
+
+  const quickActions = [
+    {
+      icon: <ClipboardCheck size={28} />,
+      label: "Check-in",
+      sub: "Khách đã đặt sân",
+      bg: "linear-gradient(135deg, #059669, #10b981)",
+      shadow: "rgba(16,185,129,0.4)",
+      action: () => navigate("/pos/checkin"),
+    },
+    {
+      icon: <UserPlus size={28} />,
+      label: "Khách vãng lai",
+      sub: "Đặt + Check-in ngay",
+      bg: "linear-gradient(135deg, #2563eb, #3b82f6)",
+      shadow: "rgba(59,130,246,0.4)",
+      action: () => navigate("/pos/walkin"),
+    },
+    {
+      icon: <ShoppingCart size={28} />,
+      label: "Bán dịch vụ",
+      sub: "Nước, đồ ăn, vật tư",
+      bg: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+      shadow: "rgba(139,92,246,0.4)",
+      action: () => navigate("/pos/orders"),
+    },
+    {
+      icon: <Clock size={28} />,
+      label: currentShift ? "Đóng ca" : "Mở ca",
+      sub: currentShift
+        ? `${(currentShift.expectedCash || 0).toLocaleString()}đ dự kiến`
+        : "Bắt đầu ca mới",
+      bg: currentShift
+        ? "linear-gradient(135deg, #d97706, #f59e0b)"
+        : "linear-gradient(135deg, #4b5563, #6b7280)",
+      shadow: currentShift ? "rgba(245,158,11,0.4)" : "rgba(107,114,128,0.35)",
+      action: () => navigate("/pos/shift"),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <Volleyball size={16} />
-            Sân
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Stat cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 16,
+        }}
+      >
+        {statCards.map((card, i) => (
+          <div key={i} className="pos-stat-card">
+            <div
+              className="pos-stat-card-icon"
+              style={{ background: card.iconBg }}
+            >
+              {card.icon}
+            </div>
+            <div className="pos-stat-card-value">{card.value}</div>
+            <div className="pos-stat-card-label">{card.label}</div>
+            <div className="pos-stat-card-sub">{card.sub}</div>
           </div>
-          <div className="text-2xl font-bold">{courts.length}</div>
-          <div className="text-xs text-gray-400">
-            {courts.filter((c) => c.currentStatus === "available").length} trống
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <Clock size={16} />
-            Hôm nay
-          </div>
-          <div className="text-2xl font-bold">{todayStats.bookings}</div>
-          <div className="text-xs text-gray-400">lượt đặt</div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <Users size={16} />
-            Đang mở phiên
-          </div>
-          <div className="text-2xl font-bold text-yellow-600">
-            {courts.filter((c) => c.currentStatus === "in_use").length}
-          </div>
-          <div className="text-xs text-gray-400">sân đang có khách</div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <ShoppingCart size={16} />
-            Doanh thu ca
-          </div>
-          <div className="text-2xl font-bold text-green-700">
-            {todayStats.revenue.toLocaleString()}đ
-          </div>
-          <div className="text-xs text-gray-400">
-            {currentShift ? "Ca đang mở" : "Chưa mở ca"}
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <button
-          onClick={() => navigate("/pos/checkin")}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-xl p-4 shadow-sm transition flex flex-col items-center gap-2"
+      <div>
+        <h2
+          style={{
+            fontSize: 16,
+            fontWeight: 800,
+            color: "#064e3b",
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
         >
-          <ClipboardCheckIcon />
-          <span className="font-semibold text-sm">Check-in</span>
-          <span className="text-xs text-green-100">Khách đã đặt</span>
-        </button>
-        <button
-          onClick={() => navigate("/pos/walkin")}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-4 shadow-sm transition flex flex-col items-center gap-2"
+          ⚡ Thao tác nhanh
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 14,
+          }}
         >
-          <WalkInIcon />
-          <span className="font-semibold text-sm">Khách vãng lai</span>
-          <span className="text-xs text-blue-100">Đặt + Check-in</span>
-        </button>
-        <button
-          onClick={() => navigate("/pos/orders")}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl p-4 shadow-sm transition flex flex-col items-center gap-2"
-        >
-          <ShoppingCartIcon />
-          <span className="font-semibold text-sm">Bán dịch vụ</span>
-          <span className="text-xs text-purple-100">Nước, đồ ăn</span>
-        </button>
-        <button
-          onClick={() => navigate("/pos/shift")}
-          className={`rounded-xl p-4 shadow-sm transition flex flex-col items-center gap-2 ${
-            currentShift
-              ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-              : "bg-gray-500 hover:bg-gray-600 text-white"
-          }`}
-        >
-          <ClockIcon />
-          <span className="font-semibold text-sm">
-            {currentShift ? "Đóng ca" : "Mở ca"}
-          </span>
-          <span className="text-xs opacity-80">
-            {currentShift
-              ? `${currentShift.expectedCash?.toLocaleString() || 0}đ`
-              : "Bắt đầu ca mới"}
-          </span>
-        </button>
+          {quickActions.map((action, i) => (
+            <button
+              key={i}
+              onClick={action.action}
+              className="pos-quick-btn"
+              style={{
+                background: action.bg,
+                boxShadow: `0 6px 20px ${action.shadow}`,
+                color: "white",
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: "rgba(255,255,255,0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {action.icon}
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{action.label}</div>
+                <div
+                  style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}
+                >
+                  {action.sub}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Court Status Grid */}
       <div>
-        <h2 className="text-lg font-bold text-gray-800 mb-3">
-          📋 Sơ đồ sân · {currentTime}
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 14,
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 16,
+              fontWeight: 800,
+              color: "#064e3b",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            🏸 Sơ đồ sân
+          </h2>
+          <span
+            style={{
+              background: "#ecfdf5",
+              border: "1px solid #a7f3d0",
+              color: "#047857",
+              padding: "4px 12px",
+              borderRadius: 99,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            ⏰ {currentTime}
+          </span>
+        </div>
+
+        {/* Legend */}
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
+          {Object.entries(statusConfig).map(([key, s]) => (
+            <div
+              key={key}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: "#374151",
+              }}
+            >
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: s.dot,
+                }}
+              />
+              {s.label}
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+            gap: 12,
+          }}
+        >
           {courts.map((court) => {
-            const status =
-              statusConfig[court.currentStatus] || statusConfig.available;
+            const status = statusConfig[court.currentStatus] || statusConfig.available;
             return (
               <div
                 key={court._id}
-                className={`rounded-xl p-4 border-2 shadow-sm ${status.color} transition`}
+                style={{
+                  background: status.bg,
+                  border: `2px solid ${status.border}`,
+                  borderRadius: 14,
+                  padding: "14px",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  cursor: "default",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-lg">{court.name}</span>
-                  <span className="text-xl">{status.icon}</span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 16,
+                      color: status.textColor,
+                    }}
+                  >
+                    {court.name}
+                  </span>
+                  <div
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: status.dot,
+                      boxShadow: `0 0 0 3px ${status.dot}30`,
+                    }}
+                  />
                 </div>
-                <div className="text-sm font-medium">{status.label}</div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: status.textColor,
+                    opacity: 0.85,
+                  }}
+                >
+                  {status.label}
+                </div>
                 {court.currentBooking && (
-                  <div className="text-xs mt-1 opacity-75">
+                  <div
+                    style={{
+                      fontSize: 11,
+                      marginTop: 6,
+                      color: status.textColor,
+                      opacity: 0.7,
+                      lineHeight: 1.4,
+                    }}
+                  >
                     {court.currentBooking.user?.name || "Khách"}
                     <br />
-                    {court.currentBooking.startTime} -{" "}
-                    {court.currentBooking.endTime}
+                    {court.currentBooking.startTime} – {court.currentBooking.endTime}
                   </div>
                 )}
-                {court.upcomingCount > 0 &&
-                  court.currentStatus === "available" && (
-                    <div className="text-xs mt-1 text-blue-600">
-                      Sắp tới: {court.upcomingCount} lượt
-                    </div>
-                  )}
+                {court.upcomingCount > 0 && court.currentStatus === "available" && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      marginTop: 4,
+                      color: "#1d4ed8",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Sắp tới: {court.upcomingCount} lượt
+                  </div>
+                )}
                 {court.maintenanceCount > 0 && (
-                  <div className="flex items-center gap-1 text-xs mt-1 text-red-600">
-                    <AlertTriangle size={12} /> Bảo trì
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 11,
+                      marginTop: 4,
+                      color: "#b91c1c",
+                    }}
+                  >
+                    <AlertTriangle size={10} />
+                    Đang bảo trì
                   </div>
                 )}
               </div>
@@ -230,82 +465,5 @@ export default function POSDashboard() {
         </div>
       </div>
     </div>
-  );
-}
-
-// SVG Icons for quick actions (simplified inline)
-function ClipboardCheckIcon() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-      <polyline points="9 14 11 16 15 12" />
-    </svg>
-  );
-}
-
-function WalkInIcon() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <line x1="19" y1="8" x2="19" y2="14" />
-      <line x1="22" y1="11" x2="16" y2="11" />
-    </svg>
-  );
-}
-
-function ShoppingCartIcon() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="9" cy="21" r="1" />
-      <circle cx="20" cy="21" r="1" />
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
   );
 }

@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
-import { UserPlus, Clock, MapPin, Phone, User } from "lucide-react";
+import { UserPlus, Clock, MapPin, Phone, User, Zap } from "lucide-react";
+
+const courtStatusInfo = {
+  available: { label: "Trống", dot: "#10b981", bg: "#ecfdf5", text: "#065f46" },
+  in_use: { label: "Đang mở phiên", dot: "#f59e0b", bg: "#fffbeb", text: "#92400e" },
+  reserved: { label: "Đã đặt", dot: "#3b82f6", bg: "#eff6ff", text: "#1e40af" },
+  maintenance: { label: "Bảo trì", dot: "#ef4444", bg: "#fef2f2", text: "#b91c1c" },
+};
 
 export default function POSWalkIn() {
   const [courts, setCourts] = useState([]);
@@ -51,7 +58,6 @@ export default function POSWalkIn() {
     try {
       const res = await api.post("/pos/bookings/walkin", form);
       toast.success(res.data.message);
-      // Reset form
       setForm((prev) => ({
         ...prev,
         startTime: "",
@@ -67,7 +73,6 @@ export default function POSWalkIn() {
     }
   };
 
-  // Quick time slots
   const quickSlots = [
     { label: "1 tiếng", minutes: 60 },
     { label: "1.5 tiếng", minutes: 90 },
@@ -95,161 +100,470 @@ export default function POSWalkIn() {
     }
   };
 
+  const selectedCourt = courts.find((c) => c._id === form.courtId);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 240, gap: 12, color: "#047857" }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #a7f3d0", borderTopColor: "#10b981", animation: "spin 0.8s linear infinite" }} />
+        <span style={{ fontWeight: 600, fontSize: 14 }}>Đang tải...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-        <UserPlus size={24} className="text-blue-600" />
-        Khách vãng lai · Đặt & Check-in
-      </h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Page header */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)",
+          borderRadius: 16,
+          padding: "20px 24px",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          boxShadow: "0 6px 20px rgba(59,130,246,0.35)",
+        }}
+      >
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <UserPlus size={26} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Khách vãng lai</h1>
+          <p style={{ fontSize: 13, opacity: 0.85, margin: "2px 0 0" }}>
+            Đặt sân và mở phiên chơi ngay tức thì
+          </p>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Info box */}
+      <div
+        style={{
+          background: "#fffbeb",
+          border: "1px solid #fde68a",
+          borderRadius: 12,
+          padding: "12px 16px",
+          fontSize: 13,
+          color: "#92400e",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span style={{ fontSize: 16 }}>ℹ️</span>
+        Phiên sẽ được <strong>mở ngay (Check-in)</strong>. Thanh toán sẽ thực hiện khi Check-out.
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Chọn sân */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <MapPin size={18} /> Chọn sân
+        <div
+          style={{
+            background: "white",
+            borderRadius: 16,
+            padding: 20,
+            boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+            border: "1px solid #d1fae5",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#064e3b",
+              marginBottom: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span style={{ background: "#ecfdf5", borderRadius: 8, padding: "4px 8px", display: "flex", alignItems: "center" }}>
+              <MapPin size={16} color="#10b981" />
+            </span>
+            Chọn sân
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-            {courts.map((court) => (
-              <button
-                key={court._id}
-                type="button"
-                onClick={() => handleChange("courtId", court._id)}
-                className={`p-3 rounded-lg border-2 text-center transition ${
-                  form.courtId === court._id
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : court.currentStatus === "available"
-                      ? "border-gray-200 hover:border-green-300 bg-white"
-                      : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                }`}
-                disabled={court.currentStatus !== "available"}
-              >
-                <div className="font-bold">{court.name}</div>
-                <div className="text-xs mt-1">
-                  {court.currentStatus === "available"
-                    ? "🟢 Trống"
-                    : court.currentStatus === "in_use"
-                      ? "🟡 Đang mở phiên"
-                      : court.currentStatus === "reserved"
-                        ? "📅 Đã đặt"
-                        : "🔧 Bảo trì"}
-                </div>
-              </button>
-            ))}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+              gap: 10,
+            }}
+          >
+            {courts.map((court) => {
+              const info = courtStatusInfo[court.currentStatus] || courtStatusInfo.available;
+              const isSelected = form.courtId === court._id;
+              const isDisabled = court.currentStatus !== "available";
+              return (
+                <button
+                  key={court._id}
+                  type="button"
+                  onClick={() => !isDisabled && handleChange("courtId", court._id)}
+                  disabled={isDisabled}
+                  style={{
+                    padding: "12px 8px",
+                    borderRadius: 12,
+                    border: isSelected
+                      ? "2px solid #3b82f6"
+                      : `2px solid ${isDisabled ? "#e5e7eb" : info.bg}`,
+                    background: isSelected
+                      ? "linear-gradient(135deg, #eff6ff, #dbeafe)"
+                      : isDisabled
+                      ? "#f9fafb"
+                      : info.bg,
+                    cursor: isDisabled ? "not-allowed" : "pointer",
+                    opacity: isDisabled ? 0.55 : 1,
+                    textAlign: "center",
+                    transition: "all 0.2s",
+                    transform: isSelected ? "scale(1.03)" : "scale(1)",
+                    boxShadow: isSelected ? "0 4px 14px rgba(59,130,246,0.25)" : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 14,
+                      color: isSelected ? "#1d4ed8" : info.text,
+                    }}
+                  >
+                    {court.name}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                      marginTop: 5,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: "50%",
+                        background: isSelected ? "#3b82f6" : info.dot,
+                      }}
+                    />
+                    <span style={{ fontSize: 10, color: isSelected ? "#1d4ed8" : info.text, fontWeight: 600 }}>
+                      {info.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          {selectedCourt && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: "8px 14px",
+                background: "#eff6ff",
+                borderRadius: 8,
+                fontSize: 13,
+                color: "#1d4ed8",
+                fontWeight: 600,
+                border: "1px solid #bfdbfe",
+              }}
+            >
+              ✓ Đã chọn: {selectedCourt.name}
+            </div>
+          )}
         </div>
 
         {/* Thời gian */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <Clock size={18} /> Thời gian
+        <div
+          style={{
+            background: "white",
+            borderRadius: 16,
+            padding: 20,
+            boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+            border: "1px solid #d1fae5",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#064e3b",
+              marginBottom: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span style={{ background: "#ecfdf5", borderRadius: 8, padding: "4px 8px", display: "flex", alignItems: "center" }}>
+              <Clock size={16} color="#10b981" />
+            </span>
+            Thời gian
           </h3>
-          <div className="flex flex-col sm:flex-row gap-3 mb-3">
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => handleChange("date", e.target.value)}
-              className="border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <div className="flex gap-2 items-center">
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 14 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                Ngày
+              </label>
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => handleChange("date", e.target.value)}
+                style={{
+                  border: "1.5px solid #d1fae5",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  color: "#064e3b",
+                  background: "#f9fffe",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                Bắt đầu
+              </label>
               <input
                 type="time"
                 value={form.startTime}
                 onChange={(e) => handleChange("startTime", e.target.value)}
-                className="border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Bắt đầu"
+                style={{
+                  border: "1.5px solid #d1fae5",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  color: "#064e3b",
+                  background: "#f9fffe",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
               />
-              <span className="text-gray-400">→</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 9, color: "#9ca3af" }}>
+              →
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                Kết thúc
+              </label>
               <input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => handleChange("endTime", e.target.value)}
-                className="border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Kết thúc"
+                style={{
+                  border: "1.5px solid #d1fae5",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  color: "#064e3b",
+                  background: "#f9fffe",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
               />
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+
+          {/* Quick time slots */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "flex", alignItems: "center", gap: 4 }}>
+              <Zap size={12} /> Nhanh:
+            </span>
             {quickSlots.map((slot) => (
               <button
                 key={slot.minutes}
                 type="button"
                 onClick={() => applyQuickSlot(slot.minutes)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm transition"
+                style={{
+                  background: "#ecfdf5",
+                  border: "1px solid #a7f3d0",
+                  color: "#065f46",
+                  padding: "5px 12px",
+                  borderRadius: 99,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = "#d1fae5";
+                  e.target.style.borderColor = "#6ee7b7";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = "#ecfdf5";
+                  e.target.style.borderColor = "#a7f3d0";
+                }}
               >
-                ⚡ {slot.label}
+                {slot.label}
               </button>
             ))}
           </div>
         </div>
 
         {/* Thông tin khách */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <User size={18} /> Thông tin khách
+        <div
+          style={{
+            background: "white",
+            borderRadius: 16,
+            padding: 20,
+            boxShadow: "0 2px 8px rgba(4,120,87,0.06)",
+            border: "1px solid #d1fae5",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#064e3b",
+              marginBottom: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span style={{ background: "#ecfdf5", borderRadius: 8, padding: "4px 8px", display: "flex", alignItems: "center" }}>
+              <User size={16} color="#10b981" />
+            </span>
+            Thông tin khách <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400 }}>(tuỳ chọn)</span>
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 4 }}>
                 Tên khách
               </label>
               <input
                 type="text"
                 value={form.customerName}
                 onChange={(e) => handleChange("customerName", e.target.value)}
-                placeholder="Nhập tên (tuỳ chọn)"
-                className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Nhập tên khách..."
+                style={{
+                  width: "100%",
+                  border: "1.5px solid #d1fae5",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  background: "#f9fffe",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500 mb-1 block flex items-center gap-1">
-                <Phone size={14} /> Số điện thoại
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                <Phone size={12} /> Số điện thoại
               </label>
               <input
                 type="tel"
                 value={form.customerPhone}
                 onChange={(e) => handleChange("customerPhone", e.target.value)}
-                placeholder="Nhập SĐT"
-                className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Nhập SĐT..."
+                style={{
+                  width: "100%",
+                  border: "1.5px solid #d1fae5",
+                  borderRadius: 10,
+                  padding: "9px 12px",
+                  fontSize: 13,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  background: "#f9fffe",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
               />
             </div>
           </div>
-        </div>
-
-        {/* Note */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <input
-            type="text"
-            value={form.note}
-            onChange={(e) => handleChange("note", e.target.value)}
-            placeholder="Ghi chú (tuỳ chọn)..."
-            className="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {/* Info box */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
-          ℹ️ Phiên sẽ được mở ngay (Check-in). Thanh toán sẽ thực hiện khi
-          Check-out.
+          <div style={{ marginTop: 12 }}>
+            <input
+              type="text"
+              value={form.note}
+              onChange={(e) => handleChange("note", e.target.value)}
+              placeholder="Ghi chú (tuỳ chọn)..."
+              style={{
+                width: "100%",
+                border: "1.5px solid #d1fae5",
+                borderRadius: 10,
+                padding: "9px 12px",
+                fontSize: 13,
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+                background: "#f9fffe",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#10b981")}
+              onBlur={(e) => (e.target.style.borderColor = "#d1fae5")}
+            />
+          </div>
         </div>
 
         {/* Submit */}
         <button
           type="submit"
-          disabled={
-            submitting || !form.courtId || !form.startTime || !form.endTime
-          }
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2"
+          disabled={submitting || !form.courtId || !form.startTime || !form.endTime}
+          style={{
+            width: "100%",
+            background:
+              submitting || !form.courtId || !form.startTime || !form.endTime
+                ? "#e5e7eb"
+                : "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+            color:
+              submitting || !form.courtId || !form.startTime || !form.endTime
+                ? "#9ca3af"
+                : "white",
+            border: "none",
+            borderRadius: 14,
+            padding: "16px",
+            fontSize: 15,
+            fontWeight: 800,
+            cursor:
+              submitting || !form.courtId || !form.startTime || !form.endTime
+                ? "not-allowed"
+                : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            fontFamily: "inherit",
+            transition: "all 0.25s",
+            boxShadow:
+              !form.courtId || !form.startTime || !form.endTime
+                ? "none"
+                : "0 6px 20px rgba(59,130,246,0.4)",
+          }}
         >
           {submitting ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <>
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: "3px solid rgba(255,255,255,0.4)",
+                  borderTopColor: "white",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              Đang xử lý...
+            </>
           ) : (
             <>
               <UserPlus size={20} />
