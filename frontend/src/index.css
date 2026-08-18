@@ -2272,6 +2272,241 @@ body {
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-setting-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-setting-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-setting-section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-setting-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #64748b;
+}
+
+.admin-setting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-setting-field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-setting-field--compact {
+  max-width: 420px;
+}
+
+.admin-setting-field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.admin-setting-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-setting-field input:focus {
+  border-color: #0d9d57;
+  box-shadow: 0 0 0 3px rgba(13, 157, 87, 0.1);
+}
+
+.admin-setting-note {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.admin-setting-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-policy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-policy-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-policy-rule {
+  display: grid;
+  grid-template-columns: auto 90px auto auto 90px auto;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.admin-policy-rule-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.admin-policy-rule input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+}
+
+.admin-policy-rule input:focus {
+  border-color: #0d9d57;
+  box-shadow: 0 0 0 3px rgba(13, 157, 87, 0.1);
+}
+
+.admin-policy-rule-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-policy-rule-delete:hover {
+  background: #fef2f2;
+}
+
+.admin-policy-add-btn {
+  align-self: flex-start;
+}
+
+.admin-policy-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-policy-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-policy-header-row h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-policy-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.admin-policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-policy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.admin-policy-refund {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-policy-refund--full {
+  color: #16a34a;
+}
+
+.admin-policy-refund--mid {
+  color: #d97706;
+}
+
+.admin-policy-refund--low {
+  color: #dc2626;
+}
+
+.admin-policy-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-policy-delete-btn {
+  padding: 7px 12px;
 }
 
 /* Responsive */
@@ -2292,6 +2527,19 @@ body {
   .admin-filter-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .admin-setting-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-policy-rule {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-policy-rule-label,
+  .admin-policy-rule-delete {
+    justify-self: start;
   }
 }
 

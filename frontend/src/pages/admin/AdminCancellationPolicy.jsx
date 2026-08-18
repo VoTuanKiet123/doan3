@@ -93,7 +93,7 @@ export default function AdminCancellationPolicy() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Xoá chính sách này?")) return;
+    if (!window.confirm("Xoá chính sách này?")) return;
     try {
       await api.delete(`/cancellation-policy/${id}`);
       toast.success("Đã xoá");
@@ -105,101 +105,103 @@ export default function AdminCancellationPolicy() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
+      <div className="admin-page-content">
+        <div className="admin-loading">
+          <div className="admin-loading-spinner" />
+          <span>Đang tải dữ liệu...</span>
+        </div>
       </div>
     );
   }
 
+  const historyPolicies = policies.filter((policy) => !policy.isActive);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <ShieldAlert size={28} className="text-orange-600" />
-          Chính sách huỷ & No-show
-        </h1>
+    <div className="admin-page-content">
+      <div className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <ShieldAlert size={26} style={{ color: "#f59e0b" }} />
+              Chính sách huỷ &amp; No-show
+            </span>
+          </h1>
+          <p className="admin-page-subtitle">
+            Quản lý refund, chiến lược no-show và điều kiện huỷ đặt sân
+          </p>
+        </div>
         <button
           onClick={() => setEditing(!editing)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition"
+          className="admin-header-btn"
         >
           {editing
             ? "Huỷ chỉnh sửa"
             : activePolicy
-              ? "✏️ Chỉnh sửa"
-              : "➕ Tạo mới"}
+              ? "Chỉnh sửa"
+              : "Tạo mới"}
         </button>
       </div>
 
-      {/* Edit Form */}
       {editing && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-600 block mb-1">
-              Tên chính sách
-            </label>
+        <div className="admin-card admin-policy-form">
+          <div className="admin-setting-field">
+            <label htmlFor="policy-name">Tên chính sách</label>
             <input
+              id="policy-name"
               type="text"
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 outline-none"
+              placeholder="Ví dụ: Chính sách mặc định"
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-600 block mb-2">
-              Quy tắc hoàn tiền
-            </label>
-            <div className="space-y-2">
+          <div className="admin-setting-field">
+            <label>Quy tắc hoàn tiền</label>
+            <div className="admin-policy-rules">
               {form.rules.map((rule, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 bg-gray-50 rounded-lg p-3"
-                >
-                  <span className="text-sm text-gray-500">Huỷ trước</span>
+                <div key={i} className="admin-policy-rule">
+                  <span className="admin-policy-rule-label">Huỷ trước</span>
                   <input
                     type="number"
                     min="0"
                     value={rule.hoursBefore}
-                    onChange={(e) =>
-                      updateRule(i, "hoursBefore", e.target.value)
-                    }
-                    className="w-20 border rounded px-2 py-1.5 text-center focus:ring-2 focus:ring-green-500 outline-none"
+                    onChange={(e) => updateRule(i, "hoursBefore", e.target.value)}
                   />
-                  <span className="text-sm text-gray-500">giờ → hoàn</span>
+                  <span className="admin-policy-rule-label">giờ</span>
+                  <span className="admin-policy-rule-label">→ hoàn</span>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     value={rule.refundPercent}
-                    onChange={(e) =>
-                      updateRule(i, "refundPercent", e.target.value)
-                    }
-                    className="w-20 border rounded px-2 py-1.5 text-center focus:ring-2 focus:ring-green-500 outline-none"
+                    onChange={(e) => updateRule(i, "refundPercent", e.target.value)}
                   />
-                  <span className="text-sm text-gray-500">%</span>
+                  <span className="admin-policy-rule-label">%</span>
                   <button
+                    type="button"
                     onClick={() => removeRule(i)}
-                    className="ml-auto p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="admin-policy-rule-delete"
+                    aria-label="Xoá quy tắc"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               ))}
             </div>
-            <button
-              onClick={addRule}
-              className="mt-2 text-green-600 hover:text-green-700 text-sm flex items-center gap-1"
-            >
-              <Plus size={14} /> Thêm rule
+            <button type="button" onClick={addRule} className="admin-btn admin-btn--outline admin-policy-add-btn">
+              <Plus size={16} /> Thêm quy tắc
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1 flex items-center gap-1">
-                <Clock size={14} /> Thời gian no-show (phút)
+          <div className="admin-setting-grid">
+            <div className="admin-setting-field">
+              <label htmlFor="no-show-minutes">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Clock size={14} /> Thời gian no-show (phút)
+                </span>
               </label>
               <input
+                id="no-show-minutes"
                 type="number"
                 min="0"
                 value={form.noShowMinutes}
@@ -209,123 +211,120 @@ export default function AdminCancellationPolicy() {
                     noShowMinutes: parseInt(e.target.value) || 0,
                   }))
                 }
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 outline-none"
               />
-              <p className="text-xs text-gray-400 mt-1">
-                Quá thời gian này mà khách chưa đến → đánh dấu no-show
+              <p className="admin-setting-note">
+                Quá thời gian này mà khách không đến sẽ được đánh dấu no-show.
               </p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
-                Mô tả
-              </label>
+
+            <div className="admin-setting-field">
+              <label htmlFor="policy-description">Mô tả</label>
               <input
+                id="policy-description"
                 type="text"
                 value={form.description}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, description: e.target.value }))
-                }
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 outline-none"
-                placeholder="Mô tả ngắn gọn..."
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Mô tả ngắn gọn về chính sách..."
               />
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium transition flex items-center gap-2"
-          >
-            <Save size={18} />
-            Lưu chính sách
-          </button>
+          <div className="admin-setting-actions">
+            <button type="button" onClick={handleSave} className="admin-header-btn">
+              <Save size={16} /> Lưu chính sách
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Active Policy Display */}
       {!editing && activePolicy && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-              ĐANG ÁP DỤNG
-            </span>
-            <h2 className="text-lg font-bold">{activePolicy.name}</h2>
-          </div>
+        <div className="admin-card">
+          <div className="admin-policy-summary">
+            <div className="admin-policy-header-row">
+              <span className="admin-policy-badge">ĐANG ÁP DỤNG</span>
+              <h2>{activePolicy.name}</h2>
+            </div>
 
-          <div className="space-y-2 mb-4">
-            {activePolicy.rules
-              .sort((a, b) => b.hoursBefore - a.hoursBefore)
-              .map((rule, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-gray-50 rounded-lg p-3"
-                >
-                  <span className="text-sm">
-                    Huỷ trước <strong>≥ {rule.hoursBefore}h</strong> →{" "}
+            <div className="admin-policy-list">
+              {[...activePolicy.rules]
+                .sort((a, b) => b.hoursBefore - a.hoursBefore)
+                .map((rule, index) => (
+                  <div key={`${rule.hoursBefore}-${index}`} className="admin-policy-row">
+                    <span>Huỷ trước ≥ {rule.hoursBefore} giờ</span>
                     <strong
                       className={
                         rule.refundPercent === 100
-                          ? "text-green-600"
+                          ? "admin-policy-refund admin-policy-refund--full"
                           : rule.refundPercent >= 50
-                            ? "text-yellow-600"
-                            : "text-red-600"
+                            ? "admin-policy-refund admin-policy-refund--mid"
+                            : "admin-policy-refund admin-policy-refund--low"
                       }
                     >
                       Hoàn {rule.refundPercent}%
                     </strong>
-                  </span>
-                </div>
-              ))}
-          </div>
+                  </div>
+                ))}
+            </div>
 
-          <div className="text-sm text-gray-500">
-            <Clock size={14} className="inline mr-1" />
-            No-show sau: <strong>{activePolicy.noShowMinutes} phút</strong>
+            <div className="admin-policy-meta">
+              <Clock size={14} />
+              <span>No-show sau: {activePolicy.noShowMinutes} phút</span>
+            </div>
+
             {activePolicy.description && (
-              <p className="mt-1 text-gray-400">{activePolicy.description}</p>
+              <p className="admin-setting-note" style={{ margin: 0 }}>
+                {activePolicy.description}
+              </p>
             )}
           </div>
         </div>
       )}
 
       {!editing && !activePolicy && (
-        <div className="text-center py-12 text-gray-400">
-          <ShieldAlert size={48} className="mx-auto mb-3 opacity-50" />
+        <div className="admin-card admin-empty">
+          <ShieldAlert size={48} className="admin-empty-icon" />
           <p>Chưa có chính sách huỷ nào</p>
-          <p className="text-sm">Nhấn "Tạo mới" để thiết lập</p>
+          <span>Nhấn “Tạo mới” để thiết lập chính sách cho khách hàng.</span>
         </div>
       )}
 
-      {/* History */}
-      {policies.length > 1 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="font-bold text-gray-800 mb-3">
-            📋 Lịch sử chính sách
-          </h3>
-          <div className="space-y-2">
-            {policies
-              .filter((p) => !p.isActive)
-              .map((policy) => (
-                <div
-                  key={policy._id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-100"
-                >
-                  <div>
-                    <div className="font-medium text-sm">{policy.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {policy.rules
-                        .map((r) => `${r.hoursBefore}h→${r.refundPercent}%`)
-                        .join(" | ")}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(policy._id)}
-                    className="text-red-400 hover:text-red-600 p-1"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
+      {historyPolicies.length > 0 && (
+        <div className="admin-table-wrap">
+          <div className="admin-table-header">
+            <h2>Lịch sử chính sách</h2>
           </div>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Tên chính sách</th>
+                <th>Quy tắc</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historyPolicies.map((policy) => (
+                <tr key={policy._id}>
+                  <td>
+                    <strong style={{ color: "#1e293b" }}>{policy.name}</strong>
+                  </td>
+                  <td>
+                    {policy.rules
+                      .map((r) => `${r.hoursBefore}h → ${r.refundPercent}%`)
+                      .join(" | ")}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(policy._id)}
+                      className="admin-btn admin-btn--outline admin-policy-delete-btn"
+                    >
+                      <Trash2 size={14} /> Xoá
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

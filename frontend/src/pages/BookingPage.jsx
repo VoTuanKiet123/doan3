@@ -589,32 +589,47 @@ export default function BookingPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 animate-fadeIn">
-      {/* ========== TAB CHỌN HÌNH THỨC ĐẶT ========== */}
-      <div className="flex gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit">
-        <button
-          onClick={() => {
-            setBookingMode("casual");
-            setFmPreview(null);
-          }}
-          className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            bookingMode === "casual"
-              ? "bg-white text-green-700 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          🏸 Đặt vãng lai
-        </button>
-        <button
-          onClick={() => setBookingMode("fixed_monthly")}
-          className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            bookingMode === "fixed_monthly"
-              ? "bg-white text-green-700 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          📅 Đặt cố định theo tháng
-        </button>
+    <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 lg:px-8 animate-fadeIn">
+      <div className="mb-6 rounded-[26px] bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-500 px-5 py-4 shadow-[0_18px_36px_rgba(16,185,129,0.22)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3 text-white">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+              <Activity size={20} />
+            </div>
+            <div>
+              <div className="text-xl font-extrabold leading-none">Đặt lịch</div>
+              <div className="text-xs text-emerald-50/90 mt-1">
+                Chọn hình thức đặt sân phù hợp
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 bg-white/10 p-1.5 rounded-2xl backdrop-blur-sm">
+            <button
+              onClick={() => {
+                setBookingMode("casual");
+                setFmPreview(null);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                bookingMode === "casual"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              🏸 Đặt vãng lai
+            </button>
+            <button
+              onClick={() => setBookingMode("fixed_monthly")}
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                bookingMode === "fixed_monthly"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              📅 Đặt cố định theo tháng
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ========== MAINTENANCE WARNING ========== */}
@@ -694,27 +709,27 @@ export default function BookingPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* ==================== LEFT: FORM ==================== */}
-        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6 md:p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-emerald-600 inline-flex">
-              <Activity size={32} />
-            </span>
-            <span className="text-4xl">
-              {bookingMode === "casual" ? "🏸" : "📅"}
-            </span>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">
-                {bookingMode === "casual"
-                  ? `Đặt lịch: ${court.name}`
-                  : `Đặt cố định: ${court.name}`}
-              </h1>
-              <p className="text-slate-400 text-xs mt-0.5">
-                {court.pricePerHour?.toLocaleString("vi-VN")}đ / giờ
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_0.9fr] gap-6 xl:gap-8">
+        <div className="bg-white rounded-[28px] border border-slate-200 shadow-[0_12px_28px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5 md:px-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm">
+                <Activity size={24} />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-[2rem] font-extrabold tracking-[-0.03em] text-slate-800 leading-none">
+                  {bookingMode === "casual"
+                    ? `Đặt lịch: ${court.name}`
+                    : `Đặt cố định: ${court.name}`}
+                </h1>
+                <p className="text-slate-500 text-sm mt-2">
+                  {court.pricePerHour?.toLocaleString("vi-VN")}đ / giờ
+                </p>
+              </div>
             </div>
           </div>
+
+          <div className="p-6 md:p-8">
 
           {/* ===== CASUAL FORM ===== */}
           {bookingMode === "casual" && (
@@ -1103,7 +1118,6 @@ export default function BookingPage() {
                   )}
                 </label>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  =
                   {DAYS_OF_WEEK.map((d) => {
                     const active = fmDaysOfWeek.includes(d.value);
                     return (
@@ -1442,83 +1456,47 @@ export default function BookingPage() {
           )}
         </div>
 
-        {/* ==================== RIGHT: SUMMARY PANEL ==================== */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h3 className="font-bold text-slate-800 text-base">
-                {court.name}
-              </h3>
+        <div className="space-y-6">
+          <div className="bg-white rounded-[24px] border border-slate-200 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h3 className="font-extrabold text-slate-800 text-xl">{court.name}</h3>
               {(() => {
-                const cType =
-                  court.type ||
-                  (court.pricePerHour >= 70000
-                    ? "A"
-                    : court.pricePerHour >= 50000
-                      ? "B"
-                      : "C");
-                const label =
-                  cType === "A"
-                    ? "Sân A (VIP)"
-                    : cType === "B"
-                      ? "Sân B (Tiêu Chuẩn)"
-                      : "Sân C (Tiết Kiệm)";
-                const colorCls =
-                  cType === "A"
-                    ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : cType === "B"
-                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                      : "bg-blue-100 text-blue-800 border-blue-300";
-                return (
-                  <span
-                    className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${colorCls}`}
-                  >
-                    {label}
-                  </span>
-                );
+                const cType = court.type || (court.pricePerHour >= 70000 ? "A" : court.pricePerHour >= 50000 ? "B" : "C");
+                const label = cType === "A" ? "Sân A (VIP)" : cType === "B" ? "Sân B (Tiêu Chuẩn)" : "Sân C (Tiết Kiệm)";
+                const colorCls = cType === "A" ? "bg-amber-100 text-amber-800 border-amber-300" : cType === "B" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-blue-100 text-blue-800 border-blue-300";
+                return <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${colorCls}`}>{label}</span>;
               })()}
             </div>
-            <p className="text-slate-500 text-xs leading-relaxed mb-4">
+            <p className="text-slate-500 text-sm leading-relaxed mb-4">
               {court.description || "Sân cầu lông tiêu chuẩn chất lượng cao."}
             </p>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-              <div className="text-xs font-bold text-slate-700 mb-1">
-                Dịch vụ đi kèm theo loại sân:
-              </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+              <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500">Dịch vụ đi kèm theo loại sân</div>
               {Array.isArray(court.services) && court.services.length > 0 ? (
                 court.services.map((srv, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-1.5 text-xs text-slate-600 font-medium"
-                  >
+                  <div key={idx} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
                     <span className="text-emerald-600 font-bold">✓</span> {srv}
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-slate-500">
-                  Thảm thi đấu, chiếu sáng LED chống lóa, nước uống & quạt mát.
-                </div>
+                <div className="text-sm text-slate-500">Thảm thi đấu, chiếu sáng LED chống lóa, nước uống & quạt mát.</div>
               )}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-900 to-emerald-950 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full filter blur-xl"></div>
+          <div className="bg-gradient-to-br from-emerald-950 via-green-900 to-emerald-900 text-white rounded-[24px] p-5 shadow-[0_18px_30px_rgba(6,78,59,0.35)] relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl"></div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-base text-emerald-300">
-                Hóa Đơn Tạm Tính
-              </h3>
+              <h3 className="font-extrabold text-lg text-emerald-200">Hóa Đơn Tạm Tính</h3>
               {hasSpecialPrice && (
-                <span className="bg-amber-500/25 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 border border-amber-500/40 rounded-lg inline-flex items-center gap-1">
-                  <Zap size={10} /> GIỜ CAO ĐIỂM
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/10 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-amber-200">
+                  <Zap size={10} /> Giờ cao điểm
                 </span>
               )}
             </div>
 
             {pricingLoading ? (
-              <div className="text-center py-5 text-emerald-200/60 text-sm">
-                Đang tính giá...
-              </div>
+              <div className="text-center py-5 text-emerald-200/60 text-sm">Đang tính giá...</div>
             ) : totalPrice > 0 ? (
               <div>
                 <div className="flex flex-col gap-1.5 mb-3 text-sm text-emerald-200/80">
@@ -1528,82 +1506,48 @@ export default function BookingPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Thời gian:</span>
-                    <span className="font-bold text-white">
-                      {startTime} - {endTime}
-                    </span>
+                    <span className="font-bold text-white">{startTime} - {endTime}</span>
                   </div>
                 </div>
                 <div className="pt-3 border-t border-white/10 space-y-2">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-emerald-300 font-medium">
-                      Tiền sân:
-                    </span>
-                    <span className="font-bold text-white">
-                      {totalPrice.toLocaleString("vi-VN")}đ
-                    </span>
+                    <span className="text-sm text-emerald-300 font-medium">Tiền sân:</span>
+                    <span className="font-bold text-white">{totalPrice.toLocaleString("vi-VN")}đ</span>
                   </div>
 
-                  {/* Dịch vụ đi kèm */}
                   {serviceCart.length > 0 && (
                     <>
                       <div className="border-t border-white/5 pt-2 space-y-1">
                         {serviceCart.map((item) => (
-                          <div
-                            key={item.product}
-                            className="flex justify-between text-xs text-emerald-200/70"
-                          >
-                            <span>
-                              {item.productName} x{item.quantity}
-                            </span>
-                            <span>
-                              {(item.unitPrice * item.quantity).toLocaleString(
-                                "vi-VN",
-                              )}
-                              đ
-                            </span>
+                          <div key={item.product} className="flex justify-between text-xs text-emerald-200/70">
+                            <span>{item.productName} x{item.quantity}</span>
+                            <span>{(item.unitPrice * item.quantity).toLocaleString("vi-VN")}đ</span>
                           </div>
                         ))}
                         {serviceDeposit > 0 && (
                           <div className="flex justify-between text-xs text-amber-300/80">
                             <span>Tiền cọc thiết bị</span>
-                            <span>
-                              {serviceDeposit.toLocaleString("vi-VN")}đ
-                            </span>
+                            <span>{serviceDeposit.toLocaleString("vi-VN")}đ</span>
                           </div>
                         )}
                       </div>
                       <div className="pt-2 border-t border-white/10 flex justify-between items-baseline">
-                        <span className="text-sm text-emerald-300 font-medium">
-                          Tổng tiền:
-                        </span>
-                        <span className="text-2xl font-black text-amber-400">
-                          {(
-                            totalPrice +
-                            serviceSubtotal +
-                            serviceDeposit
-                          ).toLocaleString("vi-VN")}
-                          đ
-                        </span>
+                        <span className="text-sm text-emerald-300 font-medium">Tổng tiền:</span>
+                        <span className="text-2xl font-black text-amber-400">{(totalPrice + serviceSubtotal + serviceDeposit).toLocaleString("vi-VN")}đ</span>
                       </div>
                     </>
                   )}
 
                   {serviceCart.length === 0 && (
                     <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-emerald-300 font-medium">
-                        Tổng tiền:
-                      </span>
-                      <span className="text-2xl font-black text-amber-400">
-                        {totalPrice.toLocaleString("vi-VN")}đ
-                      </span>
+                      <span className="text-sm text-emerald-300 font-medium">Tổng tiền:</span>
+                      <span className="text-2xl font-black text-amber-400">{totalPrice.toLocaleString("vi-VN")}đ</span>
                     </div>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="text-xs text-emerald-300/60 py-2">
-                Vui lòng chọn ngày và giờ để hiển thị hóa đơn.
-              </div>
+              <div className="text-xs text-emerald-300/60 py-2">Vui lòng chọn ngày và giờ để hiển thị hóa đơn.</div>
             )}
           </div>
         </div>

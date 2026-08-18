@@ -876,9 +876,9 @@ export default function POSCheckIn() {
                 ) && (
                   <button
                     onClick={() => setShowRescheduleModal(true)}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm transition"
+                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1"
                   >
-                    🔄 Đổi giờ
+                    <RefreshCw size={15} /> Đặt lịch lại
                   </button>
                 )}
               </div>
@@ -1421,39 +1421,66 @@ export default function POSCheckIn() {
       {/* ===== RESCHEDULE MODAL ===== */}
       {showRescheduleModal && selectedBooking && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowRescheduleModal(false)}
         >
           <div
-            className="bg-white rounded-xl p-6 max-w-md w-full mx-4"
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-blue-600 mb-3">
-              🔄 Dời lịch
-            </h3>
-            <div className="text-sm text-gray-600 mb-4">
-              <p>
-                Hiện tại:{" "}
-                <strong>
-                  {selectedBooking.date} · {selectedBooking.startTime} -{" "}
-                  {selectedBooking.endTime}
-                </strong>
-              </p>
-              <p>Sân: {selectedBooking.court?.name}</p>
+            <div className="bg-gradient-to-r from-emerald-600 to-green-500 px-5 py-4">
+              <div className="flex items-center gap-3 text-white">
+                <div className="bg-white/20 rounded-lg p-2">
+                  <RefreshCw size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Đặt lịch lại</h3>
+                  <p className="text-xs text-emerald-50/90">
+                    Dời khung giờ phù hợp cho khách
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleReschedule}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition"
-              >
-                Xác nhận dời
-              </button>
-              <button
-                onClick={() => setShowRescheduleModal(false)}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-medium transition"
-              >
-                Đóng
-              </button>
+
+            <div className="p-5">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mb-4">
+                <div className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500 mb-2">
+                  Thông tin hiện tại
+                </div>
+                <div className="space-y-2 text-sm text-slate-700">
+                  <p>
+                    <span className="font-medium text-slate-500">Sân:</span>{" "}
+                    <strong>{selectedBooking.court?.name}</strong>
+                  </p>
+                  <p>
+                    <span className="font-medium text-slate-500">Khung giờ:</span>{" "}
+                    <strong>
+                      {selectedBooking.date} · {selectedBooking.startTime} -{" "}
+                      {selectedBooking.endTime}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600 leading-6 mb-5">
+                Hệ thống sẽ cập nhật lại lịch đặt cho khách theo thời gian mới phù
+                hợp và giữ nguyên thông tin sân, dịch vụ đi kèm.
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReschedule}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-semibold transition shadow-md hover:shadow-lg"
+                >
+                  Xác nhận đặt lại
+                </button>
+                <button
+                  onClick={() => setShowRescheduleModal(false)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold transition"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
