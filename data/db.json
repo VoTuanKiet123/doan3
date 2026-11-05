@@ -91,6 +91,26 @@
       "phone": "+84866994249",
       "createdAt": "2026-06-15T14:46:57.848Z",
       "updatedAt": "2026-06-15T14:46:57.848Z"
+    },
+    {
+      "_id": "user_083ias6pv",
+      "name": "Nhân Viên Quầy",
+      "email": "posstaff@badminton.com",
+      "password": "$2a$10$vACsGAjapZzhYAdqDjfF0e.yvq.wTbEA9JxjZMje8MSyG7aZ54qXC",
+      "phone": "0987654321",
+      "role": "pos_staff",
+      "createdAt": "2026-11-05T12:40:10.227Z",
+      "updatedAt": "2026-11-05T12:40:10.229Z"
+    },
+    {
+      "_id": "user_8pev0te02",
+      "name": "Lễ Tân Ca 2",
+      "email": "posstaff2@badminton.com",
+      "password": "$2a$10$J1TEJSNtikzKBWo6Hj2xmestPTu5msjpRO9b0ty.ByNeeJABDVNOW",
+      "phone": "0987654322",
+      "role": "pos_staff",
+      "createdAt": "2026-11-05T12:40:10.298Z",
+      "updatedAt": "2026-11-05T12:40:10.298Z"
     }
   ],
   "bookings": [

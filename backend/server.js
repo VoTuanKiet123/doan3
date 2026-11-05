@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const connectDB = require("./src/config/db");
+const { stopLocalMongo } = require("./src/config/db");
 
 // Tạo thư mục uploads nếu chưa có
 const uploadsDir = path.join(__dirname, "uploads");
@@ -31,9 +32,6 @@ const {
 const {
   cleanupExpiredTransactions,
 } = require("./src/controllers/vnpayController");
-
-// Connect to MongoDB
-connectDB();
 
 const app = express();
 
@@ -101,11 +99,22 @@ const cleanupInterval = setInterval(async () => {
   }
 }, 60 * 1000);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
-});
+// Kết nối DB xong mới mở cổng, tránh request bị treo khi DB chưa sẵn sàng
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Không khởi động được database:", err);
+    process.exit(1);
+  });
 
-process.on("SIGINT", () => {
+const shutdown = async () => {
   clearInterval(cleanupInterval);
+  await stopLocalMongo();
   process.exit(0);
-});
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

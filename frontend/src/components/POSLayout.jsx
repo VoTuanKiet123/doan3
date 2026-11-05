@@ -103,7 +103,7 @@ export default function POSLayout() {
         {/* Header */}
         <div className="pos-sidebar-header">
           <div className="pos-sidebar-logo">
-            <Activity size={22} color="white" />
+            <Activity size={18} />
           </div>
           <div className="pos-sidebar-brand">
             <span className="pos-sidebar-title">BadmintonHub</span>
@@ -159,6 +159,7 @@ export default function POSLayout() {
               onClick={handleLogout}
               className="pos-sidebar-logout"
               title="Đăng xuất"
+              aria-label="Đăng xuất"
             >
               <LogOut size={16} />
             </button>
@@ -174,7 +175,8 @@ export default function POSLayout() {
             <button
               className="pos-menu-btn"
               onClick={() => setMenuOpen(!menuOpen)}
-              title="Menu"
+              aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
+              aria-expanded={menuOpen}
             >
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -182,21 +184,8 @@ export default function POSLayout() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span className="pos-topbar-time">{currentTime}</span>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                borderRadius: 99,
-                padding: "4px 12px",
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#065f46",
-              }}
-            >
-              <BadgeCheck size={14} color="#10b981" />
+            <div className="pos-topbar-user">
+              <BadgeCheck size={14} />
               {user?.name}
             </div>
           </div>

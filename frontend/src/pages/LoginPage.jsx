@@ -19,6 +19,8 @@ export default function LoginPage() {
       toast.success(`Chào mừng trở lại, ${user.name}!`);
       if (user.role === 'admin') {
         navigate('/admin');
+      } else if (user.role === 'pos_staff') {
+        navigate('/pos');
       } else {
         navigate('/courts');
       }

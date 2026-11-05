@@ -11,7 +11,7 @@ export default function Footer() {
         <div>
           <div className="footer-brand-logo">
             <div className="footer-brand-icon">
-              <Activity size={20} className="text-white" />
+              <Activity size={18} className="text-white" />
             </div>
             <span className="footer-brand-name">
               Badminton<span>Hub</span>
@@ -33,7 +33,7 @@ export default function Footer() {
               { id: 'tiktok', icon: <Music size={18} /> },
               { id: 'zalo', icon: <MessageCircle size={18} /> }
             ].map(s => (
-              <div key={s.id} style={{ width: 36, height: 36, borderRadius: 8, background: '#2a3040', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ba6bb' }}>
+              <div key={s.id} className="footer-social" aria-label={s.id}>
                 {s.icon}
               </div>
             ))}
@@ -42,18 +42,18 @@ export default function Footer() {
 
         {/* Links: Khám phá */}
         <div>
-          <h4 className="footer-col-title">Khám Phá</h4>
+          <h4 className="footer-col-title">Khám phá</h4>
           <div className="footer-links">
-            <Link to="/" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/" className="footer-link">
               <Home size={14} /> Trang chủ
             </Link>
-            <Link to="/courts" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/courts" className="footer-link">
               <Volleyball size={14} /> Danh sách sân
             </Link>
-            <Link to="/my-bookings" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/my-bookings" className="footer-link">
               <Calendar size={14} /> Lịch đặt của tôi
             </Link>
-            <Link to="/register" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/register" className="footer-link">
               <Sparkles size={14} /> Đăng ký miễn phí
             </Link>
           </div>
@@ -61,18 +61,18 @@ export default function Footer() {
 
         {/* Hỗ trợ */}
         <div>
-          <h4 className="footer-col-title">Hỗ Trợ</h4>
+          <h4 className="footer-col-title">Hỗ trợ</h4>
           <div className="footer-links">
-            <a href="#" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <a href="#" className="footer-link">
               <HelpCircle size={14} /> Câu hỏi thường gặp
             </a>
-            <a href="#" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <a href="#" className="footer-link">
               <Phone size={14} /> Liên hệ hỗ trợ
             </a>
-            <a href="#" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <a href="#" className="footer-link">
               <Lock size={14} /> Chính sách bảo mật
             </a>
-            <a href="#" className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <a href="#" className="footer-link">
               <FileText size={14} /> Điều khoản sử dụng
             </a>
           </div>
@@ -80,18 +80,18 @@ export default function Footer() {
 
         {/* Liên hệ */}
         <div>
-          <h4 className="footer-col-title">Liên Hệ</h4>
+          <h4 className="footer-col-title">Liên hệ</h4>
           <div className="footer-links">
-            <span className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span className="footer-link">
               <MapPin size={14} /> TP. Hồ Chí Minh, Việt Nam
             </span>
-            <span className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span className="footer-link">
               <Phone size={14} /> 0901 234 567
             </span>
-            <span className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span className="footer-link">
               <Mail size={14} /> support@badmintonhub.vn
             </span>
-            <span className="footer-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span className="footer-link">
               <Clock size={14} /> 05:00 – 23:00 hàng ngày
             </span>
           </div>
@@ -100,12 +100,12 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <p className="footer-copyright">
-          © {year} BadmintonHub. Thiết kế với ❤️ cho cộng đồng cầu lông Việt Nam.
+          © {year} BadmintonHub. Dành cho cộng đồng cầu lông Việt Nam.
         </p>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="#" className="footer-link" style={{ fontSize: 11 }}>Chính sách bảo mật</a>
-          <a href="#" className="footer-link" style={{ fontSize: 11 }}>Điều khoản</a>
-          <a href="#" className="footer-link" style={{ fontSize: 11 }}>Sitemap</a>
+          <a href="#" className="footer-link">Chính sách bảo mật</a>
+          <a href="#" className="footer-link">Điều khoản</a>
+          <a href="#" className="footer-link">Sitemap</a>
         </div>
       </div>
     </footer>

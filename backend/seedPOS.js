@@ -1,4 +1,5 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
 const User = require("./src/models/User");
 const CancellationPolicy = require("./src/models/CancellationPolicy");
 const connectDB = require("./src/config/db");
@@ -72,6 +73,13 @@ const seedPOSData = async () => {
     }
 
     // ========== Tạo Cancellation Policy mặc định ==========
+    // Chế độ JSON file (không kết nối được MongoDB) không hỗ trợ model này,
+    // nên bỏ qua thay vì để script bị treo rồi báo lỗi.
+    if (mongoose.connection.readyState !== 1) {
+      console.log("ℹ️  Đang dùng JSON file DB → bỏ qua tạo Chính sách huỷ.");
+      console.log("\n🎉 Seed dữ liệu POS hoàn tất!");
+      process.exit(0);
+    }
     const existingPolicy = await CancellationPolicy.findOne({ isActive: true });
 
     if (!existingPolicy) {

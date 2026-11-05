@@ -178,7 +178,7 @@ function ReviewForm({ booking, onSubmitted }) {
           style={{
             width: '100%', padding: '12px 14px', borderRadius: 12,
             border: '1.5px solid var(--border)', outline: 'none',
-            fontFamily: 'Nunito, sans-serif', fontSize: 13, resize: 'vertical',
+            fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 13, resize: 'vertical',
             color: 'var(--text-primary)', transition: 'border-color 0.2s',
             background: 'var(--surface-2)', lineHeight: 1.6,
           }}
@@ -199,7 +199,7 @@ function ReviewForm({ booking, onSubmitted }) {
           color: rating ? 'white' : '#9ca3af',
           border: 'none', borderRadius: 999, padding: '14px',
           fontWeight: 800, fontSize: 15, cursor: rating ? 'pointer' : 'not-allowed',
-          fontFamily: 'Nunito, sans-serif', transition: 'all 0.25s',
+          fontFamily: 'Be Vietnam Pro, sans-serif', transition: 'all 0.25s',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           boxShadow: rating ? '0 6px 20px rgba(245,158,11,0.35)' : 'none',
         }}
@@ -315,7 +315,7 @@ export default function ReviewPage() {
                   background: activeTab === tab.id ? 'white' : 'transparent',
                   color: activeTab === tab.id ? '#d97706' : 'rgba(255,255,255,0.9)',
                   fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
-                  fontFamily: 'Nunito, sans-serif', display: 'flex', alignItems: 'center',
+                  fontFamily: 'Be Vietnam Pro, sans-serif', display: 'flex', alignItems: 'center',
                   justifyContent: 'center', gap: 6,
                   boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
                 }}
@@ -348,7 +348,7 @@ export default function ReviewPage() {
                   <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Star size={18} color="#f59e0b" fill="#f59e0b" /> Đánh giá sân
                   </div>
-                  <button onClick={() => setSelectedBooking(null)} style={{ background: 'var(--surface-2)', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'Nunito, sans-serif' }}>
+                  <button onClick={() => setSelectedBooking(null)} style={{ background: 'var(--surface-2)', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'Be Vietnam Pro, sans-serif' }}>
                     ← Đổi sân
                   </button>
                 </div>
@@ -388,7 +388,7 @@ export default function ReviewPage() {
                           borderBottom: idx < reviewable.length - 1 ? '1px solid var(--border-light)' : 'none',
                           background: 'transparent', cursor: 'pointer',
                           display: 'flex', alignItems: 'center', gap: 14,
-                          transition: 'background 0.15s', fontFamily: 'Nunito, sans-serif',
+                          transition: 'background 0.15s', fontFamily: 'Be Vietnam Pro, sans-serif',
                           textAlign: 'left',
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = '#fffbeb'}
@@ -439,7 +439,7 @@ export default function ReviewPage() {
                   style={{
                     background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                     color: 'white', border: 'none', borderRadius: 999, padding: '12px 28px',
-                    fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Nunito, sans-serif',
+                    fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Be Vietnam Pro, sans-serif',
                     display: 'inline-flex', alignItems: 'center', gap: 8,
                     boxShadow: '0 6px 20px rgba(245,158,11,0.35)',
                   }}

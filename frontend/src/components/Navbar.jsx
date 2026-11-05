@@ -7,10 +7,10 @@ import {
   Volleyball,
   CalendarDays,
   Settings,
-  User,
   LogOut,
   Calendar,
   Activity,
+  Star,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -50,148 +50,109 @@ export default function Navbar() {
     setMenuOpen(false);
   };
 
+  const closeMenu = () => setMenuOpen(false);
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
-    { path: "/", label: "Trang chủ", icon: <Home size={15} /> },
-    { path: "/courts", label: "Sân cầu lông", icon: <Volleyball size={15} /> },
+    { path: "/", label: "Trang chủ", icon: <Home size={16} /> },
+    { path: "/courts", label: "Sân cầu lông", icon: <Volleyball size={16} /> },
     ...(user
       ? [
           {
             path: "/my-bookings",
             label: "Lịch của tôi",
-            icon: <CalendarDays size={15} />,
+            icon: <CalendarDays size={16} />,
           },
+          { path: "/reviews", label: "Đánh giá", icon: <Star size={16} /> },
         ]
       : []),
     ...(isAdmin
-      ? [{ path: "/admin", label: "Quản trị", icon: <Settings size={15} /> }]
+      ? [{ path: "/admin", label: "Quản trị", icon: <Settings size={16} /> }]
       : []),
     ...(isPosStaff
-      ? [{ path: "/pos", label: "POS Bán hàng", icon: <Activity size={15} /> }]
+      ? [{ path: "/pos", label: "POS Bán hàng", icon: <Activity size={16} /> }]
       : []),
   ];
 
   return (
     <nav className="alob-header">
-      {/* Top row: Logo | Date | Auth buttons */}
-      <div
-        className="alob-header-top"
-        style={{ maxWidth: 1200, margin: "0 auto" }}
-      >
+      <div className="alob-header-top">
         {/* Logo */}
-        <Link
-          to="/"
-          className="alob-header-logo"
-          onClick={() => setMenuOpen(false)}
-        >
+        <Link to="/" className="alob-header-logo" onClick={closeMenu}>
           <div className="alob-header-logo-icon">
-            <Activity size={24} className="text-white animate-pulse" />
+            <Activity size={20} />
           </div>
           <div className="alob-header-logo-text">
             <span className="alob-header-logo-title">BadmintonHub</span>
-            <span className="alob-header-logo-sub">Đặt sân Online</span>
+            <span className="alob-header-logo-sub">Đặt sân online</span>
           </div>
         </Link>
 
-        {/* Date (center, hidden on mobile) */}
-        <span
-          className="alob-header-date"
-          style={{ display: "none" }}
-          id="date-label-desktop"
-        >
-          {dateLabel}
-        </span>
+        {/* Links (desktop) */}
+        <div className="alob-nav-links">
+          {navLinks.map(({ path, label, icon }) => (
+            <Link
+              key={path}
+              to={path}
+              className={`alob-nav-link ${isActive(path) ? "alob-nav-link--active" : ""}`}
+              aria-current={isActive(path) ? "page" : undefined}
+            >
+              {icon}
+              {label}
+            </Link>
+          ))}
+        </div>
 
-        {/* Auth area - Desktop */}
+        {/* Date + auth */}
         <div className="alob-header-actions">
+          <span className="alob-header-date">
+            <Calendar size={14} /> {dateLabel}
+          </span>
+
           {user ? (
             <div className="alob-header-user">
-              <User size={18} strokeWidth={2} />
+              <div className="alob-header-avatar" aria-hidden="true">
+                {user.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
               <span className="alob-header-username">{user.name}</span>
               <button
                 onClick={handleLogout}
                 className="alob-header-logout"
-                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                aria-label="Đăng xuất"
               >
-                <LogOut size={14} />
-                Đăng xuất
+                <LogOut size={15} />
+                <span className="alob-header-logout-label">Đăng xuất</span>
               </button>
             </div>
           ) : (
-            <>
+            <div className="alob-header-guest">
               <Link
                 to="/login"
                 className="alob-header-btn alob-header-btn-login"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
                 className="alob-header-btn alob-header-btn-register"
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 Đăng ký
               </Link>
-            </>
+            </div>
           )}
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden"
-            style={{
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 8,
-              padding: "6px 8px",
-              cursor: "pointer",
-              color: "white",
-              marginLeft: 4,
-              display: "inline-flex",
-              alignItems: "center",
-            }}
+            className="alob-menu-toggle"
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menu"
+            aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
+            aria-expanded={menuOpen}
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-      </div>
-
-      {/* Nav links row (visible on desktop) */}
-      <div
-        className="alob-nav-links hidden md:flex"
-        style={{ maxWidth: 1200, margin: "0 auto" }}
-      >
-        {navLinks.map(({ path, label, icon }) => (
-          <Link
-            key={path}
-            to={path}
-            className={`alob-nav-link ${isActive(path) ? "alob-nav-link--active" : ""}`}
-            onClick={() => setMenuOpen(false)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            {icon}
-            {label}
-          </Link>
-        ))}
-        <span
-          className="alob-header-date"
-          style={{
-            marginLeft: "auto",
-            fontSize: 12,
-            color: "rgba(255,255,255,0.8)",
-            fontWeight: 600,
-            alignSelf: "center",
-            paddingRight: 8,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-          }}
-        >
-          <Calendar size={13} /> {dateLabel}
-        </span>
       </div>
 
       {/* Mobile menu */}
@@ -202,47 +163,21 @@ export default function Navbar() {
               key={path}
               to={path}
               className={`alob-mobile-link ${isActive(path) ? "alob-mobile-link--active" : ""}`}
-              onClick={() => setMenuOpen(false)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              onClick={closeMenu}
             >
               {icon}
               {label}
             </Link>
           ))}
           {!user && (
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <Link
-                to="/login"
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  padding: "10px 0",
-                  background: "#f0fdf4",
-                  color: "#0D9D57",
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  textDecoration: "none",
-                  border: "1.5px solid #b8e8ce",
-                }}
-              >
+            <div className="alob-mobile-auth">
+              <Link to="/login" onClick={closeMenu} className="btn btn-outline">
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  padding: "10px 0",
-                  background: "#0D9D57",
-                  color: "white",
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  textDecoration: "none",
-                }}
+                onClick={closeMenu}
+                className="btn btn-primary"
               >
                 Đăng ký
               </Link>

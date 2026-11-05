@@ -156,7 +156,7 @@ export default function ReviewModal({ booking, onClose, onSuccess }) {
                 padding: '12px 14px',
                 borderRadius: 12,
                 border: '1.5px solid var(--border)',
-                fontFamily: 'Nunito, sans-serif',
+                fontFamily: 'Be Vietnam Pro, sans-serif',
                 fontSize: 13,
                 color: 'var(--text-primary)',
                 resize: 'none',
@@ -182,7 +182,7 @@ export default function ReviewModal({ booking, onClose, onSuccess }) {
                 border: '1.5px solid var(--border)',
                 background: 'white', color: 'var(--text-secondary)',
                 fontWeight: 800, fontSize: 13, cursor: 'pointer',
-                fontFamily: 'Nunito, sans-serif', transition: 'all 0.2s',
+                fontFamily: 'Be Vietnam Pro, sans-serif', transition: 'all 0.2s',
               }}
             >
               Huỷ
@@ -196,7 +196,7 @@ export default function ReviewModal({ booking, onClose, onSuccess }) {
                 background: rating ? 'linear-gradient(135deg, #0D9D57, #1aaf64)' : '#e5e7eb',
                 color: rating ? 'white' : '#9ca3af',
                 fontWeight: 800, fontSize: 13, cursor: rating ? 'pointer' : 'not-allowed',
-                fontFamily: 'Nunito, sans-serif', transition: 'all 0.2s',
+                fontFamily: 'Be Vietnam Pro, sans-serif', transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 boxShadow: rating ? '0 4px 12px rgba(13,157,87,0.3)' : 'none',
               }}

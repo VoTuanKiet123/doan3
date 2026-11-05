@@ -1454,6 +1454,7 @@ export default function BookingPage() {
               </div>
             </form>
           )}
+          </div>
         </div>
 
         <div className="space-y-6">

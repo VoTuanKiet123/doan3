@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard,
@@ -16,6 +17,8 @@ import {
   BarChart3,
   ShieldAlert,
   Settings,
+  Menu,
+  X,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -81,6 +84,14 @@ const sidebarLinks = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
+
+  const currentLabel =
+    sidebarLinks.find((l) =>
+      l.end ? location.pathname === l.to : location.pathname.startsWith(l.to),
+    )?.label || "Quản trị";
 
   const handleLogout = () => {
     logout();
@@ -89,25 +100,32 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-layout">
+      {/* Overlay for mobile */}
+      <div
+        className={`admin-sidebar-overlay ${menuOpen ? "admin-sidebar--open" : ""}`}
+        onClick={closeMenu}
+      />
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${menuOpen ? "admin-sidebar--open" : ""}`}>
         <div className="admin-sidebar-header">
           <div className="admin-sidebar-logo">
-            <Activity size={24} className="text-white animate-pulse" />
+            <Activity size={18} />
           </div>
           <div className="admin-sidebar-brand">
             <span className="admin-sidebar-title">BadmintonHub</span>
-            <span className="admin-sidebar-badge">Admin</span>
+            <span className="admin-sidebar-badge">Quản trị</span>
           </div>
         </div>
 
         <nav className="admin-sidebar-nav">
-          <div className="admin-sidebar-section-label">MENU CHÍNH</div>
+          <div className="admin-sidebar-section-label">Menu chính</div>
           {sidebarLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               end={link.end}
+              onClick={closeMenu}
               className={({ isActive }) =>
                 `admin-sidebar-link ${isActive ? "admin-sidebar-link--active" : ""}`
               }
@@ -122,6 +140,7 @@ export default function AdminLayout() {
           <NavLink
             to="/"
             className="admin-sidebar-link admin-sidebar-link--back"
+            onClick={closeMenu}
           >
             <span className="admin-sidebar-link-icon">
               <Globe size={18} />
@@ -140,11 +159,7 @@ export default function AdminLayout() {
               onClick={handleLogout}
               className="admin-sidebar-logout"
               title="Đăng xuất"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              aria-label="Đăng xuất"
             >
               <LogOut size={16} />
             </button>
@@ -154,6 +169,18 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="admin-main">
+        {/* Top bar (mobile/tablet only) */}
+        <div className="admin-mobile-bar">
+          <button
+            className="admin-menu-btn"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="admin-mobile-bar-title">{currentLabel}</span>
+        </div>
         <Outlet />
       </main>
     </div>
