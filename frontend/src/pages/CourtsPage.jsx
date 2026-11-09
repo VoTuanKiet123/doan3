@@ -90,6 +90,7 @@ export default function CourtsPage() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all"); // all, A, B, C
   const [filterStatus, setFilterStatus] = useState("all"); // all, active, maintenance
+  const [suspendedIds, setSuspendedIds] = useState([]); // sân tạm ngưng vì báo cáo sự cố (N1.7)
   const { user } = useAuth();
 
   useEffect(() => {
@@ -100,6 +101,11 @@ export default function CourtsPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    api
+      .get("/maintenance/active-courts")
+      .then((res) => setSuspendedIds((res.data.suspendedCourts || []).map(String)))
+      .catch(() => {});
   }, []);
 
   // Helper function to get type for legacy courts
@@ -578,8 +584,10 @@ export default function CourtsPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {filtered.map((court, idx) => {
-                const isUnderMaintenance = court.status === "maintenance";
-                const isAvailable = court.status === "active";
+                const isSuspended = suspendedIds.includes(String(court._id));
+                const isUnderMaintenance =
+                  court.status === "maintenance" || isSuspended;
+                const isAvailable = court.status === "active" && !isSuspended;
                 const cType = getCourtType(court);
                 const tierInfo = COURT_TIERS[cType] || COURT_TIERS.A;
                 const courtServices = getCourtServices(court);
@@ -710,7 +718,7 @@ export default function CourtsPage() {
                                 size={12}
                                 style={{ display: "inline", marginRight: 4 }}
                               />{" "}
-                              Đang bảo trì
+                              {isSuspended ? "Tạm ngưng" : "Đang bảo trì"}
                             </>
                           ) : (
                             "● Khả dụng"
@@ -823,7 +831,8 @@ export default function CourtsPage() {
                               gap: 6,
                             }}
                           >
-                            <Wrench size={14} /> Sân đang bảo trì
+                            <Wrench size={14} />{" "}
+                            {isSuspended ? "Sân tạm ngưng" : "Sân đang bảo trì"}
                           </span>
                         ) : isAvailable ? (
                           user ? (

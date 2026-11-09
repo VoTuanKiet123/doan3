@@ -8,6 +8,7 @@ const {
   getOccupancyRate,
   getNetProfit,
   getCustomerInsights,
+  getMaintenanceAnalytics,
   exportReport,
 } = require("../controllers/analyticsController");
 
@@ -31,6 +32,9 @@ router.get("/net-profit", getNetProfit);
 
 // Báo cáo khách hàng
 router.get("/customer-insights", getCustomerInsights);
+
+// Báo cáo bảo trì + thống kê kiểm tra sân
+router.get("/maintenance", getMaintenanceAnalytics);
 
 // Xuất báo cáo
 router.get("/export", exportReport);

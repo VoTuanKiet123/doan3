@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Counter = require("./Counter");
 
 const maintenanceSchema = new mongoose.Schema(
   {
@@ -6,6 +7,12 @@ const maintenanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Court",
       required: [true, "Vui lòng chọn sân cần bảo trì"],
+    },
+
+    // ============ MÃ PHIẾU (tự sinh: BT-YYMMDD-NNN, tra cứu nhanh) ============
+    ticketCode: {
+      type: String,
+      unique: true,
     },
 
     // ============ THÔNG TIN PHIẾU BẢO TRÌ ============
@@ -38,6 +45,20 @@ const maintenanceSchema = new mongoose.Schema(
       type: String,
       default: "22:00",
     },
+    // Thời gian thực tế (do changeTicketStatus ghi tự động)
+    actualStart: {
+      type: Date,
+      default: null,
+    },
+    actualEnd: {
+      type: Date,
+      default: null,
+    },
+    // Sân đóng bao nhiêu phút (tính khi completed, chỉ nếu requiresClosure)
+    downtimeMinutes: {
+      type: Number,
+      default: null,
+    },
 
     // ============ LOẠI BẢO TRÌ ============
     maintenanceType: {
@@ -45,22 +66,54 @@ const maintenanceSchema = new mongoose.Schema(
       enum: ["scheduled", "emergency", "periodic"],
       default: "scheduled",
     },
-    // scheduled: Bảo trì có kế hoạch (admin chủ động lên lịch)
+    // scheduled: Sửa chữa khi có lỗi/hỏng (tạo từ báo cáo hoặc admin chủ động)
     // emergency: Bảo trì khẩn cấp (ép sân vào trạng thái bảo trì ngay)
-    // periodic: Bảo trì định kỳ (tự động phát sinh)
+    // periodic: Bảo trì định kỳ (tự động phát sinh — làm sau)
+
+    // ============ PHÂN LOẠI v2 ============
+    category: {
+      type: String,
+      enum: [
+        "floor",
+        "lighting",
+        "net_post",
+        "line_marking",
+        "ventilation",
+        "roof_wall",
+        "other",
+      ],
+      default: "other",
+    },
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high", "urgent"],
+      default: "medium",
+    },
+    // false = việc nhỏ (siết trụ, thay lưới) → KHÔNG chặn lịch đặt, không hiện gì cho khách
+    requiresClosure: {
+      type: Boolean,
+      default: true,
+    },
 
     // ============ TRẠNG THÁI PHIẾU ============
+    // pending → in_progress → pending_acceptance → completed
+    // in_progress ⇄ on_hold; pending_acceptance → in_progress (trả về làm lại)
+    // completed / cancelled là trạng thái CUỐI (khóa)
     status: {
       type: String,
-      enum: ["pending", "in_progress", "completed", "cancelled"],
+      enum: [
+        "pending",
+        "in_progress",
+        "on_hold",
+        "pending_acceptance",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
-    // pending: Chờ đến giờ bảo trì
-    // in_progress: Đang bảo trì (sân đã đóng)
-    // completed: Hoàn thành (sân hoạt động lại)
-    // cancelled: Hủy phiếu
 
     // ============ CHI PHÍ ============
+    // cost/costNote: field cũ (giữ cho UI/luồng cũ), phiếu mới nên dùng costContractor
     cost: {
       type: Number,
       default: 0,
@@ -69,6 +122,23 @@ const maintenanceSchema = new mongoose.Schema(
     costNote: {
       type: String,
       trim: true,
+    },
+    // Chi phí tách theo nguồn (costLabor + costMaterial tính từ MaintenanceLog)
+    costLabor: {
+      type: Number,
+      default: 0,
+    },
+    costMaterial: {
+      type: Number,
+      default: 0,
+    },
+    costContractor: {
+      type: Number,
+      default: 0,
+    },
+    costTotal: {
+      type: Number,
+      default: 0,
     },
 
     // ============ XỬ LÝ XUNG ĐỘT ============
@@ -105,6 +175,24 @@ const maintenanceSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // ============ NGƯỜI THỰC HIỆN (chỉ là thông tin, không phải role mới) ============
+    executorType: {
+      type: String,
+      enum: ["in_house", "contractor"],
+      default: "in_house",
+    },
+    // executorName lấy từ assignedTo (không thêm field trùng)
+    contractor: {
+      name: String,
+      phone: String,
+      invoiceNo: String,
+    },
+    // Nhà thầu sửa bảo hành → chi phí 0 nhưng vẫn ghi nhận để đánh giá
+    isUnderWarranty: {
+      type: Boolean,
+      default: false,
+    },
+
     // ============ GHI CHÚ HOÀN THÀNH ============
     completionNote: {
       type: String,
@@ -114,16 +202,94 @@ const maintenanceSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // ============ BẢO TRÌ NÂNG CAO (v2) ============
+    // Tạo từ báo cáo kiểm tra của nhân viên POS (nếu có)
+    inspection: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Inspection",
+      default: null,
+    },
+    photosBefore: {
+      type: [String],
+      default: [],
+    },
+    attachments: {
+      type: [String],
+      default: [],
+    },
+    // Timeline trạng thái — chỉ changeTicketStatus được ghi vào đây
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "pending",
+            "in_progress",
+            "on_hold",
+            "pending_acceptance",
+            "completed",
+            "cancelled",
+          ],
+          required: true,
+        },
+        by: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          default: null,
+        },
+        at: {
+          type: Date,
+          default: Date.now,
+        },
+        note: {
+          type: String,
+          trim: true,
+        },
+      },
+    ],
+
+    // ============ XÓA MỀM ============
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
 
+// ============ TỰ SINH MÃ PHIẾU ============
+// Counter.$inc để không trùng khi race condition (KHÔNG dùng count + 1)
+// Điều kiện !ticketCode covers cả document mới lẫn phiếu cũ chạy qua migrateMaintenanceV2
+maintenanceSchema.pre("save", async function () {
+  if (!this.ticketCode) {
+    const counter = await Counter.findOneAndUpdate(
+      { key: "maintenance" },
+      { $inc: { seq: 1 } },
+      { upsert: true, new: true },
+    );
+    const d = new Date();
+    const ymd =
+      String(d.getFullYear()).slice(2) +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      String(d.getDate()).padStart(2, "0");
+    this.ticketCode = `BT-${ymd}-${String(counter.seq).padStart(3, "0")}`;
+  }
+});
+
 // ============ INDEXES CHO TRUY VẤN TỐI ƯU ============
-// Tìm phiếu bảo trì theo sân + trạng thái
-maintenanceSchema.index({ court: 1, status: 1 });
-// Tìm phiếu bảo trì đang active trong khoảng thời gian
-maintenanceSchema.index({ startDate: 1, endDate: 1, status: 1 });
-// Tìm theo loại bảo trì
-maintenanceSchema.index({ maintenanceType: 1 });
+// (ticketCode đã có unique index từ field definition)
+// Danh sách/truy vấn phiếu theo sân + trạng thái + khung ngày (String date so sánh đúng thứ tự YYYY-MM-DD)
+maintenanceSchema.index({ court: 1, status: 1, startDate: 1, endDate: 1 });
+// Lọc theo độ ưu tiên + quét phiếu quá hạn (pending qua endDate)
+maintenanceSchema.index({ status: 1, priority: -1, endDate: 1 });
+// Tra phiếu tạo từ báo cáo kiểm tra
+maintenanceSchema.index({ inspection: 1 });
+// Danh sách mặc định (ẩn phiếu đã xóa mềm), mới nhất trước
+maintenanceSchema.index({ isDeleted: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Maintenance", maintenanceSchema);

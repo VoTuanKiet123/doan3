@@ -1,6 +1,13 @@
 const Maintenance = require("../models/Maintenance");
 const Booking = require("../models/Booking");
 const Court = require("../models/Court");
+const MaintenanceLog = require("../models/MaintenanceLog");
+const Inspection = require("../models/Inspection");
+const {
+  changeTicketStatus,
+  ACTIVE_STATUSES,
+  getSuspendedCourtIds,
+} = require("../services/maintenanceService");
 const mongoose = require("mongoose");
 
 // ============ HELPERS ============
@@ -102,7 +109,7 @@ const findAlternativeCourt = async (courtId, date, startTime, endTime) => {
 const getMaintenances = async (req, res) => {
   try {
     const { status, court, type } = req.query;
-    const filter = {};
+    const filter = { isDeleted: { $ne: true } };
     if (status) filter.status = status;
     if (court) filter.court = court;
     if (type) filter.maintenanceType = type;
@@ -127,15 +134,39 @@ const getMaintenanceById = async (req, res) => {
     const maintenance = await Maintenance.findById(req.params.id)
       .populate("court", "name pricePerHour status")
       .populate("createdBy", "name email")
+      .populate("statusHistory.by", "name")
       .populate("conflictResolution.affectedBookings")
       .populate("conflictResolution.relocatedTo", "name");
 
-    if (!maintenance) {
+    if (!maintenance || maintenance.isDeleted) {
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy phiếu bảo trì" });
     }
-    res.json({ success: true, maintenance });
+
+    // N1.4: chi tiết phiếu đọc kèm nhật ký thực hiện + báo cáo nghiệm thu (chỉ đọc)
+    const [logs, inspections] = await Promise.all([
+      MaintenanceLog.find({ ticket: maintenance._id })
+        .sort({ startedAt: -1 })
+        .populate("performedBy", "name")
+        .lean(),
+      Inspection.find({ ticket: maintenance._id })
+        .sort({ createdAt: -1 })
+        .populate("inspectedBy", "name")
+        .lean(),
+    ]);
+
+    // N1.4: chi phí nhân công/vật tư xem theo nhật ký (trừ log voided) — chỉ khi đã có log
+    if (logs.length > 0) {
+      const sum = (key) =>
+        logs
+          .filter((l) => l.status !== "voided")
+          .reduce((a, l) => a + (l[key] || 0), 0);
+      maintenance.costLabor = sum("laborCost");
+      maintenance.costMaterial = sum("materialCost");
+    }
+
+    res.json({ success: true, maintenance, logs, inspections });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -159,6 +190,14 @@ const createMaintenance = async (req, res) => {
       maintenanceType = "scheduled",
       conflictStrategy = "auto_relocate",
       assignedTo,
+      // field v2 (có default trong schema nếu không gửi)
+      category,
+      priority,
+      requiresClosure,
+      executorType,
+      contractor,
+      photosBefore,
+      inspection: inspectionId,
     } = req.body;
 
     // Validate cơ bản
@@ -192,7 +231,8 @@ const createMaintenance = async (req, res) => {
     let relocatedTo = null;
     let resolutionNote = "";
 
-    if (affectedBookings.length > 0) {
+    // Phiếu việc nhỏ (requiresClosure = false) không chặn lịch → không đụng booking
+    if (affectedBookings.length > 0 && requiresClosure !== false) {
       if (conflictStrategy === "auto_relocate") {
         // Thử chuyển từng booking sang sân khác
         const dates = generateDateRange(startDate, endDate);
@@ -294,6 +334,13 @@ const createMaintenance = async (req, res) => {
           endTime,
           maintenanceType,
           status: "pending",
+          ...(category && { category }),
+          ...(priority && { priority }),
+          ...(requiresClosure !== undefined && { requiresClosure }),
+          ...(executorType && { executorType }),
+          ...(contractor && { contractor }),
+          ...(photosBefore && { photosBefore }),
+          ...(inspectionId && { inspection: inspectionId }),
           conflictResolution: {
             strategy: conflictStrategy,
             affectedBookings: resolvedBookings,
@@ -337,186 +384,180 @@ const createMaintenance = async (req, res) => {
 
 // @desc    Cập nhật trạng thái phiếu bảo trì
 // @route   PUT /api/maintenance/:id/status
+// Mọi chuyển trạng thái đi qua changeTicketStatus (state machine + history + đồng bộ sân)
 const updateMaintenanceStatus = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const { status, completionNote, cost, costNote } = req.body;
-    const maintenance = await Maintenance.findById(req.params.id).session(
-      session,
-    );
 
-    if (!maintenance) {
-      await session.abortTransaction();
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy phiếu bảo trì" });
+    const updated = await changeTicketStatus(req.params.id, status, {
+      by: req.user._id,
+      note: completionNote,
+    });
+
+    // UI cũ nhập cost lúc hoàn thành → ghi tiếp vào field legacy + costContractor
+    if (updated.status === "completed" && (cost !== undefined || costNote)) {
+      const legacy = {};
+      if (cost !== undefined) {
+        legacy.cost = cost;
+        legacy.costContractor = cost;
+        // changeTicketStatus đã tính costTotal TRƯỚC khi costContractor được ghi → cộng lại đủ 3 vế
+        legacy.costTotal = updated.costLabor + updated.costMaterial + cost;
+      }
+      if (costNote) legacy.costNote = costNote;
+      await Maintenance.findByIdAndUpdate(updated._id, legacy);
     }
 
-    // Validate state transitions
-    const validTransitions = {
-      pending: ["in_progress", "cancelled"],
-      in_progress: ["completed", "cancelled"],
-      completed: [],
-      cancelled: [],
-    };
-
-    if (!validTransitions[maintenance.status].includes(status)) {
-      await session.abortTransaction();
-      return res.status(400).json({
-        success: false,
-        message: `Không thể chuyển từ "${maintenance.status}" sang "${status}"`,
-      });
-    }
-
-    // Cập nhật phiếu
-    const updateData = { status };
-    if (status === "in_progress") {
-      // Khi bắt đầu bảo trì → set sân về trạng thái maintenance
-      await Court.findByIdAndUpdate(
-        maintenance.court,
-        { status: "maintenance" },
-        { session },
-      );
-    }
-    if (status === "completed") {
-      updateData.completionNote = completionNote || "";
-      updateData.completedAt = new Date();
-      if (cost !== undefined) updateData.cost = cost;
-      if (costNote) updateData.costNote = costNote;
-
-      // Trả sân về trạng thái active
-      await Court.findByIdAndUpdate(
-        maintenance.court,
-        { status: "active" },
-        { session },
-      );
-    }
-    if (status === "cancelled") {
-      // Trả sân về active nếu hủy phiếu
-      await Court.findByIdAndUpdate(
-        maintenance.court,
-        { status: "active" },
-        { session },
-      );
-    }
-
-    const updated = await Maintenance.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, session },
-    )
+    const populated = await Maintenance.findById(updated._id)
       .populate("court", "name pricePerHour status")
       .populate("createdBy", "name email")
+      .populate("statusHistory.by", "name")
       .populate("conflictResolution.affectedBookings")
       .populate("conflictResolution.relocatedTo", "name");
-
-    await session.commitTransaction();
 
     res.json({
       success: true,
       message: `Phiếu bảo trì đã chuyển sang "${status}"`,
-      maintenance: updated,
+      maintenance: populated,
     });
   } catch (error) {
-    await session.abortTransaction();
-    res.status(500).json({ success: false, message: error.message });
-  } finally {
-    session.endSession();
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Cập nhật phiếu bảo trì
+// @desc    Cập nhật phiếu bảo trì theo trạng thái (N1.5)
 // @route   PUT /api/maintenance/:id
+// pending sửa mọi field; đang làm chỉ sửa 5 field; completed chỉ sửa chi phí+hóa đơn (kèm lý do); cancelled khóa
+const EDITABLE_FIELDS_BY_STATUS = {
+  pending: [
+    "title",
+    "description",
+    "startDate",
+    "endDate",
+    "startTime",
+    "endTime",
+    "maintenanceType",
+    "category",
+    "priority",
+    "requiresClosure",
+    "assignedTo",
+    "executorType",
+    "contractor",
+    "cost",
+    "costNote",
+    "photosBefore",
+  ],
+  in_progress: ["description", "assignedTo", "priority", "endDate", "endTime"],
+  on_hold: ["description", "assignedTo", "priority", "endDate", "endTime"],
+  pending_acceptance: [
+    "description",
+    "assignedTo",
+    "priority",
+    "endDate",
+    "endTime",
+  ],
+  completed: ["costContractor", "contractor", "isUnderWarranty", "costNote", "attachments"],
+  cancelled: [],
+};
+
 const updateMaintenance = async (req, res) => {
   try {
-    const maintenance = await Maintenance.findById(req.params.id);
-    if (!maintenance) {
+    const ticket = await Maintenance.findById(req.params.id);
+    if (!ticket) {
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy phiếu bảo trì" });
     }
 
-    if (maintenance.status !== "pending") {
+    const allowed = EDITABLE_FIELDS_BY_STATUS[ticket.status] || [];
+    const changed = [];
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        ticket[field] = req.body[field];
+        changed.push(field);
+      }
+    });
+
+    if (ticket.status === "cancelled" || (!changed.length && !req.body.reason)) {
       return res.status(400).json({
         success: false,
-        message: "Chỉ có thể sửa phiếu ở trạng thái chờ xử lý",
+        message:
+          ticket.status === "cancelled"
+            ? "Phiếu đã hủy — khóa, không sửa được"
+            : "Không có field nào được phép sửa ở trạng thái này",
       });
     }
+    // Phiếu đã hoàn thành: Admin chỉ sửa chi phí/hóa đơn, BẮT BUỘC lý do
+    if (ticket.status === "completed" && !req.body.reason) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Sửa phiếu hoàn thành bắt buộc nhập lý do" });
+    }
 
-    const allowedFields = [
-      "title",
-      "description",
-      "startDate",
-      "endDate",
-      "startTime",
-      "endTime",
-      "assignedTo",
-      "cost",
-      "costNote",
-    ];
-    const updates = {};
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    // Ghi lịch sử chỉnh sửa (trạng thái giữ nguyên, note liệt kê field)
+    ticket.statusHistory.push({
+      status: ticket.status,
+      by: req.user._id,
+      at: new Date(),
+      note: `Sửa: ${changed.join(", ") || "—"}${req.body.reason ? ` — ${req.body.reason}` : ""}`,
     });
+    await ticket.save();
 
-    const updated = await Maintenance.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true },
-    )
+    const updated = await Maintenance.findById(ticket._id)
       .populate("court", "name pricePerHour status")
-      .populate("createdBy", "name email");
+      .populate("createdBy", "name email")
+      .populate("statusHistory.by", "name")
+      .populate("conflictResolution.affectedBookings")
+      .populate("conflictResolution.relocatedTo", "name");
 
-    res.json({
-      success: true,
-      message: "Cập nhật phiếu thành công",
-      maintenance: updated,
-    });
+    res.json({ success: true, message: "Cập nhật phiếu thành công", maintenance: updated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Xóa phiếu bảo trì
+// @desc    Xóa mềm phiếu bảo trì (N1.6)
 // @route   DELETE /api/maintenance/:id
+// Chỉ pending (chưa có nhật ký/nghiệm thu) hoặc cancelled; completed không xóa; đang làm phải Hủy
 const deleteMaintenance = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const maintenance = await Maintenance.findById(req.params.id).session(
-      session,
-    );
-    if (!maintenance) {
-      await session.abortTransaction();
+    const ticket = await Maintenance.findById(req.params.id);
+    if (!ticket || ticket.isDeleted) {
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy phiếu bảo trì" });
     }
 
-    // Nếu phiếu đang in_progress, trả sân về active
-    if (
-      maintenance.status === "in_progress" ||
-      maintenance.status === "pending"
-    ) {
-      await Court.findByIdAndUpdate(
-        maintenance.court,
-        { status: "active" },
-        { session },
-      );
+    if (ticket.status === "completed") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Phiếu đã hoàn thành không được xóa" });
+    }
+    if (ticket.status !== "pending" && ticket.status !== "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ xóa được phiếu Chờ xử lý / Đã hủy — phiếu đang thực hiện phải Hủy kèm lý do",
+      });
+    }
+    if (ticket.status === "pending") {
+      const [hasLog, hasAcceptance] = await Promise.all([
+        MaintenanceLog.exists({ ticket: ticket._id }),
+        Inspection.exists({ ticket: ticket._id, type: "acceptance" }),
+      ]);
+      if (hasLog || hasAcceptance) {
+        return res.status(400).json({
+          success: false,
+          message: "Phiếu đã có nhật ký/kiểm tra nghiệm thu — chỉ được Hủy, không xóa",
+        });
+      }
     }
 
-    await Maintenance.findByIdAndDelete(req.params.id, { session });
+    ticket.isDeleted = true;
+    ticket.deletedAt = new Date();
+    await ticket.save();
 
-    await session.commitTransaction();
-    res.json({ success: true, message: "Xóa phiếu bảo trì thành công" });
+    res.json({ success: true, message: "Đã xóa (ẩn) phiếu bảo trì" });
   } catch (error) {
-    await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
-  } finally {
-    session.endSession();
   }
 };
 
@@ -564,15 +605,22 @@ const previewConflicts = async (req, res) => {
 
 // @desc    Lấy danh sách sân đang bảo trì (public)
 // @route   GET /api/maintenance/active-courts
+// Chỉ phiếu ĐÓNG sân (requiresClosure) — việc nhỏ không hiện gì cho khách.
+// Kèm suspendedCourts: sân tạm ngưng vì báo cáo critical chờ xử lý (chặn mọi slot)
 const getActiveMaintenanceCourts = async (req, res) => {
   try {
-    const activeMaintenances = await Maintenance.find({
-      status: { $in: ["pending", "in_progress"] },
-    })
-      .select("court startDate endDate startTime endTime maintenanceType")
-      .populate("court", "name");
+    const [activeMaintenances, suspendedCourts] = await Promise.all([
+      Maintenance.find({
+        status: { $in: ACTIVE_STATUSES },
+        requiresClosure: true,
+        isDeleted: { $ne: true },
+      })
+        .select("court startDate endDate startTime endTime maintenanceType")
+        .populate("court", "name"),
+      getSuspendedCourtIds(),
+    ]);
 
-    res.json({ success: true, activeMaintenances });
+    res.json({ success: true, activeMaintenances, suspendedCourts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

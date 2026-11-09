@@ -16,6 +16,19 @@ const mongoose = require("mongoose");
 const Maintenance = require("./src/models/Maintenance");
 const Court = require("./src/models/Court");
 const User = require("./src/models/User");
+const ChecklistTemplate = require("./src/models/ChecklistTemplate");
+
+// Mục kiểm tra mẫu mặc định (N2.1) — Admin chỉnh lại được trên DB
+const DEFAULT_CHECKLIST = [
+  { item: "Mặt sân khô, sạch, không phồng/bong mép", category: "floor" },
+  { item: "Sàn không trơn rít, không ẩm do dột", category: "floor" },
+  { item: "Lưới căng đều, không rách/xệ", category: "net_post" },
+  { item: "Trụ lưới chắc, không lung lay", category: "net_post" },
+  { item: "Đèn đủ sáng, không nhấp nháy", category: "lighting" },
+  { item: "Vạch kẻ sân rõ, không mờ", category: "line_marking" },
+  { item: "Quạt/thông gió chạy tốt", category: "ventilation" },
+  { item: "Mái/trần/tường không dột, không ẩm", category: "roof_wall" },
+];
 
 const connectDB = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -42,6 +55,15 @@ const seedMaintenance = async () => {
     // Xóa phiếu bảo trì cũ
     await Maintenance.deleteMany({});
     console.log("🗑️ Đã xóa phiếu bảo trì cũ");
+
+    // Seed mục kiểm tra mẫu (chỉ khi trống — không đè chỉnh sửa của Admin)
+    const checklistCount = await ChecklistTemplate.countDocuments();
+    if (checklistCount === 0) {
+      await ChecklistTemplate.insertMany(DEFAULT_CHECKLIST);
+      console.log(`✅ Seed ${DEFAULT_CHECKLIST.length} mục kiểm tra mẫu`);
+    } else {
+      console.log("⏭️ ChecklistTemplate đã có dữ liệu, bỏ qua seed");
+    }
 
     const today = new Date();
     const y = today.getFullYear();
@@ -81,6 +103,9 @@ const seedMaintenance = async () => {
       endTime: "12:00",
       maintenanceType: "scheduled",
       status: "pending",
+      category: "net_post",
+      priority: "medium",
+      requiresClosure: true,
       createdBy: admin._id,
       assignedTo: "Anh Tuấn (Kỹ thuật)",
     });
@@ -102,6 +127,15 @@ const seedMaintenance = async () => {
       endTime: "22:00",
       maintenanceType: "emergency",
       status: "in_progress",
+      category: "floor",
+      priority: "urgent",
+      requiresClosure: true,
+      executorType: "contractor",
+      contractor: {
+        name: "Đội thi công sàn HCM",
+        phone: "0900000000",
+        invoiceNo: "HC/25-001",
+      },
       createdBy: admin._id,
       assignedTo: "Đội thi công sàn",
       conflictResolution: {
@@ -124,6 +158,8 @@ const seedMaintenance = async () => {
       endTime: "18:00",
       maintenanceType: "scheduled",
       status: "completed",
+      category: "lighting",
+      priority: "medium",
       cost: 4800000,
       costNote: "12 bóng LED x 350.000đ + công thợ 600.000đ",
       completionNote: "Đã thay xong toàn bộ, ánh sáng đạt chuẩn thi đấu.",
@@ -173,6 +209,27 @@ const seedMaintenance = async () => {
     });
     console.log(
       `✅ Tạo phiếu PERIODIC: "${periodicMaint.title}" - ${nextWeek} → ${nextWeekEnd}`,
+    );
+
+    // ========== 6. Phiếu VIỆC NHỎ không đóng sân (requiresClosure = false) ==========
+    const minorMaint = await Maintenance.create({
+      court: courts[5]?._id || courts[0]._id,
+      title: "Siết lại trụ lưới sân",
+      description: "Trụ hơi lỏng, chỉ cần siết lại — không cần ngưng nhận khách.",
+      startDate: todayStr,
+      endDate: todayStr,
+      startTime: "07:00",
+      endTime: "08:00",
+      maintenanceType: "scheduled",
+      status: "pending",
+      category: "net_post",
+      priority: "low",
+      requiresClosure: false,
+      createdBy: admin._id,
+      assignedTo: "Nhân viên trực sân",
+    });
+    console.log(
+      `✅ Tạo phiếu VIỆC NHỎ (không đóng sân): "${minorMaint.title}"`,
     );
 
     // ========== TÓM TẮT ==========

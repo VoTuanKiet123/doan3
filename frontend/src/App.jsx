@@ -25,6 +25,9 @@ import AdminBookings from "./pages/admin/AdminBookings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminMaintenance from "./pages/admin/AdminMaintenance";
+import MaintenanceTicketDetail from "./pages/admin/MaintenanceTicketDetail";
+import AdminInspections from "./pages/admin/AdminInspections";
+import MaintenanceCalendar from "./pages/admin/MaintenanceCalendar";
 import AdminPOS from "./pages/admin/AdminPOS";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminRentals from "./pages/admin/AdminRentals";
@@ -34,6 +37,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import POSDashboard from "./pages/pos/POSDashboard";
 import POSCheckIn from "./pages/pos/POSCheckIn";
 import POSWalkIn from "./pages/pos/POSWalkIn";
+import POSCourtCheck from "./pages/pos/POSCourtCheck";
+import POSMaintenance from "./pages/pos/POSMaintenance";
 import POSOrders from "./pages/pos/POSOrders";
 import POSShift from "./pages/pos/POSShift";
 import PaymentResult from "./pages/PaymentResult";
@@ -103,6 +108,9 @@ export default function App() {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="pricing" element={<AdminPricing />} />
             <Route path="maintenance" element={<AdminMaintenance />} />
+            <Route path="maintenance/calendar" element={<MaintenanceCalendar />} />
+            <Route path="maintenance/:id" element={<MaintenanceTicketDetail />} />
+            <Route path="inspections" element={<AdminInspections />} />
             <Route path="pos" element={<AdminPOS />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="rentals" element={<AdminRentals />} />
@@ -126,6 +134,8 @@ export default function App() {
           >
             <Route index element={<POSDashboard />} />
             <Route path="checkin" element={<POSCheckIn />} />
+            <Route path="checklist" element={<POSCourtCheck />} />
+            <Route path="maintenance" element={<POSMaintenance />} />
             <Route path="walkin" element={<POSWalkIn />} />
             <Route path="orders" element={<POSOrders />} />
             <Route path="shift" element={<POSShift />} />

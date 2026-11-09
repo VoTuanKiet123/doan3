@@ -47,6 +47,14 @@ const statusConfig = {
     badge: "bg-red-100 text-red-700",
     dot: "#ef4444",
   },
+  suspended: {
+    label: "Tạm ngưng chờ xác nhận",
+    bg: "linear-gradient(135deg, #fff7ed, #ffedd5)",
+    border: "#fdba74",
+    textColor: "#c2410c",
+    badge: "bg-orange-100 text-orange-700",
+    dot: "#f97316",
+  },
 };
 
 export default function POSDashboard() {
