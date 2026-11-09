@@ -3,6 +3,11 @@ const ServiceOrder = require("../models/ServiceOrder");
 const Maintenance = require("../models/Maintenance");
 const Court = require("../models/Court");
 const User = require("../models/User");
+const Inspection = require("../models/Inspection");
+const { ACTIVE_STATUSES } = require("../services/maintenanceService");
+
+// Ngày hiệu lực của phiếu = actualEnd, phiếu cũ (trước v2) dùng completedAt thay thế
+const EFF_END = { $ifNull: ["$actualEnd", "$completedAt"] };
 
 // ============================================================
 // 1. DASHBOARD TỔNG QUAN (4 card chỉ số nhanh)
@@ -590,9 +595,12 @@ exports.getOccupancyRate = async (req, res) => {
       },
     ]);
 
-    // Lấy tất cả maintenance trong khoảng để loại trừ
+    // Lấy bảo trì trong khoảng để loại khỏi MẪU SỐ công suất (N1.11):
+    // chỉ phiếu ĐÓNG sân (requiresClosure), chưa xóa mềm; việc nhỏ không loại.
     const maintenances = await Maintenance.find({
-      status: { $in: ["pending", "in_progress", "completed"] },
+      status: { $in: [...ACTIVE_STATUSES, "completed"] },
+      requiresClosure: true,
+      isDeleted: { $ne: true },
       $or: [{ startDate: { $lte: eDate }, endDate: { $gte: sDate } }],
     }).select("court startDate endDate");
 
@@ -1016,6 +1024,190 @@ exports.exportReport = async (req, res) => {
     res.send("\uFEFF" + csvData);
   } catch (error) {
     console.error("Export error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============================================================
+// 7. BÁO CÁO BẢO TRÌ (N1.11) + THỐNG KÊ KIỂM TRA (N2.11)
+// ============================================================
+exports.getMaintenanceAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+    const ymd = (d) => d.toISOString().split("T")[0];
+    const sDate = req.query.from || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const eDate = req.query.to || ymd(now);
+    const rangeStart = new Date(sDate + "T00:00:00.000Z");
+    const rangeEnd = new Date(eDate + "T23:59:59.999Z");
+    const doneInRange = [
+      { $match: { status: "completed" } },
+      { $addFields: { effEnd: EFF_END } },
+      { $match: { effEnd: { $gte: rangeStart, $lte: rangeEnd } } },
+    ];
+
+    const [byCategory, byCourt, byMonth, contractors, typeAgg, procAgg] =
+      await Promise.all([
+        Maintenance.aggregate([
+          ...doneInRange,
+          {
+            $group: {
+              _id: "$category",
+              cost: { $sum: "$costTotal" },
+              downtimeMinutes: { $sum: "$downtimeMinutes" },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { cost: -1 } },
+        ]),
+        Maintenance.aggregate([
+          ...doneInRange,
+          {
+            $group: {
+              _id: "$court",
+              cost: { $sum: "$costTotal" },
+              downtimeMinutes: { $sum: "$downtimeMinutes" },
+              count: { $sum: 1 },
+            },
+          },
+          { $lookup: { from: "courts", localField: "_id", foreignField: "_id", as: "c" } },
+          {
+            $addFields: {
+              courtName: { $arrayElemAt: ["$c.name", 0] },
+              pricePerHour: { $arrayElemAt: ["$c.pricePerHour", 0] },
+            },
+          },
+          { $project: { c: 0 } },
+          { $sort: { cost: -1 } },
+        ]),
+        Maintenance.aggregate([
+          ...doneInRange,
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m", date: "$effEnd" } },
+              cost: { $sum: "$costTotal" },
+              downtimeMinutes: { $sum: "$downtimeMinutes" },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
+        // So sánh nhà thầu: tên lấy contractor.name, fallback assignedTo (phiếu cũ).
+        // Tổng chi phí, số phiếu, downtime, tỷ lệ bảo hành
+        Maintenance.aggregate([
+          ...doneInRange,
+          {
+            $addFields: {
+              vendorName: {
+                $ifNull: ["$contractor.name", "$assignedTo"],
+              },
+            },
+          },
+          {
+            $match: {
+              executorType: "contractor",
+              vendorName: { $nin: [null, ""] },
+            },
+          },
+          {
+            $group: {
+              _id: "$vendorName",
+              cost: { $sum: "$costContractor" },
+              count: { $sum: 1 },
+              downtimeMinutes: { $sum: "$downtimeMinutes" },
+              warrantyCount: { $sum: { $cond: ["$isUnderWarranty", 1, 0] } },
+            },
+          },
+          { $sort: { cost: -1 } },
+        ]),
+        // Số phiếu theo loại (mọi trạng thái, tạo trong khoảng)
+        Maintenance.aggregate([
+          { $match: { isDeleted: { $ne: true }, createdAt: { $gte: rangeStart, $lte: rangeEnd } } },
+          { $group: { _id: "$maintenanceType", count: { $sum: 1 } } },
+        ]),
+        // Thời gian xử lý TB: bắt đầu → duyệt hoàn thành (phút)
+        Maintenance.aggregate([
+          ...doneInRange,
+          { $match: { actualStart: { $ne: null } } },
+          {
+            $group: {
+              _id: null,
+              avgMinutes: { $avg: { $subtract: ["$effEnd", "$actualStart"] } },
+              totalDowntime: { $sum: "$downtimeMinutes" },
+              totalCost: { $sum: "$costTotal" },
+              total: { $sum: 1 },
+            },
+          },
+        ]),
+      ]);
+
+    // Doanh thu mất ước tính = downtime × giá giờ của chính sân đó
+    const byCourtRows = byCourt.map((c) => ({
+      ...c,
+      courtId: c._id,
+      revenueLoss: Math.round((c.downtimeMinutes || 0) / 60 * (c.pricePerHour || 0)),
+    }));
+    const totals = procAgg[0] || { avgMinutes: 0, totalDowntime: 0, totalCost: 0, total: 0 };
+    const summary = {
+      ticketCount: totals.total,
+      totalCost: totals.totalCost,
+      totalDowntimeHours: Math.round((totals.totalDowntime || 0) / 6) / 10,
+      revenueLoss: byCourtRows.reduce((s, c) => s + c.revenueLoss, 0),
+      avgProcessingMinutes: Math.round((totals.avgMinutes || 0) / 60000),
+    };
+
+    // ---------- N2.11: thống kê kiểm tra ----------
+    const [accTotal, accPass, failingItems, problemCourts, courtsToday, totalCourts] =
+      await Promise.all([
+        Inspection.countDocuments({ type: "acceptance", createdAt: { $gte: rangeStart, $lte: rangeEnd } }),
+        Inspection.countDocuments({ type: "acceptance", result: "pass", createdAt: { $gte: rangeStart, $lte: rangeEnd } }),
+        Inspection.aggregate([
+          { $match: { type: "routine", createdAt: { $gte: rangeStart, $lte: rangeEnd } } },
+          { $unwind: "$items" },
+          { $match: { "items.result": "fail" } },
+          { $group: { _id: { item: "$items.item", category: "$items.category" }, count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 8 },
+        ]),
+        Inspection.aggregate([
+          { $match: { type: "routine", "items.result": "fail", createdAt: { $gte: rangeStart, $lte: rangeEnd } } },
+          { $group: { _id: "$court", failCount: { $sum: 1 } } },
+          { $sort: { failCount: -1 } },
+          { $limit: 5 },
+          { $lookup: { from: "courts", localField: "_id", foreignField: "_id", as: "c" } },
+          { $addFields: { courtName: { $arrayElemAt: ["$c.name", 0] } } },
+          { $project: { c: 0 } },
+        ]),
+        Inspection.distinct("court", {
+          type: "routine",
+          date: ymd(now),
+        }),
+        Court.countDocuments({ status: "active" }),
+      ]);
+
+    const inspection = {
+      acceptanceCount: accTotal,
+      acceptancePassRate: accTotal ? Math.round((accPass / accTotal) * 100) : null,
+      failingItems,
+      problemCourts,
+      uninspectedCourtsToday: Math.max(0, totalCourts - courtsToday.length),
+      totalActiveCourts: totalCourts,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        period: { from: sDate, to: eDate },
+        summary,
+        byCategory,
+        byCourt: byCourtRows,
+        byMonth,
+        contractors,
+        typeCounts: Object.fromEntries(typeAgg.map((t) => [t._id, t.count])),
+        inspection,
+      },
+    });
+  } catch (error) {
+    console.error("Maintenance analytics error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

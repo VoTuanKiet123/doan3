@@ -355,6 +355,23 @@ h4 {
   color: #b42323;
 }
 
+.badge-onhold {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.badge-acceptance {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.badge-overdue {
+  background: #b42323;
+  color: white;
+  font-size: 11px;
+  padding: 1px 8px;
+}
+
 .badge-hot {
   background: #c2410c;
   color: white;

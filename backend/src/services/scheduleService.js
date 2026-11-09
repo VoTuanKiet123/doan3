@@ -6,7 +6,10 @@
  */
 
 const Booking = require("../models/Booking");
-const Maintenance = require("../models/Maintenance");
+const {
+  getBlockingInfo,
+  slotHitsWindow,
+} = require("./maintenanceService");
 
 /**
  * Sinh mảng các ngày trong khoảng [startDate, endDate] trùng với các thứ được chọn.
@@ -106,24 +109,23 @@ const bulkCheckConflicts = async (courtId, slots, excludeBatchId = null) => {
 
   const conflictDates = new Set(conflicts.map((b) => b.date));
 
-  // ----- Kiểm tra trùng với lịch Bảo trì (Maintenance) -----
-  // Lấy tất cả phiếu bảo trì đang active (pending hoặc in_progress) cho sân này
-  const activeMaintenances = await Maintenance.find({
-    court: courtId,
-    status: { $in: ["pending", "in_progress"] },
-  }).lean();
+  // ----- Kiểm tra Bảo trì (N1.7 — một nguồn sự thật maintenanceService) -----
+  const blocking = await getBlockingInfo(courtId);
 
-  // Với mỗi slot, kiểm tra xem có nằm trong khoảng bảo trì nào không
+  // (b) Sân tạm ngưng vì báo cáo critical chờ xử lý ⇒ chặn MỌI slot
+  if (blocking.suspended) {
+    for (const slot of slots) conflictDates.add(slot.date);
+    return [...conflictDates];
+  }
+
+  // (a) Phiếu đóng sân (requiresClosure) chặn theo cửa sổ ngày+giờ
   for (const slot of slots) {
-    for (const maint of activeMaintenances) {
-      // Kiểm tra ngày slot có nằm trong [startDate, endDate] của phiếu bảo trì không
-      if (slot.date >= maint.startDate && slot.date <= maint.endDate) {
-        // Kiểm tra giao thời gian
-        if (slot.startTime < maint.endTime && slot.endTime > maint.startTime) {
-          conflictDates.add(slot.date);
-          break; // Ngày này đã bị conflict, không cần kiểm tra tiếp
-        }
-      }
+    if (
+      blocking.windows.some((w) =>
+        slotHitsWindow(w, slot.date, slot.startTime, slot.endTime),
+      )
+    ) {
+      conflictDates.add(slot.date);
     }
   }
 

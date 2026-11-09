@@ -27,11 +27,15 @@ import {
   RefreshCw,
   DollarSign,
   Activity,
+  ClipboardList,
+  Clock,
   BarChart3,
 } from "lucide-react";
+import { CATEGORY_MAP } from "./maintenanceMaps";
 
 const BLUE = "#0EA5E9";
 const GREEN = "#10B981";
+const ORANGE = "#F97316";
 
 const fmtVND = (n) => (n || 0).toLocaleString("vi-VN") + "đ";
 const toDDMM = (dateStr) => {
@@ -56,6 +60,7 @@ export default function AdminAnalytics() {
   const [monthlyData, setMonthlyData] = useState(null);
   const [profitData, setProfitData] = useState(null);
   const [customerData, setCustomerData] = useState(null);
+  const [maintData, setMaintData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -69,13 +74,17 @@ export default function AdminAnalytics() {
       api.get("/analytics/monthly-revenue"),
       api.get("/analytics/net-profit", { params: { startDate, endDate } }),
       api.get("/analytics/customer-insights"),
+      api.get("/analytics/maintenance", {
+        params: { from: startDate, to: endDate },
+      }),
     ])
-      .then(([dash, daily, monthly, profit, customers]) => {
+      .then(([dash, daily, monthly, profit, customers, maint]) => {
         if (dash.data.success) setDashboard(dash.data.data);
         if (daily.data.success) setDailyData(daily.data.data);
         if (monthly.data.success) setMonthlyData(monthly.data.data);
         if (profit.data.success) setProfitData(profit.data.data);
         if (customers.data.success) setCustomerData(customers.data.data);
+        if (maint.data.success) setMaintData(maint.data.data);
         setLoading(false);
       })
       .catch((err) => {
@@ -137,6 +146,7 @@ export default function AdminAnalytics() {
       icon: <TrendingUp size={16} />,
     },
     { key: "profit", label: "Lợi nhuận", icon: <DollarSign size={16} /> },
+    { key: "maintenance", label: "Bảo trì", icon: <Wrench size={16} /> },
     { key: "customers", label: "Khách hàng", icon: <Users size={16} /> },
   ];
 
@@ -992,6 +1002,258 @@ export default function AdminAnalytics() {
           )}
 
           {/* ====== CUSTOMERS ====== */}
+          {activeTab === "maintenance" && (
+            <>
+              <div className="admin-stat-cards">
+                <div className="admin-stat-card admin-stat-card--yellow">
+                  <div className="admin-stat-card-icon">
+                    <Wrench size={22} />
+                  </div>
+                  <div className="admin-stat-card-value">
+                    {maintData?.summary?.ticketCount ?? 0}
+                  </div>
+                  <div className="admin-stat-card-label">
+                    Phiếu hoàn thành trong kỳ
+                  </div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--red">
+                  <div className="admin-stat-card-icon">
+                    <DollarSign size={22} />
+                  </div>
+                  <div className="admin-stat-card-value">
+                    {fmtVND(maintData?.summary?.totalCost)}
+                  </div>
+                  <div className="admin-stat-card-label">Tổng chi phí bảo trì</div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--blue">
+                  <div className="admin-stat-card-icon">
+                    <Clock size={22} />
+                  </div>
+                  <div className="admin-stat-card-value">
+                    {maintData?.summary?.totalDowntimeHours ?? 0}h
+                  </div>
+                  <div className="admin-stat-card-label">
+                    Thời gian đóng sân · TB{" "}
+                    {maintData?.summary?.avgProcessingMinutes ?? 0} phút/phiếu
+                  </div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-card-icon">
+                    <TrendingUp size={22} />
+                  </div>
+                  <div className="admin-stat-card-value">
+                    ≈{fmtVND(maintData?.summary?.revenueLoss)}
+                  </div>
+                  <div className="admin-stat-card-label">
+                    Doanh thu mất ước tính (downtime × giá sân)
+                  </div>
+                </div>
+              </div>
+
+              <div className="analytics-charts-row">
+                <div className="admin-card analytics-chart-card">
+                  <h3 className="analytics-chart-title">
+                    <Wrench size={18} /> Chi phí theo hạng mục
+                  </h3>
+                  {(maintData?.byCategory || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={maintData.byCategory.map((c) => ({
+                          ten: CATEGORY_MAP[c._id] || c._id,
+                          "Chi phí": c.cost,
+                          "Giờ đóng": Math.round((c.downtimeMinutes || 0) / 6),
+                        }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="ten" fontSize={11} />
+                        <YAxis fontSize={12} tick={{ fill: "#6B7280" }} />
+                        <Tooltip
+                          formatter={(v) => v.toLocaleString("vi-VN")}
+                          contentStyle={{ borderRadius: 12 }}
+                        />
+                        <Bar dataKey="Chi phí" fill={ORANGE} radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="admin-text-muted">Chưa có dữ liệu trong kỳ</p>
+                  )}
+                </div>
+
+                <div className="admin-card analytics-chart-card">
+                  <h3 className="analytics-chart-title">
+                    <TrendingUp size={18} /> Chi phí theo tháng
+                  </h3>
+                  {(maintData?.byMonth || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart
+                        data={maintData.byMonth.map((m) => ({
+                          thang: m._id,
+                          "Chi phí": m.cost,
+                        }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="thang" fontSize={11} />
+                        <YAxis fontSize={12} tick={{ fill: "#6B7280" }} />
+                        <Tooltip
+                          formatter={(v) => v.toLocaleString("vi-VN") + "đ"}
+                          contentStyle={{ borderRadius: 12 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="Chi phí"
+                          stroke={BLUE}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="admin-text-muted">Chưa có dữ liệu</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="analytics-charts-row">
+                {/* Chi phí theo sân */}
+                <div className="admin-card analytics-chart-card">
+                  <h3 className="analytics-chart-title">
+                    <DollarSign size={18} /> Theo sân (chi phí · mất doanh thu)
+                  </h3>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Sân</th>
+                        <th>Số phiếu</th>
+                        <th>Chi phí</th>
+                        <th>Doanh thu mất ≈</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(maintData?.byCourt || []).map((c) => (
+                        <tr key={String(c.courtId)}>
+                          <td className="admin-user-name">{c.courtName || "—"}</td>
+                          <td>{c.count}</td>
+                          <td>{fmtVND(c.cost)}</td>
+                          <td style={{ color: "#b42323" }}>
+                            {fmtVND(c.revenueLoss)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* So sánh nhà thầu */}
+                <div className="admin-card analytics-chart-card">
+                  <h3 className="analytics-chart-title">
+                    <Users size={18} /> So sánh nhà thầu
+                  </h3>
+                  {(maintData?.contractors || []).length === 0 ? (
+                    <p className="admin-text-muted">
+                      Chưa có phiếu giao nhà thầu hoàn thành trong kỳ
+                    </p>
+                  ) : (
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Nhà thầu</th>
+                          <th>Phiếu</th>
+                          <th>Chi phí</th>
+                          <th>Downtime</th>
+                          <th>BH</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {maintData.contractors.map((c) => (
+                          <tr key={c._id}>
+                            <td className="admin-user-name">{c._id}</td>
+                            <td>{c.count}</td>
+                            <td>{fmtVND(c.cost)}</td>
+                            <td>{Math.round((c.downtimeMinutes || 0) / 6) / 10}h</td>
+                            <td>{c.warrantyCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {maintData?.typeCounts && (
+                    <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {Object.entries(maintData.typeCounts).map(([k, v]) => (
+                        <span key={k} className="badge badge-inactive">
+                          {k === "scheduled"
+                            ? "Sửa chữa"
+                            : k === "emergency"
+                              ? "Khẩn cấp"
+                              : "Định kỳ"}{" "}
+                          × {v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* N2.11 — thống kê kiểm tra sân */}
+              <div className="admin-card analytics-chart-card" style={{ marginTop: 16 }}>
+                <h3 className="analytics-chart-title">
+                  <ClipboardList size={18} /> Thống kê kiểm tra sân
+                </h3>
+                <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>
+                      {maintData?.inspection?.acceptancePassRate != null
+                        ? maintData.inspection.acceptancePassRate + "%"
+                        : "—"}
+                    </div>
+                    <div className="admin-text-muted" style={{ fontSize: 12 }}>
+                      Tỷ lệ nghiệm thu đạt ({maintData?.inspection?.acceptanceCount ?? 0} lần)
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#b45309" }}>
+                      {maintData?.inspection?.uninspectedCourtsToday ?? "—"}/
+                      {maintData?.inspection?.totalActiveCourts ?? "—"}
+                    </div>
+                    <div className="admin-text-muted" style={{ fontSize: 12 }}>
+                      sân CHƯA được kiểm tra hôm nay
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", marginBottom: 6 }}>
+                      Hạng mục hay hỏng nhất
+                    </div>
+                    {(maintData?.inspection?.failingItems || []).map((f) => (
+                      <div key={f._id.item} style={{ fontSize: 12, lineHeight: 1.9 }}>
+                        • {f._id.item}{" "}
+                        <span className="text-slate-400">
+                          ({CATEGORY_MAP[f._id.category] || f._id.category}) — {f.count} lần
+                        </span>
+                      </div>
+                    ))}
+                    {(maintData?.inspection?.failingItems || []).length === 0 && (
+                      <div className="admin-text-muted" style={{ fontSize: 12 }}>Chưa có ghi nhận</div>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", marginBottom: 6 }}>
+                      Sân hay lỗi nhất
+                    </div>
+                    {(maintData?.inspection?.problemCourts || []).map((p) => (
+                      <div key={String(p._id)} style={{ fontSize: 12, lineHeight: 1.9 }}>
+                        • {p.courtName || "—"} — {p.failCount} mục lỗi
+                      </div>
+                    ))}
+                    {(maintData?.inspection?.problemCourts || []).length === 0 && (
+                      <div className="admin-text-muted" style={{ fontSize: 12 }}>Chưa có ghi nhận</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {activeTab === "customers" && (
             <>
               <div className="admin-card" style={{ marginBottom: 16 }}>

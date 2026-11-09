@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 import {
   LayoutDashboard,
   Volleyball,
@@ -43,6 +44,11 @@ const sidebarLinks = [
     to: "/admin/maintenance",
     icon: <Wrench size={18} />,
     label: "Bảo trì sân",
+  },
+  {
+    to: "/admin/inspections",
+    icon: <ClipboardList size={18} />,
+    label: "Báo cáo kiểm tra",
   },
   {
     to: "/admin/analytics",
@@ -88,6 +94,19 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
+  // N2.3: badge số báo cáo kiểm tra chờ xử lý trong menu
+  const [pendingInspections, setPendingInspections] = useState(0);
+  useEffect(() => {
+    const loadCount = () =>
+      api
+        .get("/inspections/pending-count")
+        .then((res) => setPendingInspections(res.data.count || 0))
+        .catch(() => {});
+    loadCount();
+    const timer = setInterval(loadCount, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const currentLabel =
     sidebarLinks.find((l) =>
       l.end ? location.pathname === l.to : location.pathname.startsWith(l.to),
@@ -132,6 +151,23 @@ export default function AdminLayout() {
             >
               <span className="admin-sidebar-link-icon">{link.icon}</span>
               <span>{link.label}</span>
+              {link.to === "/admin/inspections" && pendingInspections > 0 && (
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    background: "#b42323",
+                    color: "white",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    borderRadius: 999,
+                    padding: "1px 8px",
+                    minWidth: 20,
+                    textAlign: "center",
+                  }}
+                >
+                  {pendingInspections}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

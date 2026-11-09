@@ -104,6 +104,9 @@ export default function BookingPage() {
   // ========== Maintenance slots ==========
   const [maintenanceSlots, setMaintenanceSlots] = useState([]);
   const [courtStatus, setCourtStatus] = useState("active");
+  // Sân tạm ngưng vì báo cáo sự cố nghiêm trọng (chặn mọi slot — N1.7)
+  const [courtSuspended, setCourtSuspended] = useState(false);
+  const courtBlocked = courtStatus === "maintenance" || courtSuspended;
 
   // ========== Dịch vụ đi kèm ==========
   const [products, setProducts] = useState([]);
@@ -255,6 +258,8 @@ export default function BookingPage() {
     api
       .get("/maintenance/active-courts")
       .then((res) => {
+        const ids = (res.data.suspendedCourts || []).map(String);
+        setCourtSuspended(ids.includes(String(courtId)));
         const courtMaintenances = res.data.activeMaintenances.filter(
           (m) => m.court?._id === courtId || m.court === courtId,
         );
@@ -418,6 +423,10 @@ export default function BookingPage() {
   // ========== Submit casual ==========
   const handleCasualSubmit = async (e) => {
     e.preventDefault();
+    if (courtSuspended) {
+      toast.error("Sân đang tạm ngưng nhận khách (báo cáo sự cố, chờ quản lý xử lý).");
+      return;
+    }
     if (courtStatus === "maintenance") {
       toast.error("Sân đang trong thời gian bảo trì, không thể đặt lịch.");
       return;
@@ -515,6 +524,10 @@ export default function BookingPage() {
   // ========== Submit fixed monthly ==========
   const handleFixedSubmit = async (e) => {
     e.preventDefault();
+    if (courtSuspended) {
+      toast.error("Sân đang tạm ngưng nhận khách (báo cáo sự cố, chờ quản lý xử lý).");
+      return;
+    }
     if (courtStatus === "maintenance") {
       toast.error("Sân đang trong thời gian bảo trì, không thể đặt lịch.");
       return;
@@ -633,7 +646,7 @@ export default function BookingPage() {
       </div>
 
       {/* ========== MAINTENANCE WARNING ========== */}
-      {courtStatus === "maintenance" && (
+      {courtBlocked && (
         <div
           style={{
             background: "linear-gradient(135deg, #fef3c7, #fffbeb)",
@@ -659,7 +672,9 @@ export default function BookingPage() {
                 marginBottom: 4,
               }}
             >
-              Sân đang trong thời gian bảo trì
+              {courtSuspended
+                ? "Sân đang tạm ngưng nhận khách"
+                : "Sân đang trong thời gian bảo trì"}
             </div>
             <p
               style={{
@@ -669,8 +684,18 @@ export default function BookingPage() {
                 lineHeight: 1.5,
               }}
             >
-              Sân <strong>{court?.name}</strong> hiện không khả dụng do đang
-              được bảo trì/sửa chữa. Vui lòng chọn sân khác hoặc quay lại sau.
+              {courtSuspended ? (
+                <>
+                  Sân <strong>{court?.name}</strong> có báo cáo sự cố nghiêm
+                  trọng và đang chờ quản lý xử lý. Vui lòng chọn sân khác.
+                </>
+              ) : (
+                <>
+                  Sân <strong>{court?.name}</strong> hiện không khả dụng do
+                  đang được bảo trì/sửa chữa. Vui lòng chọn sân khác hoặc quay
+                  lại sau.
+                </>
+              )}
             </p>
             {maintenanceSlots.length > 0 && (
               <div style={{ marginTop: 8, fontSize: 12, color: "#b45309" }}>
@@ -683,7 +708,7 @@ export default function BookingPage() {
       )}
 
       {/* ========== MAINTENANCE DATE WARNING ========== */}
-      {courtStatus === "active" && maintenanceSlots.length > 0 && (
+      {courtStatus === "active" && !courtSuspended && maintenanceSlots.length > 0 && (
         <div
           style={{
             background: "#fffbeb",
@@ -1051,17 +1076,15 @@ export default function BookingPage() {
                     !date ||
                     !startTime ||
                     !endTime ||
-                    courtStatus === "maintenance"
+                    courtBlocked
                   }
                   className="bg-green-600 text-white hover:bg-green-700 flex-1 py-3 text-sm rounded-xl font-extrabold cursor-pointer disabled:opacity-50"
                   title={
-                    courtStatus === "maintenance"
-                      ? "Sân đang bảo trì, không thể đặt lịch"
-                      : ""
+                    courtBlocked ? "Sân đang ngừng nhận đặt lịch" : ""
                   }
                 >
-                  {courtStatus === "maintenance"
-                    ? "Sân đang bảo trì"
+                  {courtBlocked
+                    ? "Sân không khả dụng"
                     : loading
                       ? "Đang tạo lịch..."
                       : "Xác nhận đặt"}
@@ -1436,17 +1459,13 @@ export default function BookingPage() {
                     loading ||
                     !fmPreview ||
                     fmConflictDates.length > 0 ||
-                    courtStatus === "maintenance"
+                    courtBlocked
                   }
                   className="bg-green-600 text-white hover:bg-green-700 flex-1 py-3 text-sm rounded-xl font-extrabold cursor-pointer disabled:opacity-50"
-                  title={
-                    courtStatus === "maintenance"
-                      ? "Sân đang bảo trì, không thể đặt lịch"
-                      : ""
-                  }
+                  title={courtBlocked ? "Sân đang ngừng nhận đặt lịch" : ""}
                 >
-                  {courtStatus === "maintenance"
-                    ? "Sân đang bảo trì"
+                  {courtBlocked
+                    ? "Sân không khả dụng"
                     : loading
                       ? "Đang tạo lịch..."
                       : `Xác nhận đặt ${fmPreview?.availableSlots || 0} buổi`}

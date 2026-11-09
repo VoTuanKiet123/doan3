@@ -1,4 +1,5 @@
 import { useEffect, useState, Fragment } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import {
@@ -12,49 +13,22 @@ import {
   ChevronUp,
   Calendar,
   Clock,
-  DollarSign,
-  User,
   FileText,
   RefreshCw,
   Search,
   Activity,
+  Pause,
 } from "lucide-react";
-
-// ============ CONSTANTS ============
-const STATUS_MAP = {
-  pending: {
-    text: "Chờ xử lý",
-    cls: "badge badge-pending",
-    icon: <Clock size={12} />,
-  },
-  in_progress: {
-    text: "Đang bảo trì",
-    cls: "badge badge-maintenance",
-    icon: <Wrench size={12} />,
-  },
-  completed: {
-    text: "Hoàn thành",
-    cls: "badge badge-confirmed",
-    icon: <CheckCircle size={12} />,
-  },
-  cancelled: {
-    text: "Đã hủy",
-    cls: "badge badge-cancelled",
-    icon: <X size={12} />,
-  },
-};
-
-const TYPE_MAP = {
-  scheduled: { text: "Có kế hoạch", cls: "admin-filter-tab" },
-  emergency: { text: "Khẩn cấp", cls: "admin-filter-tab" },
-  periodic: { text: "Định kỳ", cls: "admin-filter-tab" },
-};
-
-const CONFLICT_STRATEGY_MAP = {
-  auto_relocate: "Tự động chuyển sân",
-  cancel_booking: "Hủy booking",
-  force_override: "Ép bảo trì",
-};
+import {
+  STATUS_MAP,
+  TYPE_MAP,
+  PRIORITY_MAP,
+  PRIORITY_WEIGHT,
+  CATEGORY_MAP,
+  CONFLICT_STRATEGY_MAP,
+  isOverdue,
+  displayPriority,
+} from "./maintenanceMaps";
 
 const TIME_SLOTS = [];
 for (let h = 6; h <= 22; h++) {
@@ -68,6 +42,7 @@ export default function AdminMaintenance() {
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [q, setQ] = useState("");
   const [expandedRows, setExpandedRows] = useState({});
   const [showCreate, setShowCreate] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -85,7 +60,32 @@ export default function AdminMaintenance() {
     maintenanceType: "scheduled",
     conflictStrategy: "auto_relocate",
     assignedTo: "",
+    category: "other",
+    priority: "medium",
+    requiresClosure: true,
+    executorType: "in_house",
+    contractorPhone: "",
+    inspection: "",
   });
+
+  const FORM_DEFAULTS = {
+    court: "",
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    startTime: "06:00",
+    endTime: "22:00",
+    maintenanceType: "scheduled",
+    conflictStrategy: "auto_relocate",
+    assignedTo: "",
+    category: "other",
+    priority: "medium",
+    requiresClosure: true,
+    executorType: "in_house",
+    contractorPhone: "",
+    inspection: "",
+  };
 
   // ========== FETCH ==========
   const fetchData = async () => {
@@ -108,24 +108,52 @@ export default function AdminMaintenance() {
     fetchData();
   }, []);
 
+  // ===== N2.4 nối N1.2: mở form tạo phiếu điền sẵn từ báo cáo kiểm tra (?inspection=) =====
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const inspectionId = searchParams.get("inspection");
+    if (!inspectionId) return;
+    api
+      .get(`/inspections/${inspectionId}`)
+      .then((res) => {
+        const insp = res.data.inspection;
+        const badItems = (insp.items || []).filter((i) => i.result !== "ok");
+        const firstBad = badItems[0];
+        const category = firstBad?.category || "other";
+        const descParts = [
+          insp.note && `Mô tả: ${insp.note}`,
+          ...badItems.map((i) => `[${i.result === "fail" ? "HỎNG" : "Lưu ý"}] ${i.item}${i.note ? ` — ${i.note}` : ""}`),
+        ].filter(Boolean);
+        setForm((prev) => ({
+          ...prev,
+          inspection: insp._id,
+          court: insp.court?._id || "",
+          title: `Bảo trì: ${CATEGORY_MAP[category]} — sân ${insp.court?.name || ""}`,
+          description: descParts.join("\n"),
+          category,
+          // nghiêm trọng ⇒ urgent + đóng sân; cần sửa ⇒ đóng sân; nhẹ ⇒ việc nhỏ
+          priority:
+            insp.severity === "critical"
+              ? "urgent"
+              : insp.severity === "needs_repair"
+                ? "high"
+                : "low",
+          requiresClosure: insp.severity !== "minor",
+          maintenanceType: insp.severity === "critical" ? "emergency" : "scheduled",
+        }));
+        setShowCreate(true);
+        setSearchParams({}, { replace: true });
+      })
+      .catch(() => toast.error("Không tải được báo cáo kiểm tra"));
+  }, [searchParams]);
+
   // ========== HELPERS ==========
   const toggleRow = (id) => {
     setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const resetForm = () => {
-    setForm({
-      court: "",
-      title: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      startTime: "06:00",
-      endTime: "22:00",
-      maintenanceType: "scheduled",
-      conflictStrategy: "auto_relocate",
-      assignedTo: "",
-    });
+    setForm({ ...FORM_DEFAULTS });
     setConflictPreview(null);
   };
 
@@ -169,8 +197,13 @@ export default function AdminMaintenance() {
       toast.error("Ngày bắt đầu phải trước ngày kết thúc");
       return;
     }
+    // Map người thực hiện nhà thầu vào sub-document contractor (backend giữ assignedTo làm tên)
+    const payload = { ...form };
+    if (form.executorType === "contractor") {
+      payload.contractor = { name: form.assignedTo, phone: form.contractorPhone };
+    }
     try {
-      const res = await api.post("/maintenance", form);
+      const res = await api.post("/maintenance", payload);
       toast.success(res.data.message || "Tạo phiếu bảo trì thành công!");
       setShowCreate(false);
       resetForm();
@@ -206,11 +239,31 @@ export default function AdminMaintenance() {
     }
   };
 
-  // ========== FILTER ==========
-  const filtered =
-    filter === "all"
-      ? maintenances
-      : maintenances.filter((m) => m.status === filter);
+  // ========== Hủy / Tạm dừng / Trả về: bắt buộc lý do ==========
+  const handleReasonAction = async (m, to, actionLabel) => {
+    const reason = prompt(`${actionLabel} — lý do (bắt buộc):`);
+    if (!reason || !reason.trim()) return;
+    await handleStatusUpdate(m._id, to, { completionNote: reason.trim() });
+  };
+
+  // ========== FILTER + TÌM KIẾM + SẮP XẾP (N1.3) ==========
+  const filtered = maintenances
+    .filter((m) => filter === "all" || m.status === filter)
+    .filter((m) => {
+      const s = q.trim().toLowerCase();
+      if (!s) return true;
+      return (
+        (m.ticketCode || "").toLowerCase().includes(s) ||
+        (m.title || "").toLowerCase().includes(s) ||
+        (m.court?.name || "").toLowerCase().includes(s)
+      );
+    })
+    .sort(
+      (a, b) =>
+        (isOverdue(b) ? 1 : 0) - (isOverdue(a) ? 1 : 0) ||
+        PRIORITY_WEIGHT[displayPriority(b)] - PRIORITY_WEIGHT[displayPriority(a)] ||
+        new Date(b.createdAt) - new Date(a.createdAt),
+    );
 
   // ========== COMPLETE MODAL STATE ==========
   const [completeModal, setCompleteModal] = useState({ open: false, id: null });
@@ -236,11 +289,31 @@ export default function AdminMaintenance() {
             Lên lịch và theo dõi tình trạng bảo trì các sân cầu lông
           </p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowCreate(true);
-          }}
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link
+            to="/admin/maintenance/calendar"
+            className="admin-action-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 20px",
+              fontSize: 14,
+              fontWeight: 800,
+              borderRadius: 999,
+              background: "#fff4dc",
+              color: "#a85d00",
+              border: "1px solid #fcd34d",
+              textDecoration: "none",
+            }}
+          >
+            <Calendar size={16} /> Lịch bảo trì
+          </Link>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowCreate(true);
+            }}
           className="admin-action-btn admin-action-btn--confirm"
           style={{
             display: "inline-flex",
@@ -259,14 +332,45 @@ export default function AdminMaintenance() {
         >
           <Plus size={16} /> Tạo phiếu bảo trì
         </button>
+        </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Tìm kiếm + Filter Tabs */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ position: "relative", maxWidth: 360 }}>
+          <Search
+            size={14}
+            style={{
+              position: "absolute",
+              left: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#94a3b8",
+            }}
+          />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Tìm theo mã phiếu (BT-...), tiêu đề, tên sân..."
+            style={{
+              width: "100%",
+              padding: "9px 12px 9px 32px",
+              borderRadius: 999,
+              border: "1px solid #e2e8f0",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          />
+        </div>
+      </div>
+
       <div className="admin-filter-tabs">
         {[
           { key: "all", label: "Tất cả" },
           { key: "pending", label: "Chờ xử lý" },
           { key: "in_progress", label: "Đang bảo trì" },
+          { key: "on_hold", label: "Tạm dừng" },
+          { key: "pending_acceptance", label: "Chờ nghiệm thu" },
           { key: "completed", label: "Hoàn thành" },
           { key: "cancelled", label: "Đã hủy" },
         ].map((tab) => (
@@ -313,10 +417,12 @@ export default function AdminMaintenance() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Mã phiếu</th>
                 <th>Sân</th>
                 <th>Tiêu đề</th>
                 <th>Thời gian</th>
                 <th>Loại</th>
+                <th>Ưu tiên</th>
                 <th>Trạng thái</th>
                 <th>Chi phí</th>
                 <th>Hành động</th>
@@ -330,6 +436,24 @@ export default function AdminMaintenance() {
                 return (
                   <Fragment key={m._id}>
                     <tr>
+                      <td>
+                        <Link
+                          to={`/admin/maintenance/${m._id}`}
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 12,
+                            color: "#1f6fd1",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {m.ticketCode || "—"}
+                        </Link>
+                        {isOverdue(m) && (
+                          <div style={{ marginTop: 4 }}>
+                            <span className="badge badge-overdue">Quá hạn</span>
+                          </div>
+                        )}
+                      </td>
                       <td>
                         <div className="admin-user-cell">
                           <div
@@ -391,6 +515,17 @@ export default function AdminMaintenance() {
                       </td>
                       <td>
                         <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: PRIORITY_MAP[displayPriority(m)]?.color,
+                          }}
+                        >
+                          {PRIORITY_MAP[displayPriority(m)]?.text || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span
                           className={s?.cls}
                           style={{
                             display: "inline-flex",
@@ -403,8 +538,8 @@ export default function AdminMaintenance() {
                       </td>
                       <td>
                         <span style={{ fontWeight: 800, color: "#1e293b" }}>
-                          {m.cost > 0
-                            ? `${m.cost.toLocaleString("vi-VN")}đ`
+                          {(m.costTotal || m.cost) > 0
+                            ? `${(m.costTotal || m.cost).toLocaleString("vi-VN")}đ`
                             : "—"}
                         </span>
                       </td>
@@ -439,7 +574,7 @@ export default function AdminMaintenance() {
                             {isExpanded ? "Ẩn" : "Chi tiết"}
                           </button>
 
-                          {/* Status actions */}
+                          {/* Status actions — theo state machine v2 */}
                           {m.status === "pending" && (
                             <>
                               <button
@@ -465,7 +600,53 @@ export default function AdminMaintenance() {
                               </button>
                               <button
                                 onClick={() =>
-                                  handleStatusUpdate(m._id, "cancelled")
+                                  handleReasonAction(m, "cancelled", "Hủy phiếu")
+                                }
+                                className="admin-action-btn admin-action-btn--danger"
+                              >
+                                <X size={12} /> Hủy
+                              </button>
+                              <button
+                                onClick={() => handleDelete(m._id)}
+                                className="admin-action-btn"
+                                style={{ fontSize: 11 }}
+                              >
+                                Xóa
+                              </button>
+                            </>
+                          )}
+                          {m.status === "in_progress" && (
+                            <>
+                              <button
+                                onClick={() => openCompleteModal(m._id)}
+                                className="admin-action-btn admin-action-btn--confirm"
+                              >
+                                <CheckCircle size={12} /> Hoàn thành
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleReasonAction(m, "on_hold", "Tạm dừng")
+                                }
+                                className="admin-action-btn"
+                                style={{
+                                  background: "#eef2ff",
+                                  color: "#4338ca",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 3,
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                <Pause size={12} /> Tạm dừng
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleReasonAction(m, "cancelled", "Hủy phiếu")
                                 }
                                 className="admin-action-btn admin-action-btn--danger"
                               >
@@ -473,22 +654,78 @@ export default function AdminMaintenance() {
                               </button>
                             </>
                           )}
-                          {m.status === "in_progress" && (
-                            <button
-                              onClick={() => openCompleteModal(m._id)}
-                              className="admin-action-btn admin-action-btn--confirm"
-                            >
-                              <CheckCircle size={12} /> Hoàn thành
-                            </button>
+                          {m.status === "on_hold" && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleStatusUpdate(m._id, "in_progress")
+                                }
+                                className="admin-action-btn"
+                                style={{
+                                  background: "#FF8F00",
+                                  color: "white",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 3,
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                <Play size={12} /> Tiếp tục
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleReasonAction(m, "cancelled", "Hủy phiếu")
+                                }
+                                className="admin-action-btn admin-action-btn--danger"
+                              >
+                                <X size={12} /> Hủy
+                              </button>
+                            </>
                           )}
-                          {(m.status === "cancelled" ||
-                            m.status === "completed") && (
+                          {m.status === "pending_acceptance" && (
+                            <>
+                              <button
+                                onClick={() => openCompleteModal(m._id)}
+                                className="admin-action-btn admin-action-btn--confirm"
+                              >
+                                <CheckCircle size={12} /> Duyệt hoàn thành
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleReasonAction(
+                                    m,
+                                    "in_progress",
+                                    "Trả về làm lại",
+                                  )
+                                }
+                                className="admin-action-btn"
+                                style={{
+                                  background: "#fdecec",
+                                  color: "#b42323",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                Trả về làm lại
+                              </button>
+                            </>
+                          )}
+                          {m.status === "cancelled" && (
                             <button
                               onClick={() => handleDelete(m._id)}
-                              className="admin-action-btn admin-action-btn--danger"
+                              className="admin-action-btn"
                               style={{ fontSize: 11 }}
                             >
-                              <X size={12} /> Xóa
+                              Xóa
                             </button>
                           )}
                         </div>
@@ -502,7 +739,7 @@ export default function AdminMaintenance() {
                         style={{ backgroundColor: "#f8fafc" }}
                       >
                         <td
-                          colSpan="7"
+                          colSpan="9"
                           style={{
                             padding: "16px 24px",
                             borderBottom: "1px solid #e2e8f0",
@@ -548,10 +785,28 @@ export default function AdminMaintenance() {
                                 <div>
                                   <strong>Người phụ trách:</strong>{" "}
                                   {m.assignedTo || "—"}
+                                  {m.executorType === "contractor"
+                                    ? " (Nhà thầu)"
+                                    : ""}
                                 </div>
                                 <div>
-                                  <strong>Loại:</strong> {t.text}
+                                  <strong>Hạng mục:</strong>{" "}
+                                  {CATEGORY_MAP[m.category] || "—"}
                                 </div>
+                                <div>
+                                  <strong>Chặn lịch đặt:</strong>{" "}
+                                  {m.requiresClosure === false
+                                    ? "Không (việc nhỏ)"
+                                    : "Có"}
+                                </div>
+                                {m.completedAt && (
+                                  <div>
+                                    <strong>Thời gian đóng sân:</strong>{" "}
+                                    {m.downtimeMinutes != null
+                                      ? `${Math.round(m.downtimeMinutes / 60 * 10) / 10} giờ`
+                                      : "—"}
+                                  </div>
+                                )}
                                 {m.completionNote && (
                                   <div>
                                     <strong>Ghi chú HT:</strong>{" "}
@@ -997,6 +1252,153 @@ export default function AdminMaintenance() {
                 </div>
               </div>
 
+              {/* Category + Priority (v2) */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#475569",
+                      display: "block",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Hạng mục
+                  </label>
+                  <select
+                    value={form.category}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: "white",
+                    }}
+                  >
+                    {Object.entries(CATEGORY_MAP).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#475569",
+                      display: "block",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Mức ưu tiên
+                  </label>
+                  <select
+                    value={form.priority}
+                    onChange={(e) =>
+                      setForm({ ...form, priority: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: "white",
+                    }}
+                  >
+                    {Object.entries(PRIORITY_MAP).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v.text}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Closure mode (v2): đóng sân / việc nhỏ */}
+              <div>
+                <label
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#475569",
+                    display: "block",
+                    marginBottom: 4,
+                  }}
+                >
+                  Ảnh hưởng đến lịch đặt
+                </label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <label
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${form.requiresClosure ? "#FF8F00" : "#e2e8f0"}`,
+                      background: form.requiresClosure ? "#fff4dc" : "white",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="closure"
+                      checked={form.requiresClosure}
+                      onChange={() =>
+                        setForm({ ...form, requiresClosure: true })
+                      }
+                    />
+                    Đóng sân (chặn khách đặt trong khung giờ)
+                  </label>
+                  <label
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${!form.requiresClosure ? "#0D9D57" : "#e2e8f0"}`,
+                      background: !form.requiresClosure
+                        ? "#e9f9f0"
+                        : "white",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="closure"
+                      checked={!form.requiresClosure}
+                      onChange={() =>
+                        setForm({ ...form, requiresClosure: false })
+                      }
+                    />
+                    Việc nhỏ (KHÔNG chặn lịch)
+                  </label>
+                </div>
+              </div>
+
               {/* Type + Strategy */}
               <div
                 style={{
@@ -1073,7 +1475,7 @@ export default function AdminMaintenance() {
                 </div>
               </div>
 
-              {/* Assigned to */}
+              {/* Assigned to + executor type (v2) */}
               <div>
                 <label
                   style={{
@@ -1086,25 +1488,65 @@ export default function AdminMaintenance() {
                 >
                   Người phụ trách
                 </label>
-                <input
-                  type="text"
-                  placeholder="Tên nhân viên phụ trách..."
-                  value={form.assignedTo}
-                  onChange={(e) =>
-                    setForm({ ...form, assignedTo: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #e2e8f0",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                />
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+                  <input
+                    type="text"
+                    placeholder="Tên nhân viên / đội thi công..."
+                    value={form.assignedTo}
+                    onChange={(e) =>
+                      setForm({ ...form, assignedTo: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  />
+                  <select
+                    value={form.executorType}
+                    onChange={(e) =>
+                      setForm({ ...form, executorType: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: "white",
+                    }}
+                  >
+                    <option value="in_house">Nhân viên sân</option>
+                    <option value="contractor">Nhà thầu</option>
+                  </select>
+                </div>
+                {form.executorType === "contractor" && (
+                  <input
+                    type="text"
+                    placeholder="SĐT nhà thầu (khi cần)"
+                    value={form.contractorPhone}
+                    onChange={(e) =>
+                      setForm({ ...form, contractorPhone: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      marginTop: 8,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  />
+                )}
               </div>
 
-              {/* Conflict Preview */}
+              {/* Conflict Preview — chỉ hiện khi phiếu đóng sân */}
+              {form.requiresClosure && (
               <div>
                 <button
                   onClick={handlePreviewConflicts}
@@ -1197,6 +1639,7 @@ export default function AdminMaintenance() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Action buttons */}
               <div

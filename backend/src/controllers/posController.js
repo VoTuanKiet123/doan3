@@ -9,6 +9,11 @@ const Product = require("../models/Product");
 const CancellationPolicy = require("../models/CancellationPolicy");
 const { getPriceForBooking } = require("../services/pricingService");
 const Maintenance = require("../models/Maintenance");
+const {
+  ACTIVE_STATUSES,
+  isSlotBlocked,
+  getSuspendedCourtIds,
+} = require("../services/maintenanceService");
 
 // ============ HELPERS ============
 
@@ -261,21 +266,22 @@ const createWalkInBooking = async (req, res) => {
       });
     }
 
-    // Kiểm tra bảo trì
-    const maintConflict = await Maintenance.findOne({
-      court: courtId,
-      status: { $in: ["pending", "in_progress"] },
-      startDate: { $lte: date },
-      endDate: { $gte: date },
-      startTime: { $lt: endTime },
-      endTime: { $gt: startTime },
-    }).session(session);
-
-    if (maintConflict) {
+    // Kiểm tra bảo trì / tạm ngưng (N1.7 — một nguồn sự thật maintenanceService)
+    const blockCheck = await isSlotBlocked(
+      courtId,
+      date,
+      startTime,
+      endTime,
+      session,
+    );
+    if (blockCheck.blocked) {
       await session.abortTransaction();
       return res.status(400).json({
         success: false,
-        message: `Sân đang trong thời gian bảo trì (${maintConflict.startTime}-${maintConflict.endTime})`,
+        message:
+          blockCheck.reason === "suspended"
+            ? "Sân đang tạm ngưng nhận khách (báo cáo sự cố, chờ quản lý xử lý)"
+            : `Sân đang trong thời gian bảo trì (${blockCheck.window.startTime}-${blockCheck.window.endTime})`,
       });
     }
 
@@ -1863,10 +1869,14 @@ const getCourtsStatus = async (req, res) => {
 
     // Lấy bảo trì active
     const activeMaintenances = await Maintenance.find({
-      status: { $in: ["pending", "in_progress"] },
+      status: { $in: ACTIVE_STATUSES },
+      isDeleted: { $ne: true },
       startDate: { $lte: date },
       endDate: { $gte: date },
     }).lean();
+
+    // N1.7: sân tạm ngưng (báo cáo critical chờ xử lý) — hiển thị "suspended"
+    const suspendedSet = new Set(await getSuspendedCourtIds());
 
     const result = courts.map((court) => {
       const courtBookings = activeBookings.filter(
@@ -1880,16 +1890,24 @@ const getCourtsStatus = async (req, res) => {
       let currentStatus = "available"; // Trống
       let currentBooking = null;
 
+      if (suspendedSet.has(court._id.toString())) {
+        currentStatus = "suspended";
+      }
+
       // Kiểm tra bảo trì
       for (const maint of courtMaintenances) {
-        if (currentTime >= maint.startTime && currentTime < maint.endTime) {
+        if (
+          currentStatus !== "suspended" &&
+          currentTime >= maint.startTime &&
+          currentTime < maint.endTime
+        ) {
           currentStatus = "maintenance";
           break;
         }
       }
 
       // Kiểm tra booking
-      if (currentStatus !== "maintenance") {
+      if (currentStatus === "available") {
         for (const booking of courtBookings) {
           if (
             currentTime >= booking.startTime &&

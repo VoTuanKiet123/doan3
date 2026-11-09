@@ -8,6 +8,7 @@ const courtStatusInfo = {
   in_use: { label: "Đang mở phiên", dot: "#f59e0b", bg: "#fffbeb", text: "#92400e" },
   reserved: { label: "Đã đặt", dot: "#3b82f6", bg: "#eff6ff", text: "#1e40af" },
   maintenance: { label: "Bảo trì", dot: "#ef4444", bg: "#fef2f2", text: "#b91c1c" },
+  suspended: { label: "Tạm ngưng chờ xác nhận", dot: "#f97316", bg: "#fff7ed", text: "#c2410c" },
 };
 
 export default function POSWalkIn() {

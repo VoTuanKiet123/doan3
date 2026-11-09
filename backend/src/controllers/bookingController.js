@@ -1,6 +1,9 @@
 const Booking = require("../models/Booking");
 const Court = require("../models/Court");
-const Maintenance = require("../models/Maintenance");
+const {
+  isSlotBlocked,
+  getBlockingInfo,
+} = require("../services/maintenanceService");
 const { getPriceForBooking } = require("../services/pricingService");
 const {
   generateFixedScheduleDates,
@@ -74,24 +77,17 @@ const validateNotPast = (dateStr, startMin) => {
 };
 
 /**
- * Kiểm tra xem khung giờ [date, startTime-endTime] có bị trùng với
- * phiếu bảo trì nào đang active (pending/in_progress) trên sân không.
- * Trả về { conflict: boolean, maintenance: object|null }
+ * Kiểm tra xem khung giờ [date, startTime-endTime] có bị chặn đặt không
+ * (N1.7 — một nguồn sự thật maintenanceService: phiếu đóng sân theo cửa sổ + sân tạm ngưng).
+ * Trả về { conflict: boolean, maintenance: object|null, suspended: boolean }
  */
 const checkMaintenanceConflict = async (courtId, date, startTime, endTime) => {
-  const activeMaintenances = await Maintenance.find({
-    court: courtId,
-    status: { $in: ["pending", "in_progress"] },
-    startDate: { $lte: date },
-    endDate: { $gte: date },
-  }).lean();
-
-  for (const maint of activeMaintenances) {
-    if (startTime < maint.endTime && endTime > maint.startTime) {
-      return { conflict: true, maintenance: maint };
-    }
-  }
-  return { conflict: false, maintenance: null };
+  const r = await isSlotBlocked(courtId, date, startTime, endTime);
+  return {
+    conflict: r.blocked,
+    maintenance: r.window,
+    suspended: r.reason === "suspended",
+  };
 };
 
 // ============ CONTROLLER: CRUD CƠ BẢN ============
@@ -353,7 +349,9 @@ const createBooking = async (req, res) => {
     if (maintCheck.conflict) {
       return res.status(400).json({
         success: false,
-        message: `Sân có lịch bảo trì (${maintCheck.maintenance.startTime}-${maintCheck.maintenance.endTime}) trong ngày này. Vui lòng chọn ngày khác.`,
+        message: maintCheck.suspended
+          ? "Sân đang tạm ngưng nhận khách (có báo cáo sự cố nghiêm trọng chờ quản lý xử lý). Vui lòng chọn sân khác."
+          : `Sân có lịch bảo trì (${maintCheck.maintenance.startTime}-${maintCheck.maintenance.endTime}) trong ngày này. Vui lòng chọn ngày khác.`,
       });
     }
 
@@ -495,27 +493,31 @@ const createFixedMonthlyBooking = async (req, res) => {
         .json({ success: false, message: "Sân hiện không khả dụng" });
     }
 
-    // Kiểm tra xung đột với lịch bảo trì trong khoảng ngày đặt cố định
-    const activeMaintenances = await Maintenance.find({
-      court: courtId,
-      status: { $in: ["pending", "in_progress"] },
-      startDate: { $lte: endDate },
-      endDate: { $gte: startDate },
-    }).lean();
-    if (activeMaintenances.length > 0) {
-      // Kiểm tra giao thời gian
-      const maintConflict = activeMaintenances.some(
-        (maint) => startTime < maint.endTime && endTime > maint.startTime,
+    // N1.7: chặn theo một nguồn sự thật — tạm ngưng ⇒ không nhận đặt cố định;
+    // phiếu đóng sân ⇒ chặn nếu giao khung giờ của các ngày định đặt
+    const blocking = await getBlockingInfo(courtId);
+    if (blocking.suspended) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Sân đang tạm ngưng nhận khách (có báo cáo sự cố nghiêm trọng chờ quản lý xử lý)",
+      });
+    }
+    const hitWindows = blocking.windows.filter(
+      (m) =>
+        m.startDate <= endDate &&
+        m.endDate >= startDate &&
+        startTime < m.endTime &&
+        endTime > m.startTime,
+    );
+    if (hitWindows.length > 0) {
+      const maintDates = hitWindows.map(
+        (m) => `${m.startDate}→${m.endDate} (${m.startTime}-${m.endTime})`,
       );
-      if (maintConflict) {
-        const maintDates = activeMaintenances.map(
-          (m) => `${m.startDate}→${m.endDate} (${m.startTime}-${m.endTime})`,
-        );
-        return res.status(400).json({
-          success: false,
-          message: `Sân có lịch bảo trì trong khoảng thời gian này: ${maintDates.join("; ")}`,
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        message: `Sân có lịch bảo trì trong khoảng thời gian này: ${maintDates.join("; ")}`,
+      });
     }
 
     const timeCheck = validateTimeSlot(startTime, endTime);
