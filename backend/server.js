@@ -28,6 +28,7 @@ const posRoutes = require("./src/routes/posRoutes");
 const cancellationPolicyRoutes = require("./src/routes/cancellationPolicyRoutes");
 const settingsRoutes = require("./src/routes/settingsRoutes");
 const vnpayRoutes = require("./src/routes/vnpayRoutes");
+const racketServiceRoutes = require("./src/routes/racketServiceRoutes");
 const {
   cleanupExpiredPendingBookings,
 } = require("./src/controllers/bookingController");
@@ -66,6 +67,7 @@ app.use("/api/pos", posRoutes);
 app.use("/api/cancellation-policy", cancellationPolicyRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/vnpay", vnpayRoutes);
+app.use("/api/racket-services", racketServiceRoutes);
 
 // Health check
 app.get("/", (req, res) => {
