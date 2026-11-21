@@ -41,7 +41,9 @@ import POSCourtCheck from "./pages/pos/POSCourtCheck";
 import POSMaintenance from "./pages/pos/POSMaintenance";
 import POSOrders from "./pages/pos/POSOrders";
 import POSShift from "./pages/pos/POSShift";
+import RacketServiceDesk from "./components/RacketServiceDesk";
 import PaymentResult from "./pages/PaymentResult";
+import RacketServicePage from "./pages/RacketServicePage";
 
 export default function App() {
   return (
@@ -84,6 +86,7 @@ export default function App() {
                         </PrivateRoute>
                       }
                     />
+                    <Route path="/racket-service" element={<RacketServicePage />} />
                     <Route path="/payment/result" element={<PaymentResult />} />
                     <Route path="/payment/return" element={<PaymentResult />} />
                   </Routes>
@@ -108,6 +111,7 @@ export default function App() {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="pricing" element={<AdminPricing />} />
             <Route path="maintenance" element={<AdminMaintenance />} />
+            <Route path="racket-service" element={<RacketServiceDesk />} />
             <Route path="maintenance/calendar" element={<MaintenanceCalendar />} />
             <Route path="maintenance/:id" element={<MaintenanceTicketDetail />} />
             <Route path="inspections" element={<AdminInspections />} />
@@ -138,6 +142,7 @@ export default function App() {
             <Route path="maintenance" element={<POSMaintenance />} />
             <Route path="walkin" element={<POSWalkIn />} />
             <Route path="orders" element={<POSOrders />} />
+            <Route path="racket-service" element={<RacketServiceDesk />} />
             <Route path="shift" element={<POSShift />} />
           </Route>
         </Routes>

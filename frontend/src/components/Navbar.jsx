@@ -11,6 +11,7 @@ import {
   Calendar,
   Activity,
   Star,
+  Wrench,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -66,6 +67,9 @@ export default function Navbar() {
           { path: "/reviews", label: "Đánh giá", icon: <Star size={16} /> },
         ]
       : []),
+    ...(!isAdmin && !isPosStaff
+      ? [{ path: "/racket-service", label: "Sửa vợt", icon: <Wrench size={16} /> }]
+      : []),
     ...(isAdmin
       ? [{ path: "/admin", label: "Quản trị", icon: <Settings size={16} /> }]
       : []),
@@ -75,7 +79,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="alob-header">
+    <nav className={`alob-header ${user ? "alob-header--auth" : ""}`}>
       <div className="alob-header-top">
         {/* Logo */}
         <Link to="/" className="alob-header-logo" onClick={closeMenu}>

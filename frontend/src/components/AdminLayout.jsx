@@ -12,6 +12,7 @@ import {
   LogOut,
   Activity,
   Wrench,
+  Scissors,
   ShoppingCart,
   Package,
   RotateCcw,
@@ -44,6 +45,11 @@ const sidebarLinks = [
     to: "/admin/maintenance",
     icon: <Wrench size={18} />,
     label: "Bảo trì sân",
+  },
+  {
+    to: "/admin/racket-service",
+    icon: <Scissors size={18} />,
+    label: "Dịch vụ vợt",
   },
   {
     to: "/admin/inspections",
