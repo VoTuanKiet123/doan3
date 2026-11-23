@@ -19,6 +19,7 @@ import {
   BarChart3,
   ShieldAlert,
   Settings,
+  Trophy,
   Menu,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const sidebarLinks = [
     end: true,
   },
   { to: "/admin/courts", icon: <Volleyball size={18} />, label: "Quản lý sân" },
+  { to: "/admin/events", icon: <Trophy size={18} />, label: "Giải đấu" },
   {
     to: "/admin/bookings",
     icon: <ClipboardList size={18} />,
