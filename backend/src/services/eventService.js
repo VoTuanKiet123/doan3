@@ -2,10 +2,7 @@ const mongoose = require("mongoose");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 
-// ============ TRẠNG THÁI SUY RA (derived — kiểu ACTIVE_STATUSES bên maintenance) ============
-// Một nguồn sự thật cho: nút [Đăng ký] trang khách, badge list khách,
-// badge màn admin, và quyết định của POST /register phía backend.
-// cancelled | draft | finished | closed_deadline | closed_full | open
+// ============ TRẠNG THÁI SUY RA ============
 const getEventState = (event, now = new Date()) => {
   if (!event) return null;
   if (event.status === "cancelled") return "cancelled";
@@ -29,9 +26,6 @@ const STATE_LABELS = {
 };
 
 // ============ GIỮ SLOT NGUYÊN TỬ ============
-// CAS lạc quan: update chỉ match khi registeredCount VẪN bằng giá trị vừa đọc.
-// Hai người đua slot cuối → đúng một người $inc thành công, người kia đọc lại
-// thấy đầy và nhận 400. Không phụ thuộc $expr trong update filter của server.
 const reserveSlot = async (eventId) => {
   for (let attempt = 0; attempt < 3; attempt++) {
     const ev = await Event.findOne({ _id: eventId, isDeleted: { $ne: true } }).lean();
@@ -48,7 +42,6 @@ const reserveSlot = async (eventId) => {
       { $inc: { registeredCount: 1 } },
     );
     if (upd.modifiedCount === 1) return { ok: true };
-    // count bị người khác đổi giữa lúc đọc và lúc ghi → thử lại với số mới
   }
   return { ok: false, reason: "try_again" };
 };
@@ -56,7 +49,7 @@ const reserveSlot = async (eventId) => {
 const releaseSlot = (eventId) =>
   Event.updateOne({ _id: eventId }, { $inc: { registeredCount: -1 } });
 
-// ============ ĐĂNG KÝ ============
+// ============ VALIDATE FORM ĐĂNG KÝ DÙNG CHUNG ============
 const CLOSE_MESSAGES = {
   closed_deadline: "Hết hạn đăng ký",
   closed_full: "Sự kiện đã đủ suất đăng ký",
@@ -66,8 +59,46 @@ const CLOSE_MESSAGES = {
   try_again: "Sự kiện vừa thay đổi, vui lòng thử lại",
 };
 
-const registerToEvent = async (eventId, user) => {
-  // Chặn trùng trước cho thông báo đẹp; unique partial index vẫn là lưới cuối
+const ALLOWED_GENDERS = ["Nam", "Nữ", "Khác"];
+const ALLOWED_LEVELS = ["Mới chơi", "Phong trào", "Khá", "Bán chuyên"];
+
+const validateRegistrationForm = (formData = {}, user = {}, eventTypeName = "") => {
+  const name = String(formData.name ?? user.name ?? "").trim().slice(0, 100);
+  if (!name) return { error: "Vui lòng nhập họ và tên người tham gia" };
+
+  const phone = String(formData.phone ?? user.phone ?? "").replace(/\s+/g, "").trim();
+  if (!phone) return { error: "Vui lòng nhập số điện thoại liên hệ" };
+  if (!/^(0|\+84)[0-9]{8,10}$/.test(phone))
+    return { error: "Số điện thoại không hợp lệ (VD: 0912345678)" };
+
+  const gender = ALLOWED_GENDERS.includes(formData.gender) ? formData.gender : "Nam";
+  const skillLevel = ALLOWED_LEVELS.includes(formData.skillLevel)
+    ? formData.skillLevel
+    : "Phong trào";
+  const partnerOrTeamName = String(formData.partnerOrTeamName || "").trim().slice(0, 120);
+  const note = String(formData.note || "").trim().slice(0, 300);
+
+  if (/đôi|đội/i.test(eventTypeName) && !partnerOrTeamName) {
+    return { error: "Vui lòng nhập tên đồng đội hoặc tên đội thi đấu" };
+  }
+
+  return {
+    data: { name, phone, gender, skillLevel, partnerOrTeamName, note },
+  };
+};
+
+// ============ ĐĂNG KÝ ============
+const registerToEvent = async (eventId, user, formData = {}) => {
+  const ev = await Event.findOne({ _id: eventId, isDeleted: { $ne: true } })
+    .populate("type", "name")
+    .lean();
+  if (!ev || ev.status === "draft")
+    return { ok: false, status: 404, message: "Không tìm thấy sự kiện" };
+
+  const validated = validateRegistrationForm(formData, user, ev.type?.name || "");
+  if (validated.error)
+    return { ok: false, status: 400, message: validated.error };
+
   const existing = await Registration.findOne({
     event: eventId,
     user: user._id,
@@ -80,7 +111,12 @@ const registerToEvent = async (eventId, user) => {
   if (!slot.ok)
     return {
       ok: false,
-      status: slot.reason === "not_found" || slot.reason === "draft" ? 404 : slot.reason === "try_again" ? 409 : 400,
+      status:
+        slot.reason === "not_found" || slot.reason === "draft"
+          ? 404
+          : slot.reason === "try_again"
+            ? 409
+            : 400,
       message: CLOSE_MESSAGES[slot.reason],
     };
 
@@ -88,20 +124,64 @@ const registerToEvent = async (eventId, user) => {
     const registration = await Registration.create({
       event: eventId,
       user: user._id,
-      name: user.name,
-      phone: user.phone,
+      ...validated.data,
     });
     return { ok: true, registration };
   } catch (e) {
-    await releaseSlot(eventId); // 2 cú click cùng giây đụng unique index → hoàn slot
+    await releaseSlot(eventId);
     if (e.code === 11000)
       return { ok: false, status: 409, message: "Bạn đã đăng ký sự kiện này" };
     throw e;
   }
 };
 
-// ============ ADMIN HỦY ĐĂNG KÝ (lý do bắt buộc) ============
-// Guard status:"registered" trong chính câu update → hủy 2 lần không trừ slot 2 lần.
+// ============ NGƯỜI DÙNG CHỈNH SỬA PHIẾU ĐĂNG KÝ TRƯỚC HẠN ============
+const updateUserRegistration = async (eventId, user, formData = {}) => {
+  const ev = await Event.findOne({ _id: eventId, isDeleted: { $ne: true } })
+    .populate("type", "name")
+    .lean();
+  if (!ev || ev.status === "draft")
+    return { ok: false, status: 404, message: "Không tìm thấy sự kiện" };
+  if (ev.status === "cancelled")
+    return { ok: false, status: 400, message: "Sự kiện đã bị hủy" };
+
+  const now = new Date();
+  if (ev.registrationDeadline && now > new Date(ev.registrationDeadline)) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Đã quá hạn đăng ký, không thể chỉnh sửa phiếu",
+    };
+  }
+  if (ev.startDate && now > new Date(ev.startDate)) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Sự kiện đã bắt đầu, không thể chỉnh sửa phiếu",
+    };
+  }
+
+  const validated = validateRegistrationForm(formData, user, ev.type?.name || "");
+  if (validated.error)
+    return { ok: false, status: 400, message: validated.error };
+
+  const updated = await Registration.findOneAndUpdate(
+    { event: eventId, user: user._id, status: "registered" },
+    { $set: validated.data },
+    { new: true },
+  );
+  if (!updated) {
+    return {
+      ok: false,
+      status: 404,
+      message: "Không tìm thấy phiếu đăng ký hợp lệ để chỉnh sửa",
+    };
+  }
+
+  return { ok: true, registration: updated };
+};
+
+// ============ HỦY ĐĂNG KÝ (HOÀN SLOT NGUYÊN TỬ) ============
 const cancelRegistration = async (registrationId, note) => {
   const session = await mongoose.startSession();
   try {
@@ -132,5 +212,6 @@ module.exports = {
   reserveSlot,
   releaseSlot,
   registerToEvent,
+  updateUserRegistration,
   cancelRegistration,
 };

@@ -1,9 +1,8 @@
 const mongoose = require("mongoose");
 
 // ============ ĐĂNG KÝ THAM GIA SỰ KIỆN ============
-// Đăng ký là có hiệu lực ngay (không duyệt đơn — chốt trong plan).
-// name/phone là SNAPSHOT từ User lúc đăng ký: danh sách + kết quả không hỏng
-// khi user bị đổi/xóa (pattern customerName/customerPhone của phiếu vợt).
+// Đăng ký có hiệu lực ngay. name/phone là SNAPSHOT lúc đăng ký để danh sách
+// không bị ảnh hưởng nếu user đổi thông tin tài khoản về sau.
 const registrationSchema = new mongoose.Schema(
   {
     event: {
@@ -16,8 +15,36 @@ const registrationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    name: { type: String, trim: true },
-    phone: { type: String, trim: true },
+    name: {
+      type: String,
+      required: [true, "Vui lòng nhập họ và tên"],
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: [true, "Vui lòng nhập số điện thoại"],
+      trim: true,
+    },
+    gender: {
+      type: String,
+      enum: ["Nam", "Nữ", "Khác"],
+      default: "Nam",
+    },
+    skillLevel: {
+      type: String,
+      enum: ["Mới chơi", "Phong trào", "Khá", "Bán chuyên"],
+      default: "Phong trào",
+    },
+    partnerOrTeamName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    note: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     status: {
       type: String,
       enum: ["registered", "cancelled"],

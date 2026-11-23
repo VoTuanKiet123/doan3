@@ -6,12 +6,31 @@ const {
   getEventState,
   STATE_LABELS,
   registerToEvent,
+  updateUserRegistration,
   cancelRegistration,
 } = require("../services/eventService");
 
+const DEFAULT_EVENT_TYPES = [
+  {
+    name: "Giải cá nhân",
+    note: "Thi đấu đơn nam / đơn nữ theo thể thức loại trực tiếp hoặc vòng bảng.",
+  },
+  {
+    name: "Giải đôi",
+    note: "Thi đấu đôi nam, đôi nữ hoặc đôi nam nữ (2 VĐV/đội).",
+  },
+  {
+    name: "Giải đồng đội",
+    note: "Thi đấu theo đội/CLB gồm nhiều nội dung đơn và đôi.",
+  },
+  {
+    name: "Giải giao hữu",
+    note: "Giao lưu cọ xát phong trào, không đặt nặng thành tích.",
+  },
+];
+
 // ============ HELPERS ============
 
-// "A, B ,, a" → ["A","B"] — dedup không phân biệt hoa thường, cắt rác
 const parseSponsors = (v) => {
   const arr = Array.isArray(v) ? v : String(v || "").split(",");
   const out = [];
@@ -28,7 +47,6 @@ const parseSponsors = (v) => {
   return out.slice(0, 30);
 };
 
-// Lọc Top 5 hợp lệ: có tên, rank 1..5, sắp theo rank
 const parseResults = (v) => {
   const arr = Array.isArray(v) ? v : [];
   const out = [];
@@ -42,16 +60,27 @@ const parseResults = (v) => {
   return out.slice(0, 5);
 };
 
-// Đọc + validate payload sự kiện từ req.body; trả về { error } để controller báo 400
 const buildEventPayload = (body, current = {}) => {
   const p = { ...current };
   const FIELDS = [
-    "name", "type", "court", "startDate", "endDate",
-    "description", "registrationDeadline", "maxRegistrations", "status",
+    "name",
+    "type",
+    "court",
+    "posterUrl",
+    "startDate",
+    "endDate",
+    "description",
+    "registrationDeadline",
+    "maxRegistrations",
+    "status",
   ];
   for (const f of FIELDS) if (body[f] !== undefined) p[f] = body[f];
   if (body.sponsors !== undefined) p.sponsors = parseSponsors(body.sponsors);
   if (body.results !== undefined) p.results = parseResults(body.results);
+
+  if (p.type === "") p.type = null;
+  if (p.court === "") p.court = null;
+  if (p.posterUrl !== undefined) p.posterUrl = String(p.posterUrl || "").trim();
 
   for (const idField of ["type", "court"]) {
     if (p[idField] && !mongoose.isValidObjectId(p[idField]))
@@ -61,7 +90,6 @@ const buildEventPayload = (body, current = {}) => {
   const deadline = p.registrationDeadline ? new Date(p.registrationDeadline) : null;
   if (!startDate || isNaN(startDate)) return { error: "Ngày bắt đầu không hợp lệ" };
   if (!deadline || isNaN(deadline)) return { error: "Hạn đăng ký không hợp lệ" };
-  // Chốt trong plan: hạn đăng ký luôn trước ngày bắt đầu (BTC cần lúc chốt danh sách)
   if (deadline > startDate)
     return { error: "Hạn đăng ký phải trước ngày bắt đầu sự kiện" };
   if (p.endDate) {
@@ -76,7 +104,6 @@ const buildEventPayload = (body, current = {}) => {
   return { payload: p };
 };
 
-// Gắn state suy ra + nhãn vào event trước khi trả client
 const decorate = (ev) => {
   const obj = ev.toObject ? ev.toObject() : ev;
   obj.state = getEventState(obj);
@@ -84,27 +111,47 @@ const decorate = (ev) => {
   return obj;
 };
 
+// ============ UPLOAD ẢNH BÌA (POSTER) ============
+
+// @desc    Admin tải ảnh bìa giải đấu lên thư mục uploads/events
+// @route   POST /api/events/upload-poster
+const uploadPoster = (req, res) => {
+  if (!req.file) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Vui lòng chọn file ảnh để tải lên" });
+  }
+  return res.status(201).json({
+    success: true,
+    posterUrl: `/uploads/events/${req.file.filename}`,
+  });
+};
+
 // ============ EVENT TYPES ============
 
-// @desc    Loại sự kiện đang bật (công khai — form admin cũng dùng)
-// @route   GET /api/event-types
 const getEventTypes = async (req, res) => {
   try {
-    const types = await EventType.find({ isActive: true }).sort({ createdAt: 1 });
+    const count = await EventType.countDocuments();
+    if (count === 0) {
+      await EventType.insertMany(DEFAULT_EVENT_TYPES, { ordered: false }).catch(() => {});
+    }
+    const filter = req.query.includeInactive === "true" ? {} : { isActive: true };
+    const types = await EventType.find(filter).sort({ createdAt: 1 });
     res.json({ success: true, types });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Thêm loại sự kiện (admin)
-// @route   POST /api/event-types
 const saveEventType = async (req, res) => {
   try {
     const { name, note } = req.body;
     if (!name || !name.trim())
       return res.status(400).json({ success: false, message: "Vui lòng nhập tên loại sự kiện" });
-    const created = await EventType.create({ name, note });
+    const created = await EventType.create({
+      name: name.trim(),
+      note: note ? String(note).trim() : "",
+    });
     res.status(201).json({ success: true, type: created });
   } catch (error) {
     if (error.code === 11000)
@@ -113,14 +160,17 @@ const saveEventType = async (req, res) => {
   }
 };
 
-// @desc    Sửa / tắt loại sự kiện (admin) — không xóa cứng
-// @route   PUT /api/event-types/:id
 const updateEventType = async (req, res) => {
   try {
     const updates = {};
-    ["name", "note", "isActive"].forEach((f) => {
-      if (req.body[f] !== undefined) updates[f] = req.body[f];
-    });
+    if (req.body.name !== undefined) {
+      if (!String(req.body.name).trim())
+        return res.status(400).json({ success: false, message: "Tên loại sự kiện không được để trống" });
+      updates.name = String(req.body.name).trim();
+    }
+    if (req.body.note !== undefined) updates.note = String(req.body.note).trim();
+    if (req.body.isActive !== undefined) updates.isActive = Boolean(req.body.isActive);
+
     const updated = await EventType.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
@@ -137,12 +187,10 @@ const updateEventType = async (req, res) => {
 
 // ============ EVENTS ============
 
-// @desc    List sự kiện published cho khách (không cần đăng nhập)
-// @route   GET /api/events
 const getPublicEvents = async (req, res) => {
   try {
     const events = await Event.find({ status: "published", isDeleted: { $ne: true } })
-      .populate("type", "name")
+      .populate("type", "name note")
       .populate("court", "name")
       .sort({ startDate: 1 })
       .lean();
@@ -152,14 +200,16 @@ const getPublicEvents = async (req, res) => {
   }
 };
 
-// @desc    Chi tiết sự kiện published cho khách
-// @route   GET /api/events/:id
 const getPublicEvent = async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id))
       return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
-    const ev = await Event.findOne({ _id: req.params.id, status: "published", isDeleted: { $ne: true } })
-      .populate("type", "name")
+    const ev = await Event.findOne({
+      _id: req.params.id,
+      status: "published",
+      isDeleted: { $ne: true },
+    })
+      .populate("type", "name note")
       .populate("court", "name")
       .lean();
     if (!ev) return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
@@ -169,14 +219,12 @@ const getPublicEvent = async (req, res) => {
   }
 };
 
-// @desc    List mọi sự kiện cho admin (kèm draft/cancelled)
-// @route   GET /api/events/manage
 const getManagedEvents = async (req, res) => {
   try {
     const filter = { isDeleted: { $ne: true } };
     if (req.query.status) filter.status = req.query.status;
     const events = await Event.find(filter)
-      .populate("type", "name")
+      .populate("type", "name note")
       .populate("court", "name")
       .sort({ startDate: -1 })
       .lean();
@@ -186,12 +234,10 @@ const getManagedEvents = async (req, res) => {
   }
 };
 
-// @desc    Chi tiết sự kiện cho admin (cả draft)
-// @route   GET /api/events/manage/:id
 const getManagedEvent = async (req, res) => {
   try {
     const ev = await Event.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
-      .populate("type", "name")
+      .populate("type", "name note")
       .populate("court", "name")
       .lean();
     if (!ev) return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
@@ -201,14 +247,14 @@ const getManagedEvent = async (req, res) => {
   }
 };
 
-// @desc    Tạo sự kiện (admin)
-// @route   POST /api/events
 const createEvent = async (req, res) => {
   try {
     const { payload, error } = buildEventPayload(req.body);
     if (error) return res.status(400).json({ success: false, message: error });
     if (!payload.name || !payload.name.trim())
       return res.status(400).json({ success: false, message: "Vui lòng nhập tên sự kiện" });
+    if (!payload.type)
+      return res.status(400).json({ success: false, message: "Vui lòng chọn loại sự kiện" });
     const created = await Event.create(payload);
     res.status(201).json({ success: true, event: decorate(created) });
   } catch (error) {
@@ -216,17 +262,16 @@ const createEvent = async (req, res) => {
   }
 };
 
-// @desc    Sửa sự kiện / đổi trạng thái / nhập Top 5 (admin)
-// @route   PUT /api/events/:id
 const updateEvent = async (req, res) => {
   try {
     const ev = await Event.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!ev) return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
-    // Hợp nhất với doc hiện tại rồi validate chéo — PUT một phần vẫn chặn deadline > startDate
     const { payload, error } = buildEventPayload(req.body, ev.toObject());
     if (error) return res.status(400).json({ success: false, message: error });
+    if (!payload.type)
+      return res.status(400).json({ success: false, message: "Vui lòng chọn loại sự kiện" });
     delete payload._id;
-    delete payload.registeredCount; // chỉ service được đụng counter
+    delete payload.registeredCount;
     delete payload.isDeleted;
     delete payload.deletedAt;
     ev.set(payload);
@@ -237,8 +282,6 @@ const updateEvent = async (req, res) => {
   }
 };
 
-// @desc    Xóa mềm sự kiện (admin)
-// @route   DELETE /api/events/:id
 const deleteEvent = async (req, res) => {
   try {
     const ev = await Event.findOneAndUpdate(
@@ -255,11 +298,9 @@ const deleteEvent = async (req, res) => {
 
 // ============ ĐĂNG KÝ ============
 
-// @desc    Khách đăng ký tham gia (user đăng nhập)
-// @route   POST /api/events/:id/register
 const register = async (req, res) => {
   try {
-    const result = await registerToEvent(req.params.id, req.user);
+    const result = await registerToEvent(req.params.id, req.user, req.body);
     if (!result.ok)
       return res.status(result.status).json({ success: false, message: result.message });
     res.status(201).json({
@@ -272,8 +313,83 @@ const register = async (req, res) => {
   }
 };
 
-// @desc    Danh sách đăng ký của một sự kiện (admin)
-// @route   GET /api/events/:id/registrations
+// @desc    Người dùng sửa phiếu đăng ký của chính mình trước hạn
+// @route   PUT /api/events/:id/register
+const updateMyRegistration = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id))
+      return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
+
+    const result = await updateUserRegistration(req.params.id, req.user, req.body);
+    if (!result.ok)
+      return res.status(result.status).json({ success: false, message: result.message });
+
+    res.json({
+      success: true,
+      message: "Đã cập nhật phiếu đăng ký",
+      registration: result.registration,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const cancelMyRegistration = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id))
+      return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
+
+    const ev = await Event.findOne({ _id: req.params.id, isDeleted: { $ne: true } }).lean();
+    if (!ev)
+      return res.status(404).json({ success: false, message: "Không tìm thấy sự kiện" });
+    if (ev.status === "cancelled")
+      return res.status(400).json({ success: false, message: "Sự kiện đã bị hủy" });
+
+    const now = new Date();
+    if (ev.registrationDeadline && now > new Date(ev.registrationDeadline)) {
+      return res.status(400).json({
+        success: false,
+        message: "Đã quá hạn đăng ký, không thể tự hủy. Vui lòng liên hệ Ban tổ chức.",
+      });
+    }
+    if (ev.startDate && now > new Date(ev.startDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Sự kiện đã bắt đầu, không thể tự hủy.",
+      });
+    }
+
+    const existing = await Registration.findOne({
+      event: ev._id,
+      user: req.user._id,
+      status: "registered",
+    }).lean();
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: "Bạn chưa đăng ký sự kiện này hoặc đơn đã bị hủy trước đó",
+      });
+    }
+
+    const rawReason = String(req.body?.reason || "").trim().slice(0, 200);
+    const cancelNote = rawReason
+      ? `Người dùng tự hủy: ${rawReason}`
+      : "Người dùng tự hủy trước hạn";
+
+    const reg = await cancelRegistration(existing._id, cancelNote);
+    if (!reg)
+      return res.status(400).json({ success: false, message: "Đăng ký này đã bị hủy trước đó" });
+
+    res.json({
+      success: true,
+      message: "Đã hủy đăng ký thành công",
+      registration: reg,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const getEventRegistrations = async (req, res) => {
   try {
     const ev = await Event.findOne({ _id: req.params.id, isDeleted: { $ne: true } }).lean();
@@ -293,8 +409,6 @@ const getEventRegistrations = async (req, res) => {
   }
 };
 
-// @desc    "Giải đấu của tôi" (user đăng nhập)
-// @route   GET /api/registrations/mine
 const getMyRegistrations = async (req, res) => {
   try {
     const regs = await Registration.find({ user: req.user._id })
@@ -307,12 +421,15 @@ const getMyRegistrations = async (req, res) => {
       })
       .sort({ createdAt: -1 })
       .lean();
-    // Ẩn đăng ký thuộc sự kiện đã xóa mềm hoặc còn là bản nháp
     const items = regs
       .filter((r) => r.event && r.event.status !== "draft" && !r.event.isDeleted)
       .map((r) => ({
         ...r,
-        event: { ...r.event, state: getEventState(r.event), stateLabel: STATE_LABELS[getEventState(r.event)] },
+        event: {
+          ...r.event,
+          state: getEventState(r.event),
+          stateLabel: STATE_LABELS[getEventState(r.event)],
+        },
       }));
     res.json({ success: true, registrations: items });
   } catch (error) {
@@ -320,8 +437,6 @@ const getMyRegistrations = async (req, res) => {
   }
 };
 
-// @desc    Admin hủy đăng ký (lý do bắt buộc) — hoàn 1 slot
-// @route   PUT /api/registrations/:id/cancel
 const cancel = async (req, res) => {
   try {
     const { reason } = req.body;
@@ -340,6 +455,7 @@ const cancel = async (req, res) => {
 };
 
 module.exports = {
+  uploadPoster,
   getEventTypes,
   saveEventType,
   updateEventType,
@@ -351,6 +467,8 @@ module.exports = {
   updateEvent,
   deleteEvent,
   register,
+  updateMyRegistration,
+  cancelMyRegistration,
   getEventRegistrations,
   getMyRegistrations,
   cancel,
