@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Activity, Zap, Calendar, Trophy, Bell, Mail, Lock, EyeOff, Eye, LogIn, Sparkles } from 'lucide-react';
@@ -7,6 +7,10 @@ import { Activity, Zap, Calendar, Trophy, Bell, Mail, Lock, EyeOff, Eye, LogIn, 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // chỉ nhận đường dẫn nội bộ ("/..." nhưng không phải "//...") để tránh chuyển hướng ra ngoài
+  const redirect = params.get('redirect');
+  const safeRedirect = redirect && /^\/(?![/\\])/.test(redirect) ? redirect : null;
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -22,7 +26,7 @@ export default function LoginPage() {
       } else if (user.role === 'pos_staff') {
         navigate('/pos');
       } else {
-        navigate('/courts');
+        navigate(safeRedirect || '/courts');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Đăng nhập thất bại');

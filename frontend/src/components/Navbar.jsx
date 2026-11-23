@@ -12,6 +12,7 @@ import {
   Activity,
   Star,
   Wrench,
+  Trophy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -52,7 +53,8 @@ export default function Navbar() {
   };
 
   const closeMenu = () => setMenuOpen(false);
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) =>
+    location.pathname === path || (path === "/tournaments" && location.pathname.startsWith("/tournaments/"));
 
   const navLinks = [
     { path: "/", label: "Trang chủ", icon: <Home size={16} /> },
@@ -68,7 +70,10 @@ export default function Navbar() {
         ]
       : []),
     ...(!isAdmin && !isPosStaff
-      ? [{ path: "/racket-service", label: "Sửa vợt", icon: <Wrench size={16} /> }]
+      ? [
+          { path: "/tournaments", label: "Giải đấu", icon: <Trophy size={16} /> },
+          { path: "/racket-service", label: "Sửa vợt", icon: <Wrench size={16} /> },
+        ]
       : []),
     ...(isAdmin
       ? [{ path: "/admin", label: "Quản trị", icon: <Settings size={16} /> }]

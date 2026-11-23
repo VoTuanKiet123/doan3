@@ -13,6 +13,7 @@ import {
   Activity,
   Wrench,
   Scissors,
+  Trophy,
   ShoppingCart,
   Package,
   RotateCcw,
@@ -50,6 +51,11 @@ const sidebarLinks = [
     to: "/admin/racket-service",
     icon: <Scissors size={18} />,
     label: "Dịch vụ vợt",
+  },
+  {
+    to: "/admin/tournaments",
+    icon: <Trophy size={18} />,
+    label: "Giải đấu",
   },
   {
     to: "/admin/inspections",

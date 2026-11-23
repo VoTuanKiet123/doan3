@@ -44,6 +44,11 @@ import POSShift from "./pages/pos/POSShift";
 import RacketServiceDesk from "./components/RacketServiceDesk";
 import PaymentResult from "./pages/PaymentResult";
 import RacketServicePage from "./pages/RacketServicePage";
+import TournamentsPage from "./pages/TournamentsPage";
+import TournamentDetailPage from "./pages/TournamentDetailPage";
+import MyTournamentsPage from "./pages/MyTournamentsPage";
+import AdminTournaments, { AdminTournamentManage } from "./pages/admin/AdminTournaments";
+import { POSTournamentList, POSTournamentManage } from "./pages/pos/POSTournaments";
 
 export default function App() {
   return (
@@ -87,6 +92,16 @@ export default function App() {
                       }
                     />
                     <Route path="/racket-service" element={<RacketServicePage />} />
+                    <Route path="/tournaments" element={<TournamentsPage />} />
+                    <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
+                    <Route
+                      path="/my-tournaments"
+                      element={
+                        <PrivateRoute>
+                          <MyTournamentsPage />
+                        </PrivateRoute>
+                      }
+                    />
                     <Route path="/payment/result" element={<PaymentResult />} />
                     <Route path="/payment/return" element={<PaymentResult />} />
                   </Routes>
@@ -112,6 +127,8 @@ export default function App() {
             <Route path="pricing" element={<AdminPricing />} />
             <Route path="maintenance" element={<AdminMaintenance />} />
             <Route path="racket-service" element={<RacketServiceDesk />} />
+            <Route path="tournaments" element={<AdminTournaments />} />
+            <Route path="tournaments/:id" element={<AdminTournamentManage />} />
             <Route path="maintenance/calendar" element={<MaintenanceCalendar />} />
             <Route path="maintenance/:id" element={<MaintenanceTicketDetail />} />
             <Route path="inspections" element={<AdminInspections />} />
@@ -143,6 +160,8 @@ export default function App() {
             <Route path="walkin" element={<POSWalkIn />} />
             <Route path="orders" element={<POSOrders />} />
             <Route path="racket-service" element={<RacketServiceDesk />} />
+            <Route path="tournaments" element={<POSTournamentList />} />
+            <Route path="tournaments/:id" element={<POSTournamentManage />} />
             <Route path="shift" element={<POSShift />} />
           </Route>
         </Routes>

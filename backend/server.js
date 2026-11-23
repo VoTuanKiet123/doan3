@@ -29,6 +29,7 @@ const cancellationPolicyRoutes = require("./src/routes/cancellationPolicyRoutes"
 const settingsRoutes = require("./src/routes/settingsRoutes");
 const vnpayRoutes = require("./src/routes/vnpayRoutes");
 const racketServiceRoutes = require("./src/routes/racketServiceRoutes");
+const tournamentRoutes = require("./src/routes/tournamentRoutes");
 const {
   cleanupExpiredPendingBookings,
 } = require("./src/controllers/bookingController");
@@ -68,6 +69,7 @@ app.use("/api/cancellation-policy", cancellationPolicyRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/vnpay", vnpayRoutes);
 app.use("/api/racket-services", racketServiceRoutes);
+app.use("/api/tournaments", tournamentRoutes);
 
 // Health check
 app.get("/", (req, res) => {

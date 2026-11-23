@@ -116,6 +116,18 @@ const ensureDefaults = async () => {
     }
   }
 
+  const EventType = mongoose.model("EventType");
+  if ((await EventType.countDocuments()) === 0) {
+    await EventType.insertMany([
+      { name: "Đơn nam", playType: "single", description: "Nội dung đánh đơn dành cho nam" },
+      { name: "Đơn nữ", playType: "single", description: "Nội dung đánh đơn dành cho nữ" },
+      { name: "Đôi nam", playType: "pair", description: "Đăng ký theo cặp 2 VĐV nam" },
+      { name: "Đôi nữ", playType: "pair", description: "Đăng ký theo cặp 2 VĐV nữ" },
+      { name: "Đôi nam nữ", playType: "pair", description: "Đăng ký theo cặp 1 nam 1 nữ" },
+    ]);
+    console.log("🏸 Đã tạo các loại sự kiện giải đấu mặc định");
+  }
+
   if (!(await CancellationPolicy.findOne({ isActive: true }))) {
     await CancellationPolicy.create({
       name: "Chính sách hủy mặc định",

@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   RefreshCw,
-  X,
   AlertTriangle,
   Phone,
   User,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 import RacketProgress from "./RacketProgress";
+import Drawer from "./Drawer";
 import {
   STATUS,
   SERVICE,
@@ -75,38 +75,6 @@ const emptyForm = () => ({
   estimatedReadyAt: defaultReady(),
   note: "",
 });
-
-// ===================================================================
-// Ngăn kéo bên phải (dùng cho tạo phiếu & chi tiết phiếu)
-// ===================================================================
-function Drawer({ title, onClose, children, footer }) {
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div className="rsd-overlay" onClick={onClose}>
-      <aside
-        className="rsd-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="rsd-drawer-head">
-          <h2>{title}</h2>
-          <button type="button" className="rsd-icon-btn" onClick={onClose} aria-label="Đóng">
-            <X size={20} />
-          </button>
-        </header>
-        <div className="rsd-drawer-body">{children}</div>
-        {footer && <footer className="rsd-drawer-foot">{footer}</footer>}
-      </aside>
-    </div>
-  );
-}
 
 // ===================================================================
 // Form tiếp nhận vợt

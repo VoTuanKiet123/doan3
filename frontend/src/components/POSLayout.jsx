@@ -14,6 +14,7 @@ import {
   BadgeCheck,
   Wrench,
   Scissors,
+  Trophy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -45,6 +46,11 @@ const posLinks = [
     label: "Dịch vụ vợt",
   },
   {
+    to: "/pos/tournaments",
+    icon: <Trophy size={18} />,
+    label: "Giải đấu phụ trách",
+  },
+  {
     to: "/pos/walkin",
     icon: <UserPlus size={18} />,
     label: "Khách vãng lai",
@@ -67,6 +73,7 @@ const pageTitles = {
   "/pos/checklist": "Kiểm tra sân & báo cáo lỗi",
   "/pos/maintenance": "Thực hiện bảo trì",
   "/pos/racket-service": "Dịch vụ vợt",
+  "/pos/tournaments": "Giải đấu phụ trách",
   "/pos/walkin": "Khách vãng lai",
   "/pos/orders": "Bán dịch vụ tại quầy",
   "/pos/shift": "Ca làm việc",
@@ -108,7 +115,9 @@ export default function POSLayout() {
   };
 
   // Current page title
-  const pageTitle = pageTitles[location.pathname] || "Nhân viên quầy";
+  const pageTitle =
+    pageTitles[location.pathname] ||
+    (location.pathname.startsWith("/pos/tournaments/") ? "Quản lý giải đấu" : "Nhân viên quầy");
 
   return (
     <div className="pos-layout">
