@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Activity, Music, MessageCircle, Home, Volleyball, Calendar, Sparkles, HelpCircle, Phone, Lock, FileText, MapPin, Mail, Clock } from 'lucide-react';
+import { Wrench, Activity, Music, MessageCircle, Home, Volleyball, Calendar, Sparkles, HelpCircle, Phone, Lock, FileText, MapPin, Mail, Clock } from 'lucide-react';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -52,6 +52,9 @@ export default function Footer() {
             </Link>
             <Link to="/my-bookings" className="footer-link">
               <Calendar size={14} /> Lịch đặt của tôi
+            </Link>
+            <Link to="/racket-service" className="footer-link">
+              <Wrench size={14} /> Theo dõi sửa vợt
             </Link>
             <Link to="/register" className="footer-link">
               <Sparkles size={14} /> Đăng ký miễn phí

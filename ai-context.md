@@ -175,6 +175,47 @@
       7. Chặn đúng quy tắc: sửa/xóa phiếu `Completed`; xóa phiếu đã có nhật ký (chỉ được Hủy); bấm Hoàn thành khi chưa có lần kiểm tra lại đạt; nhân viên POS thử tạo/hủy phiếu.
       8. Số liệu trên báo cáo (chi phí, thời gian đóng sân, tỷ lệ đạt) khớp với dữ liệu phiếu và nhật ký.
 
+  - [ ] **Quản lý giải đấu — PLAN CHỐT 2026-11-23, chưa code (agent đọc mục này trước khi làm):**
+    > **TRẠNG THÁI 2026-11-23:** Code XONG toàn bộ Phase 1–3 (backend: 3 model + eventService + eventController + 3 routes + seedEvents.js + testEventsAPI.js; frontend: EventsPage/EventDetailPage/MyRegistrationsPage/AdminEvents + utils/events.js + nav + route). **CHƯA CHẠY** `node backend/testEventsAPI.js` và build frontend (môi trường chặn execute lúc code xong) — chạy pass cả hai trước khi coi là xong Phase. Slotrace dùng CAS guard (`registeredCount: $eq giá trị vừa đọc`) thay `$expr`, an toàn mọi version Mongo.
+    - **Phạm vi:** loại sự kiện, sự kiện, nhà tài trợ (text thô), đăng ký, danh sách đăng ký, kết quả Top 5 chung cuộc. **Ngoài phạm vi:** chat AI, bracket/xếp trận, lệ phí/thanh toán, chặn lịch đặt sân theo sự kiện.
+    - **Vai trò:** BTC = `admin` (không thêm role mới). Khách đăng ký = `user` (bắt buộc đăng nhập).
+    - **Diễn giải chốt (mô hình phẳng):** 1 sự kiện = 1 pool đăng ký, KHÔNG có nội dung thi đấu con (đơn nam/đôi nữ…). Sau này muốn chia nội dung ⇒ thêm `category` vào `Registration` + `results`, đụng form đăng ký + màn admin ⇒ hỏi trước khi đổi.
+    - **Collections (3):**
+      - `EventType`: `{ name (unique, trim), active, note }` — CRUD theo pattern `ChecklistTemplate` + seed mặc định.
+      - `Event`:
+        ```
+        { name (required), type (ref EventType, optional), court (ref Court, optional — chỉ hiển thị, KHÔNG chặn lịch đặt),
+          startDate, endDate (Date), description,
+          registrationDeadline (Date; validate khi lưu: phải ≤ startDate),
+          maxRegistrations (Number, 0 = không giới hạn), registeredCount (Number, default 0),
+          sponsors: [String] (form 1 ô text, split dấu phẩy — không có model Sponsor),
+          status: "draft" | "published" | "cancelled",
+          results: [{ rank: 1..5, name: String }] (admin gõ tay, không join Registration),
+          isDeleted, deletedAt }
+        ```
+        Index: `{ status: 1, startDate: 1 }`.
+      - `Registration`: `{ event (ref), user (ref), name, phone (snapshot từ user lúc đăng ký), status: "registered" | "cancelled", cancelNote }`; **unique partial index `{ event: 1, user: 1 }` với `status = "registered"`** — chặn đăng ký trùng (409), admin hủy xong index tự giải để đăng ký lại được.
+    - **Quy tắc khóa đăng ký (derived, không cron):** MỘT nguồn sự thật — helper `getEventState(event)` trong `backend/src/services/eventService.js`: `open` / `closed_deadline` / `closed_full` / `finished` / `cancelled` (dùng cả cho list + detail của khách và badge màn admin, kiểu `ACTIVE_STATUSES` bên maintenance).
+      - `POST /register` **không tin UI**: một câu update nguyên tử `Event.findOneAndUpdate({_id, status: "published", registrationDeadline: { $gte: now }, registeredCount: { $lt: max }}, { $inc: { registeredCount: 1 } }, { new: true })` → không match = 400 "Đăng ký đã đóng". So sánh 2 field trong doc cần `$expr` (Mongo ≥ 5 cho phép trong filter của findOneAndUpdate — **verify version Mongo khi code**; fallback: lúc lưu, `max = 0` thì chuẩn hóa thành hằng số lớn để query thường).
+      - Admin hủy đăng ký ⇒ `$inc: { registeredCount: -1 }` + set status `cancelled` trong cùng transaction (kiểu maintenanceService).
+      - Ngày diễn ra không cần xử lý riêng: deadline luôn ≤ startDate nên hết hạn đăng ký kéo trước ngày đá; sự kiện xong thì nút đăng ký vốn đã tắt và Top 5 hiện ra.
+    - **API:** `/api/event-types` (admin CRUD) · `/api/events` (public GET list+detail chỉ `published`; admin: toàn bộ + POST/PUT/DELETE xóa mềm; results+sponsors lưu qua PUT thường) · `/api/events/:id/register` (user) · `/api/registrations/mine` (user) · `/api/events/:id/registrations` + `PUT /api/registrations/:id/cancel` (admin, bắt buộc lý do vào `cancelNote`).
+    - **Màn Admin:** `AdminEvents.jsx` (route + nav `/admin/events`): list badge trạng thái; form tạo/sửa có 1 ô "Nhà tài trợ (cách nhau dấu phẩy)" + khối "Kết quả — Top 5" 5 dòng; drawer/tab "Danh sách đăng ký" theo sự kiện (tên/SĐT/giờ đã đăng ký + nút Hủy có lý do).
+    - **Màn khách:** `/events` (list, không cần đăng nhập vẫn xem được) · `/events/:id` (thông tin + sponsor + Top 5 + nút [Đăng ký] theo `getEventState`, các nhãn "Hết hạn đăng ký"/"Đã đầy"/"Sự kiện đã hủy") · `/my-registrations` copy pattern `MyBookings`. Thêm mục "Giải đấu" vào `BottomNav`/`Navbar`.
+    - **Thứ tự làm (mỗi Phase kết thúc bằng thứ chạy được):**
+      - **Phase 1 — Nền:** 3 model + seed EventType + `eventService.getEventState` + API admin; self-check `backend/testEventsAPI.js`: trùng đăng ký 409, quá deadline 400, đầy slot 400, **2 request đua slot cuối → đúng 1 thành công và count ≤ max**, hủy thì count −1 và đăng ký lại được, validate deadline > startDate bị chặn.
+      - **Phase 2 — Khách:** API public/register/mine + trang list, detail, nút đăng ký, trang "Đăng ký của tôi".
+      - **Phase 3 — Chốt:** màn `AdminEvents` đủ danh sách đăng ký + Top 5 + nav + build frontend + chạy lại self-check.
+    - **Kịch bản nghiệm thu (7):**
+      1. Tạo sự kiện `draft` → khách không thấy; chuyển `published` → thấy.
+      2. Khách đăng ký → admin thấy ngay trong danh sách, `registeredCount +1`; đăng ký lần 2 → 409.
+      3. Qua `registrationDeadline` → nút thành "Hết hạn đăng ký", gọi thẳng API vẫn 400.
+      4. Max = 2, khách thứ 3 → "Đã đầy"; hai người đua slot cuối đúng 1 người vào.
+      5. Admin hủy 1 đăng ký → count −1, khách thấy "Đã hủy", đăng ký lại được.
+      6. Nhập Top 5 → khách thấy ở trang chi tiết; sửa field khác của sự kiện không làm mất sponsors/kết quả.
+      7. Sự kiện `cancelled` → đăng ký cũ báo sự kiện đã hủy, không đăng ký mới được.
+    - **Giới hạn cố ý (nâng cấp khi cần, không làm bây giờ):** tên sponsor text thô (không cộng tiền/không báo cáo theo sponsor — sẽ đổi `[{name, amount}]` + migrate 1 script); Top 5 gõ tay nên không đối chiếu được với `Registration`; `registeredCount` maintain bằng `$inc` — nếu ai xóa cứng dữ liệu đăng ký thì phải count lại bằng script (repo toàn xóa mềm nên tạm an toàn).
+
 - [ ] **SẮP LÀM (BACKLOG):**
   - [ ] **Dịch vụ căng dây & sửa vợt (Racket Stringing & Repair Service) + nâng cấp quản lý vợt cho thuê:**
     - **Phạm vi (đã chốt):** Sân chỉ có **vợt cho thuê** và **dịch vụ căng dây/sửa vợt cho khách**. Sân **không bán vợt**, nên **không làm** module bảo hành của hãng và không có luồng gửi hãng sửa. Chỉ có **bảo hành dịch vụ của chính sân** (căng lại miễn phí nếu lỗi do thợ, trong thời hạn ngắn), tích hợp thẳng vào phiếu dịch vụ.

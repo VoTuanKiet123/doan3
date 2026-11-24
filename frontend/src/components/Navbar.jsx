@@ -11,6 +11,8 @@ import {
   Calendar,
   Activity,
   Star,
+  Wrench,
+  Trophy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -56,6 +58,7 @@ export default function Navbar() {
   const navLinks = [
     { path: "/", label: "Trang chủ", icon: <Home size={16} /> },
     { path: "/courts", label: "Sân cầu lông", icon: <Volleyball size={16} /> },
+    { path: "/events", label: "Giải đấu", icon: <Trophy size={16} /> },
     ...(user
       ? [
           {
@@ -63,8 +66,16 @@ export default function Navbar() {
             label: "Lịch của tôi",
             icon: <CalendarDays size={16} />,
           },
+          {
+            path: "/my-registrations",
+            label: "Giải của tôi",
+            icon: <Trophy size={16} />,
+          },
           { path: "/reviews", label: "Đánh giá", icon: <Star size={16} /> },
         ]
+      : []),
+    ...(!isAdmin && !isPosStaff
+      ? [{ path: "/racket-service", label: "Sửa vợt", icon: <Wrench size={16} /> }]
       : []),
     ...(isAdmin
       ? [{ path: "/admin", label: "Quản trị", icon: <Settings size={16} /> }]
@@ -75,7 +86,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="alob-header">
+    <nav className={`alob-header ${user ? "alob-header--auth" : ""}`}>
       <div className="alob-header-top">
         {/* Logo */}
         <Link to="/" className="alob-header-logo" onClick={closeMenu}>

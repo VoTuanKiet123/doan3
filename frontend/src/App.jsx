@@ -18,6 +18,9 @@ import RegisterPage from "./pages/RegisterPage";
 import CourtsPage from "./pages/CourtsPage";
 import BookingPage from "./pages/BookingPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import EventsPage from "./pages/EventsPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import MyRegistrationsPage from "./pages/MyRegistrationsPage";
 import ReviewPage from "./pages/ReviewPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCourts from "./pages/admin/AdminCourts";
@@ -27,6 +30,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminMaintenance from "./pages/admin/AdminMaintenance";
 import MaintenanceTicketDetail from "./pages/admin/MaintenanceTicketDetail";
 import AdminInspections from "./pages/admin/AdminInspections";
+import AdminEvents from "./pages/admin/AdminEvents";
 import MaintenanceCalendar from "./pages/admin/MaintenanceCalendar";
 import AdminPOS from "./pages/admin/AdminPOS";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -41,7 +45,9 @@ import POSCourtCheck from "./pages/pos/POSCourtCheck";
 import POSMaintenance from "./pages/pos/POSMaintenance";
 import POSOrders from "./pages/pos/POSOrders";
 import POSShift from "./pages/pos/POSShift";
+import RacketServiceDesk from "./components/RacketServiceDesk";
 import PaymentResult from "./pages/PaymentResult";
+import RacketServicePage from "./pages/RacketServicePage";
 
 export default function App() {
   return (
@@ -77,6 +83,16 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="/my-registrations"
+                      element={
+                        <PrivateRoute>
+                          <MyRegistrationsPage />
+                        </PrivateRoute>
+                      }
+                    />
+                    <Route path="/events" element={<EventsPage />} />
+                    <Route path="/events/:id" element={<EventDetailPage />} />
+                    <Route
                       path="/reviews"
                       element={
                         <PrivateRoute>
@@ -84,6 +100,7 @@ export default function App() {
                         </PrivateRoute>
                       }
                     />
+                    <Route path="/racket-service" element={<RacketServicePage />} />
                     <Route path="/payment/result" element={<PaymentResult />} />
                     <Route path="/payment/return" element={<PaymentResult />} />
                   </Routes>
@@ -108,9 +125,11 @@ export default function App() {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="pricing" element={<AdminPricing />} />
             <Route path="maintenance" element={<AdminMaintenance />} />
+            <Route path="racket-service" element={<RacketServiceDesk />} />
             <Route path="maintenance/calendar" element={<MaintenanceCalendar />} />
             <Route path="maintenance/:id" element={<MaintenanceTicketDetail />} />
             <Route path="inspections" element={<AdminInspections />} />
+            <Route path="events" element={<AdminEvents />} />
             <Route path="pos" element={<AdminPOS />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="rentals" element={<AdminRentals />} />
@@ -138,6 +157,7 @@ export default function App() {
             <Route path="maintenance" element={<POSMaintenance />} />
             <Route path="walkin" element={<POSWalkIn />} />
             <Route path="orders" element={<POSOrders />} />
+            <Route path="racket-service" element={<RacketServiceDesk />} />
             <Route path="shift" element={<POSShift />} />
           </Route>
         </Routes>

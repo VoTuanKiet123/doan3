@@ -13,6 +13,7 @@ import {
   Globe,
   BadgeCheck,
   Wrench,
+  Scissors,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -39,6 +40,11 @@ const posLinks = [
     label: "Thực hiện bảo trì",
   },
   {
+    to: "/pos/racket-service",
+    icon: <Scissors size={18} />,
+    label: "Dịch vụ vợt",
+  },
+  {
     to: "/pos/walkin",
     icon: <UserPlus size={18} />,
     label: "Khách vãng lai",
@@ -60,6 +66,7 @@ const pageTitles = {
   "/pos/checkin": "Check-in / Check-out",
   "/pos/checklist": "Kiểm tra sân & báo cáo lỗi",
   "/pos/maintenance": "Thực hiện bảo trì",
+  "/pos/racket-service": "Dịch vụ vợt",
   "/pos/walkin": "Khách vãng lai",
   "/pos/orders": "Bán dịch vụ tại quầy",
   "/pos/shift": "Ca làm việc",

@@ -12,12 +12,14 @@ import {
   LogOut,
   Activity,
   Wrench,
+  Scissors,
   ShoppingCart,
   Package,
   RotateCcw,
   BarChart3,
   ShieldAlert,
   Settings,
+  Trophy,
   Menu,
   X,
 } from "lucide-react";
@@ -30,6 +32,7 @@ const sidebarLinks = [
     end: true,
   },
   { to: "/admin/courts", icon: <Volleyball size={18} />, label: "Quản lý sân" },
+  { to: "/admin/events", icon: <Trophy size={18} />, label: "Giải đấu" },
   {
     to: "/admin/bookings",
     icon: <ClipboardList size={18} />,
@@ -44,6 +47,11 @@ const sidebarLinks = [
     to: "/admin/maintenance",
     icon: <Wrench size={18} />,
     label: "Bảo trì sân",
+  },
+  {
+    to: "/admin/racket-service",
+    icon: <Scissors size={18} />,
+    label: "Dịch vụ vợt",
   },
   {
     to: "/admin/inspections",
