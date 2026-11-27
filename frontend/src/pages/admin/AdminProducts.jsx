@@ -245,102 +245,120 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.map((product) => {
-              const isLowStock =
-                product.stockQuantity <= product.lowStockThreshold;
-              const isOutOfStock = product.stockQuantity <= 0;
-              return (
-                <tr
-                  key={product._id}
-                  className={!product.isActive ? "opacity-50" : ""}
-                >
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="admin-product-avatar">
-                        {CATEGORIES.find((c) => c.value === product.category)
-                          ?.icon || <Package size={16} />}
-                      </div>
-                      <div>
-                        <div className="font-semibold">{product.name}</div>
-                        <div className="text-xs text-muted">{product.unit}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${CATEGORY_COLORS[product.category]}`}
+            {filteredProducts.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="admin-table-empty">
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <Package size={36} className="text-gray-300" />
+                    <p>Chưa có sản phẩm nào trong kho</p>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-primary"
+                      onClick={openCreateModal}
                     >
-                      {
-                        CATEGORIES.find((c) => c.value === product.category)
-                          ?.label
-                      }
-                    </span>
-                    {product.isRentable && (
-                      <span className="badge badge-rental ml-1">Thuê</span>
-                    )}
-                  </td>
-                  <td className="font-semibold">
-                    {product.price.toLocaleString("vi-VN")}đ
-                    {product.isRentable && product.depositAmount > 0 && (
-                      <div className="text-xs text-muted">
-                        Cọc: {product.depositAmount.toLocaleString("vi-VN")}đ
+                      <Plus size={15} /> Thêm sản phẩm đầu tiên
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredProducts.map((product) => {
+                const isLowStock =
+                  product.stockQuantity <= product.lowStockThreshold;
+                const isOutOfStock = product.stockQuantity <= 0;
+                return (
+                  <tr
+                    key={product._id}
+                    className={!product.isActive ? "opacity-50" : ""}
+                  >
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="admin-product-avatar">
+                          {CATEGORIES.find((c) => c.value === product.category)
+                            ?.icon || <Package size={16} />}
+                        </div>
+                        <div>
+                          <div className="font-semibold">{product.name}</div>
+                          <div className="text-xs text-muted">{product.unit}</div>
+                        </div>
                       </div>
-                    )}
-                  </td>
-                  <td>
-                    <span
-                      className={`font-bold ${isOutOfStock ? "text-red-500" : isLowStock ? "text-amber-500" : "text-green-600"}`}
-                    >
-                      {product.stockQuantity}
-                    </span>
-                  </td>
-                  <td className="text-sm text-muted">
-                    {product.lowStockThreshold}
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${isOutOfStock ? "badge-cancelled" : isLowStock ? "badge-pending" : "badge-confirmed"}`}
-                    >
-                      {isOutOfStock
-                        ? "Hết hàng"
-                        : isLowStock
-                          ? "Sắp hết"
-                          : "Còn hàng"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-actions">
-                      <button
-                        className="admin-btn-icon"
-                        title="Nhập thêm hàng"
-                        onClick={() => {
-                          setShowRestockModal(product);
-                          setRestockQty("");
-                        }}
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${CATEGORY_COLORS[product.category]}`}
                       >
-                        <ArrowUpCircle size={16} />
-                      </button>
-                      <button
-                        className="admin-btn-icon"
-                        title="Sửa"
-                        onClick={() => openEditModal(product)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      {product.isActive && (
-                        <button
-                          className="admin-btn-icon danger"
-                          title="Ngừng bán"
-                          onClick={() => handleDelete(product)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {
+                          CATEGORIES.find((c) => c.value === product.category)
+                            ?.label
+                        }
+                      </span>
+                      {product.isRentable && (
+                        <span className="badge badge-rental ml-1">Thuê</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td className="font-semibold">
+                      {product.price.toLocaleString("vi-VN")}đ
+                      {product.isRentable && product.depositAmount > 0 && (
+                        <div className="text-xs text-muted">
+                          Cọc: {product.depositAmount.toLocaleString("vi-VN")}đ
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className={`font-bold ${isOutOfStock ? "text-red-500" : isLowStock ? "text-amber-500" : "text-green-600"}`}
+                      >
+                        {product.stockQuantity}
+                      </span>
+                    </td>
+                    <td className="text-sm text-muted">
+                      {product.lowStockThreshold}
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${isOutOfStock ? "badge-cancelled" : isLowStock ? "badge-pending" : "badge-confirmed"}`}
+                      >
+                        {isOutOfStock
+                          ? "Hết hàng"
+                          : isLowStock
+                            ? "Sắp hết"
+                            : "Còn hàng"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="admin-actions">
+                        <button
+                          className="admin-btn-icon"
+                          title="Nhập thêm hàng"
+                          onClick={() => {
+                            setShowRestockModal(product);
+                            setRestockQty("");
+                          }}
+                        >
+                          <ArrowUpCircle size={16} />
+                        </button>
+                        <button
+                          className="admin-btn-icon"
+                          title="Sửa"
+                          onClick={() => openEditModal(product)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        {product.isActive && (
+                          <button
+                            className="admin-btn-icon danger"
+                            title="Ngừng bán"
+                            onClick={() => handleDelete(product)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

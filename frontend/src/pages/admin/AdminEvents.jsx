@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import {
-  Trophy,
   Plus,
   Pencil,
   Trash2,
@@ -130,7 +129,7 @@ export default function AdminEvents() {
     });
     setShowModal(true);
 
-    // Tải ngầm danh sách VĐV đã đăng ký để gợi ý cho 5 ô Top 5 kết quả
+    // Nạp danh sách VĐV đã đăng ký để gợi ý cho 5 ô Top 5 kết quả
     api
       .get(`/events/${ev._id}/registrations`)
       .then((res) => {
@@ -362,37 +361,39 @@ export default function AdminEvents() {
     return true;
   });
 
-  const input = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm";
-  const label = "block text-xs font-medium text-gray-600 mb-1";
+  const input =
+    "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600";
+  const label = "block text-xs font-semibold text-gray-600 mb-1";
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Trophy size={22} className="text-amber-500" /> Quản lý giải đấu & Sự kiện
-        </h1>
-        <button
-          onClick={openCreate}
-          className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-1"
-        >
+    <div className="admin-page-content">
+      {/* Header đồng bộ */}
+      <div className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">Quản lý giải đấu &amp; Sự kiện</h1>
+          <p className="admin-page-subtitle">
+            Tạo giải đấu, phân loại thể thức, quản lý vận động viên và kết quả Top 5
+          </p>
+        </div>
+        <button onClick={openCreate} className="admin-header-btn">
           <Plus size={16} /> Tạo sự kiện
         </button>
       </div>
 
       {/* ===== Khung quản lý Phân loại sự kiện ===== */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5">
+      <div className="admin-card mb-5">
         <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
           <div>
             <h2 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-              <Tag size={15} className="text-amber-500" /> Phân loại sự kiện ({types.length})
+              <Tag size={15} className="text-emerald-600" /> Phân loại sự kiện ({types.length})
             </h2>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 mt-0.5">
               Danh mục thể thức dùng để phân loại giải đấu khi tạo sự kiện mới.
             </p>
           </div>
           <button
             onClick={openCreateType}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 flex items-center gap-1"
+            className="admin-btn admin-btn-outline text-xs"
           >
             <Plus size={14} /> Thêm loại sự kiện
           </button>
@@ -401,13 +402,13 @@ export default function AdminEvents() {
         {types.length === 0 ? (
           <p className="text-xs text-gray-400">Chưa có phân loại sự kiện nào.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {types.map((ty) => (
               <div
                 key={ty._id}
-                className={`rounded-lg border p-2.5 flex items-start justify-between gap-2 ${
+                className={`rounded-xl border p-3 flex items-start justify-between gap-2 ${
                   ty.isActive
-                    ? "bg-gray-50/70 border-gray-200"
+                    ? "bg-slate-50/80 border-slate-200"
                     : "bg-gray-100/60 border-gray-300 border-dashed opacity-65"
                 }`}
               >
@@ -421,16 +422,16 @@ export default function AdminEvents() {
                       {ty.name}
                     </p>
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${
                         ty.isActive
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-emerald-100 text-emerald-700"
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
                       {ty.isActive ? "Đang dùng" : "Đã ẩn"}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">
+                  <p className="text-xs text-gray-500 line-clamp-2 mt-1">
                     {ty.note || "Chưa có mô tả thể thức"}
                   </p>
                 </div>
@@ -438,14 +439,14 @@ export default function AdminEvents() {
                   <button
                     onClick={() => openEditType(ty)}
                     title="Sửa loại sự kiện"
-                    className="p-1 rounded hover:bg-white text-gray-600"
+                    className="p-1.5 rounded-lg hover:bg-white text-gray-600"
                   >
                     <Pencil size={13} />
                   </button>
                   <button
                     onClick={() => toggleType(ty)}
                     title={ty.isActive ? "Ẩn loại này" : "Bật lại loại này"}
-                    className="p-1 rounded hover:bg-white text-gray-600"
+                    className="p-1.5 rounded-lg hover:bg-white text-gray-600"
                   >
                     {ty.isActive ? <EyeOff size={13} /> : <Eye size={13} />}
                   </button>
@@ -457,9 +458,9 @@ export default function AdminEvents() {
       </div>
 
       {/* ===== Thanh lọc sự kiện ===== */}
-      <div className="flex items-center gap-3 flex-wrap mb-3">
+      <div className="flex items-center gap-3 flex-wrap mb-4">
         <select
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
+          className="admin-input"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
         >
@@ -472,7 +473,7 @@ export default function AdminEvents() {
         </select>
 
         <select
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
+          className="admin-input"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -484,25 +485,28 @@ export default function AdminEvents() {
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Đang tải...</p>
+        <div className="admin-loading">
+          <div className="admin-loading-spinner"></div>
+          <span>Đang tải dữ liệu...</span>
+        </div>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
               <tr>
-                <th className="px-3 py-2">Sự kiện</th>
-                <th className="px-3 py-2 whitespace-nowrap">Loại sự kiện</th>
-                <th className="px-3 py-2 whitespace-nowrap">Diễn ra</th>
-                <th className="px-3 py-2 whitespace-nowrap">Hạn đăng ký</th>
-                <th className="px-3 py-2 whitespace-nowrap">Đã đăng ký</th>
-                <th className="px-3 py-2">Trạng thái</th>
-                <th className="px-3 py-2">Hành động</th>
+                <th>Sự kiện</th>
+                <th>Loại sự kiện</th>
+                <th>Diễn ra</th>
+                <th>Hạn đăng ký</th>
+                <th>Đã đăng ký</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {filteredEvents.map((ev) => (
-                <tr key={ev._id} className="border-t border-gray-200">
-                  <td className="px-3 py-2">
+                <tr key={ev._id}>
+                  <td>
                     <div className="flex items-center gap-2.5">
                       {ev.posterUrl && (
                         <img
@@ -512,41 +516,57 @@ export default function AdminEvents() {
                         />
                       )}
                       <div>
-                        <p className="font-medium">{ev.name}</p>
+                        <p className="admin-user-name">{ev.name}</p>
                         {ev.court?.name && (
-                          <p className="text-xs text-gray-400">{ev.court.name}</p>
+                          <p className="admin-text-muted">{ev.court.name}</p>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="whitespace-nowrap">
                     {ev.type?.name ? (
-                      <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+                      <span className="badge badge-active">
                         {ev.type.name}
                       </span>
                     ) : (
                       <span className="text-xs text-red-500 italic">Chưa phân loại</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">{fmtDateTime(ev.startDate)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{fmtDateTime(ev.registrationDeadline)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="admin-text-secondary whitespace-nowrap">
+                    {fmtDateTime(ev.startDate)}
+                  </td>
+                  <td className="admin-text-secondary whitespace-nowrap">
+                    {fmtDateTime(ev.registrationDeadline)}
+                  </td>
+                  <td className="font-semibold whitespace-nowrap">
                     {ev.registeredCount}/{ev.maxRegistrations || "∞"}
                   </td>
-                  <td className="px-3 py-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATE_BADGE[ev.state]}`}>
+                  <td>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATE_BADGE[ev.state]}`}>
                       {ev.stateLabel}
                     </span>
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="flex gap-1">
-                      <button onClick={() => openEdit(ev)} title="Sửa" className="p-1.5 rounded hover:bg-gray-100">
+                  <td>
+                    <div className="admin-actions">
+                      <button
+                        onClick={() => openEdit(ev)}
+                        title="Sửa sự kiện"
+                        className="admin-btn-icon"
+                      >
                         <Pencil size={15} />
                       </button>
-                      <button onClick={() => openRegs(ev)} title="Danh sách đăng ký" className="p-1.5 rounded hover:bg-gray-100">
+                      <button
+                        onClick={() => openRegs(ev)}
+                        title="Danh sách đăng ký"
+                        className="admin-btn-icon"
+                      >
                         <Users size={15} />
                       </button>
-                      <button onClick={() => handleDelete(ev)} title="Xóa" className="p-1.5 rounded hover:bg-red-50 text-red-500">
+                      <button
+                        onClick={() => handleDelete(ev)}
+                        title="Xóa sự kiện"
+                        className="admin-btn-icon danger"
+                      >
                         <Trash2 size={15} />
                       </button>
                     </div>
@@ -555,7 +575,7 @@ export default function AdminEvents() {
               ))}
               {filteredEvents.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={7} className="admin-table-empty">
                     Không có sự kiện nào phù hợp
                   </td>
                 </tr>
@@ -568,10 +588,19 @@ export default function AdminEvents() {
       {/* ===== Modal tạo/sửa sự kiện ===== */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl w-full max-w-2xl p-5 my-4 max-h-[90vh] overflow-y-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-2xl w-full max-w-2xl p-6 my-4 max-h-[90vh] overflow-y-auto shadow-xl"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg">{editing ? "Sửa sự kiện" : "Tạo sự kiện"}</h2>
-              <button type="button" onClick={() => setShowModal(false)}>
+              <h2 className="font-bold text-lg text-slate-900">
+                {editing ? "Sửa sự kiện" : "Tạo sự kiện mới"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -618,7 +647,7 @@ export default function AdminEvents() {
                     </div>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-xl p-5 cursor-pointer hover:border-amber-400 hover:bg-amber-50/40 transition">
+                  <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-xl p-5 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/40 transition">
                     <ImagePlus size={24} className="text-gray-400" />
                     <span className="text-xs font-medium text-gray-600">
                       {uploadingPoster
@@ -638,11 +667,11 @@ export default function AdminEvents() {
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-gray-600">Loại sự kiện *</label>
+                  <label className="text-xs font-semibold text-gray-600">Loại sự kiện *</label>
                   <button
                     type="button"
                     onClick={openCreateType}
-                    className="text-[11px] text-amber-600 hover:underline font-medium"
+                    className="text-[11px] text-emerald-700 hover:underline font-semibold"
                   >
                     + Tạo loại mới
                   </button>
@@ -752,11 +781,11 @@ export default function AdminEvents() {
             {/* Top 5 kết quả chung cuộc + datalist gợi ý từ danh sách VĐV đã đăng ký */}
             <div className="mt-4">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <label className="text-xs font-medium text-gray-600">
+                <label className="text-xs font-semibold text-gray-600">
                   Kết quả chung cuộc — Top 5 (để trống nếu chưa có)
                 </label>
                 {resultSuggestions.length > 0 && (
-                  <span className="text-[11px] text-amber-700">
+                  <span className="text-[11px] text-emerald-700 font-medium">
                     Có {resultSuggestions.length} gợi ý từ VĐV/đội đã đăng ký
                   </span>
                 )}
@@ -786,18 +815,18 @@ export default function AdminEvents() {
               ))}
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-2 mt-5">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-sm"
+                className="admin-btn admin-btn-outline"
               >
                 Hủy bỏ
               </button>
               <button
                 type="submit"
                 disabled={submitting || uploadingPoster}
-                className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium disabled:opacity-60"
+                className="admin-btn admin-btn-primary disabled:opacity-60"
               >
                 {submitting ? "Đang lưu..." : "Lưu sự kiện"}
               </button>
@@ -809,9 +838,9 @@ export default function AdminEvents() {
       {/* ===== Modal Thêm / Sửa Loại sự kiện ===== */}
       {showTypeModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
-          <form onSubmit={handleSaveType} className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg">
+          <form onSubmit={handleSaveType} className="bg-white rounded-2xl w-full max-w-md p-5 shadow-xl">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-base">
+              <h3 className="font-bold text-base text-slate-900">
                 {editingType ? "Sửa loại sự kiện" : "Thêm loại sự kiện mới"}
               </h3>
               <button type="button" onClick={() => setShowTypeModal(false)}>
@@ -844,14 +873,14 @@ export default function AdminEvents() {
               <button
                 type="button"
                 onClick={() => setShowTypeModal(false)}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm"
+                className="admin-btn admin-btn-outline"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={savingType}
-                className="px-4 py-1.5 rounded-lg bg-amber-500 text-white text-sm font-medium disabled:opacity-60"
+                className="admin-btn admin-btn-primary disabled:opacity-60"
               >
                 {savingType ? "Đang lưu..." : "Lưu loại"}
               </button>
@@ -863,10 +892,10 @@ export default function AdminEvents() {
       {/* ===== Modal danh sách đăng ký (có lọc + Xuất Excel CSV) ===== */}
       {regsFor && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl w-full max-w-4xl p-5 max-h-[85vh] flex flex-col">
+          <div className="bg-white rounded-2xl w-full max-w-4xl p-5 max-h-[85vh] flex flex-col shadow-xl">
             <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
               <div>
-                <h2 className="font-bold">Danh sách đăng ký — {regsFor.name}</h2>
+                <h2 className="font-bold text-slate-900">Danh sách đăng ký — {regsFor.name}</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {regs
                     ? `Đang giữ suất: ${regs.registeredCount}/${regs.maxRegistrations || "∞"} · Tổng lịch sử đơn: ${regs.registrations.length}`
@@ -879,7 +908,7 @@ export default function AdminEvents() {
                     type="button"
                     onClick={handleExportCSV}
                     disabled={visibleRegs.length === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium disabled:opacity-50 transition"
+                    className="admin-btn admin-btn-primary text-xs disabled:opacity-50"
                   >
                     <Download size={14} /> Xuất Excel (.csv)
                   </button>
@@ -907,9 +936,9 @@ export default function AdminEvents() {
                     key={tab.key}
                     type="button"
                     onClick={() => setRegStatusFilter(tab.key)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
                       regStatusFilter === tab.key
-                        ? "bg-amber-500 text-white"
+                        ? "bg-[#0b7f47] text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -927,53 +956,53 @@ export default function AdminEvents() {
                   Không có đăng ký nào trong mục này.
                 </p>
               ) : (
-                <table className="w-full text-sm">
-                  <thead className="text-left text-xs text-gray-500 bg-gray-50">
+                <table className="admin-table">
+                  <thead>
                     <tr>
-                      <th className="py-2 px-2">Vận động viên</th>
-                      <th className="py-2 px-2">SĐT</th>
-                      <th className="py-2 px-2">Trình độ</th>
-                      <th className="py-2 px-2">Đồng đội / Đội</th>
-                      <th className="py-2 px-2">Ghi chú</th>
-                      <th className="py-2 px-2">Lúc ĐK</th>
-                      <th className="py-2 px-2">Trạng thái</th>
-                      <th className="py-2 px-2"></th>
+                      <th>Vận động viên</th>
+                      <th>SĐT</th>
+                      <th>Trình độ</th>
+                      <th>Đồng đội / Đội</th>
+                      <th>Ghi chú</th>
+                      <th>Lúc ĐK</th>
+                      <th>Trạng thái</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {visibleRegs.map((r) => (
-                      <tr key={r._id} className="border-t border-gray-200 align-top">
-                        <td className="py-2 px-2">
-                          <p className="font-medium">{r.name}</p>
+                      <tr key={r._id}>
+                        <td>
+                          <p className="font-semibold text-slate-900">{r.name}</p>
                           <p className="text-xs text-gray-400">{r.gender || "Nam"}</p>
                         </td>
-                        <td className="py-2 px-2 whitespace-nowrap">{r.phone || "—"}</td>
-                        <td className="py-2 px-2 whitespace-nowrap">
+                        <td className="whitespace-nowrap">{r.phone || "—"}</td>
+                        <td className="whitespace-nowrap">
                           <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
                             {r.skillLevel || "Phong trào"}
                           </span>
                         </td>
-                        <td className="py-2 px-2">{r.partnerOrTeamName || "—"}</td>
-                        <td className="py-2 px-2 text-xs text-gray-600 max-w-[180px]">
+                        <td>{r.partnerOrTeamName || "—"}</td>
+                        <td className="text-xs text-gray-600 max-w-[180px]">
                           {r.note || "—"}
                         </td>
-                        <td className="py-2 px-2 whitespace-nowrap text-xs text-gray-500">
+                        <td className="whitespace-nowrap text-xs text-gray-500">
                           {fmtDateTime(r.createdAt)}
                         </td>
-                        <td className="py-2 px-2">
+                        <td>
                           {r.status === "cancelled" ? (
                             <span className="text-xs text-red-600">
                               Đã hủy{r.cancelNote ? ` (${r.cancelNote})` : ""}
                             </span>
                           ) : (
-                            <span className="text-xs text-green-700 font-medium">Đã đăng ký</span>
+                            <span className="text-xs text-green-700 font-semibold">Đã đăng ký</span>
                           )}
                         </td>
-                        <td className="py-2 px-2 text-right">
+                        <td className="text-right">
                           {r.status === "registered" && (
                             <button
                               onClick={() => handleCancelReg(r)}
-                              className="text-xs text-red-500 hover:underline"
+                              className="text-xs text-red-500 hover:underline font-medium"
                             >
                               Hủy
                             </button>

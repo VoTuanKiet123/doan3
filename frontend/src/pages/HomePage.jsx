@@ -1,7 +1,23 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import api from '../services/api';
-import { Activity, Flame, Trophy, Star, Sparkles, Gift, Zap, Calendar, Award, Bell, ArrowRight } from 'lucide-react';
+import {
+  Activity,
+  Flame,
+  Trophy,
+  Star,
+  Sparkles,
+  Gift,
+  Zap,
+  Calendar,
+  Award,
+  Bell,
+  ArrowRight,
+  Clock,
+  MapPin,
+  Users,
+} from 'lucide-react';
+import { STATE_BADGE, fmtDateTime, fmtDate } from '../utils/events';
 
 const BANNER_SLIDES = [
   {
@@ -22,8 +38,8 @@ const BANNER_SLIDES = [
     tag: <><Star size={14} style={{ marginRight: 4 }} /> Tiêu chuẩn BWF quốc tế</>,
     title: 'Sân đạt chuẩn quốc tế BWF',
     desc: 'Hệ thống sàn PVC chuyên dụng 5 lớp, đèn LED chống lóa chuẩn BWF. Trải nghiệm thi đấu đỉnh cao.',
-    cta: 'Xem sân ngay',
-    ctaLink: '/courts',
+    cta: 'Xem giải đấu',
+    ctaLink: '/events',
     accent: '#fff',
   },
   {
@@ -48,17 +64,32 @@ const FEATURES = [
 
 export default function HomePage() {
   const [courts, setCourts] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [slide, setSlide] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
     api.get('/courts')
       .then(res => {
-        setCourts(res.data.courts.slice(0, 6));
+        setCourts((res.data.courts || []).slice(0, 6));
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    api.get('/events')
+      .then(res => {
+        const list = res.data.events || [];
+        // Ưu tiên giải đang mở đăng ký lên đầu, hiển thị tối đa 3 giải nổi bật
+        const sorted = [...list].sort((a, b) => {
+          const score = (s) => (s === 'open' ? 0 : s === 'closed_full' || s === 'closed_deadline' ? 1 : 2);
+          return score(a.state) - score(b.state);
+        });
+        setEvents(sorted.slice(0, 3));
+        setEventsLoading(false);
+      })
+      .catch(() => setEventsLoading(false));
   }, []);
 
   // Auto-advance carousel
@@ -128,7 +159,7 @@ export default function HomePage() {
       <div className="home-container">
         <div className="stats-row home-stats">
           {[
-            { n: courts.length || '10+', label: 'Sân hoạt động' },
+            { n: courts.length || '6', label: 'Sân hoạt động' },
             { n: '1,200+', label: 'Lượt đặt sân' },
             { n: '4.9★', label: 'Đánh giá trung bình' },
           ].map(s => (
@@ -179,7 +210,7 @@ export default function HomePage() {
                         <div className="home-court-name-row">
                           <h3 className="home-court-name">{court.name}</h3>
                           <span className={`badge ${cType === 'A' ? 'badge-hot' : cType === 'B' ? 'badge-active' : 'badge-inactive'}`}>
-                            Sân {cType} ({cType === 'A' ? 'VIP 70k' : cType === 'B' ? 'Standard 50k' : 'Eco 30k'})
+                            Sân {cType} ({cType === 'A' ? 'VIP 70k' : cType === 'B' ? 'Tiêu chuẩn 50k' : 'Tiết kiệm 30k'})
                           </span>
                         </div>
                         <p className="home-court-desc">
@@ -222,6 +253,87 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* ── UPCOMING EVENTS / TOURNAMENTS ── */}
+      {(eventsLoading || events.length > 0) && (
+        <section className="home-container home-section" style={{ paddingTop: 0 }}>
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Giải đấu &amp; Sự kiện nổi bật</h2>
+              <p className="section-sub">Tham gia thi đấu giao lưu và tranh tài cùng cộng đồng</p>
+            </div>
+            <Link to="/events" className="section-link">Xem tất cả <ArrowRight size={14} /></Link>
+          </div>
+
+          {eventsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="skeleton" style={{ height: 260, borderRadius: 12 }} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {events.map((ev) => (
+                <Link
+                  key={ev._id}
+                  to={`/events/${ev._id}`}
+                  className="flex flex-col h-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-emerald-400 transition"
+                >
+                  {ev.posterUrl ? (
+                    <div className="h-40 w-full bg-gray-100 overflow-hidden shrink-0">
+                      <img
+                        src={ev.posterUrl}
+                        alt={ev.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-40 w-full bg-gradient-to-br from-emerald-50 via-green-50 to-amber-50 flex flex-col items-center justify-center gap-1.5 border-b border-gray-100 shrink-0">
+                      <Trophy size={34} className="text-emerald-600/40" />
+                      <span className="text-xs font-medium text-emerald-800/50">
+                        BadmintonHub Tournament
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-gray-900 text-sm line-clamp-2">{ev.name}</h3>
+                      <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-full font-medium ${STATE_BADGE[ev.state]}`}>
+                        {ev.stateLabel}
+                      </span>
+                    </div>
+
+                    {ev.type?.name && (
+                      <span className="inline-block w-fit mt-1.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        {ev.type.name}
+                      </span>
+                    )}
+
+                    <div className="mt-3 space-y-1 text-xs text-gray-600 flex-1">
+                      <p>
+                        <Clock size={13} className="inline mr-1 text-gray-400" />
+                        {fmtDateTime(ev.startDate)}
+                        {ev.endDate ? ` → ${fmtDate(ev.endDate)}` : ''}
+                      </p>
+                      {ev.court?.name && (
+                        <p>
+                          <MapPin size={13} className="inline mr-1 text-gray-400" />
+                          {ev.court.name}
+                        </p>
+                      )}
+                      <p>
+                        <Users size={13} className="inline mr-1 text-gray-400" />
+                        {ev.registeredCount}/{ev.maxRegistrations || '∞'} người đã đăng ký
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── WHY CHOOSE US ── */}
       <section className="home-why">

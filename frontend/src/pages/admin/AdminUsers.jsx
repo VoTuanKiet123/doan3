@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { Users, Trash2, ShieldCheck, UserCircle } from 'lucide-react';
+import { Users, Trash2, ShieldCheck, UserCircle, Store } from 'lucide-react';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -9,7 +9,7 @@ export default function AdminUsers() {
 
   const fetchUsers = () => {
     api.get('/users').then(res => {
-      setUsers(res.data.users);
+      setUsers(res.data.users || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -28,8 +28,21 @@ export default function AdminUsers() {
   };
 
   const roleMap = {
-    admin: { text: 'Admin', cls: 'badge badge-admin-role' },
-    user: { text: 'Người dùng', cls: 'badge badge-user-role' },
+    admin: {
+      text: 'Admin',
+      cls: 'badge badge-admin-role',
+      icon: <ShieldCheck size={12} />,
+    },
+    pos_staff: {
+      text: 'Nhân viên POS',
+      cls: 'badge badge-pos-role',
+      icon: <Store size={12} />,
+    },
+    user: {
+      text: 'Người dùng',
+      cls: 'badge badge-user-role',
+      icon: <UserCircle size={12} />,
+    },
   };
 
   return (
@@ -37,7 +50,7 @@ export default function AdminUsers() {
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Quản lý người dùng</h1>
-          <p className="admin-page-subtitle">Danh sách tất cả người dùng trong hệ thống</p>
+          <p className="admin-page-subtitle">Danh sách tất cả tài khoản trong hệ thống</p>
         </div>
         <div className="admin-page-header-stat">
           <span className="admin-stat-number">{users.length}</span>
@@ -85,7 +98,7 @@ export default function AdminUsers() {
                     <td className="admin-text-secondary">{u.phone || '—'}</td>
                     <td>
                       <span className={r.cls} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        {u.role === 'admin' ? <ShieldCheck size={12} /> : <UserCircle size={12} />}
+                        {r.icon}
                         {r.text}
                       </span>
                     </td>

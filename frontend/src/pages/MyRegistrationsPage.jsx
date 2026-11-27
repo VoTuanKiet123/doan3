@@ -107,127 +107,143 @@ export default function MyRegistrationsPage() {
     editingItem?.event?.type?.name || "",
   );
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";
+    "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500";
   const labelClass = "block text-xs font-medium text-gray-700 mb-1";
 
+  const activeCount = (items || []).filter((r) => r.status === "registered").length;
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Trophy size={24} className="text-amber-500" />
-        <h1 className="text-2xl font-bold">Giải đấu của tôi</h1>
+    <div className="min-h-[70vh] bg-[#f8faf8]">
+      {/* Banner xanh lá đồng bộ */}
+      <div className="bg-gradient-to-r from-[#2d5a3d] to-[#3f7d58] text-white">
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2.5">
+            <Trophy size={26} /> Giải đấu của tôi
+          </h1>
+          <p className="text-sm text-white/80 mt-1">
+            {items === null
+              ? "Đang tải lịch sử đăng ký..."
+              : `${items.length} phiếu đăng ký · ${activeCount} giải đang tham gia`}
+          </p>
+        </div>
       </div>
 
-      {items === null ? (
-        <p className="text-gray-500">Đang tải...</p>
-      ) : items.length === 0 ? (
-        <p className="text-gray-500">
-          Bạn chưa đăng ký giải nào.{" "}
-          <Link to="/events" className="text-blue-600">
-            Xem giải đấu →
-          </Link>
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((r) => (
-            <div
-              key={r._id}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm p-4"
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {items === null ? (
+          <p className="text-gray-500">Đang tải...</p>
+        ) : items.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+            <p className="text-gray-500 mb-3">Bạn chưa đăng ký giải đấu nào.</p>
+            <Link
+              to="/events"
+              className="inline-block px-4 py-2 rounded-lg bg-[#2d5a3d] hover:bg-[#234730] text-white text-sm font-medium"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <Link
-                    to={`/events/${r.event._id}`}
-                    className="font-bold hover:text-blue-600"
+              Khám phá giải đấu →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {items.map((r) => (
+              <div
+                key={r._id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <Link
+                      to={`/events/${r.event._id}`}
+                      className="font-bold text-gray-900 hover:text-emerald-700"
+                    >
+                      {r.event.name}
+                    </Link>
+                    {r.event.type?.name && (
+                      <span className="ml-2 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        {r.event.type.name}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${STATE_BADGE[r.event.state]}`}
                   >
-                    {r.event.name}
-                  </Link>
-                  {r.event.type?.name && (
-                    <span className="ml-2 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
-                      {r.event.type.name}
-                    </span>
+                    {r.event.stateLabel}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  <CalendarDays size={14} className="inline mr-1" />
+                  Diễn ra: {fmtDateTime(r.event.startDate)}
+                  <span className="mx-2">·</span>
+                  Hạn ĐK: {fmtDateTime(r.event.registrationDeadline)}
+                </p>
+
+                {/* Thông tin phiếu đã đăng ký */}
+                <div className="mt-2.5 pt-2.5 border-t border-gray-100 grid sm:grid-cols-2 gap-1 text-xs text-gray-600">
+                  <p>
+                    <span className="text-gray-400">VĐV:</span> {r.name} (
+                    {r.gender || "Nam"})
+                  </p>
+                  <p>
+                    <span className="text-gray-400">SĐT:</span> {r.phone || "—"}
+                  </p>
+                  <p>
+                    <span className="text-gray-400">Trình độ:</span>{" "}
+                    {r.skillLevel || "Phong trào"}
+                  </p>
+                  {r.partnerOrTeamName && (
+                    <p>
+                      <span className="text-gray-400">Đồng đội / Đội:</span>{" "}
+                      {r.partnerOrTeamName}
+                    </p>
+                  )}
+                  {r.note && (
+                    <p className="sm:col-span-2">
+                      <span className="text-gray-400">Ghi chú:</span> {r.note}
+                    </p>
                   )}
                 </div>
-                <span
-                  className={`shrink-0 text-xs px-2 py-1 rounded-full font-medium ${STATE_BADGE[r.event.state]}`}
-                >
-                  {r.event.stateLabel}
-                </span>
+
+                <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
+                  {r.status === "cancelled" ? (
+                    <p className="text-sm text-red-600">
+                      <XCircle size={14} className="inline mr-1" />
+                      Đăng ký đã hủy{r.cancelNote ? `: ${r.cancelNote}` : ""}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-green-600">
+                      <CheckCircle size={14} className="inline mr-1" />
+                      Đã đăng ký ({fmtDateTime(r.createdAt)})
+                    </p>
+                  )}
+
+                  {canModifyBeforeDeadline(r) && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(r)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition"
+                      >
+                        <Pencil size={12} /> Sửa phiếu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCancellingItem(r);
+                          setCancelReason("");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                      >
+                        <XCircle size={13} /> Hủy đăng ký
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              <p className="text-sm text-gray-500 mt-1">
-                <CalendarDays size={14} className="inline mr-1" />
-                Diễn ra: {fmtDateTime(r.event.startDate)}
-                <span className="mx-2">·</span>
-                Hạn ĐK: {fmtDateTime(r.event.registrationDeadline)}
-              </p>
-
-              {/* Thông tin phiếu đã đăng ký */}
-              <div className="mt-2.5 pt-2.5 border-t border-gray-100 grid sm:grid-cols-2 gap-1 text-xs text-gray-600">
-                <p>
-                  <span className="text-gray-400">VĐV:</span> {r.name} (
-                  {r.gender || "Nam"})
-                </p>
-                <p>
-                  <span className="text-gray-400">SĐT:</span> {r.phone || "—"}
-                </p>
-                <p>
-                  <span className="text-gray-400">Trình độ:</span>{" "}
-                  {r.skillLevel || "Phong trào"}
-                </p>
-                {r.partnerOrTeamName && (
-                  <p>
-                    <span className="text-gray-400">Đồng đội / Đội:</span>{" "}
-                    {r.partnerOrTeamName}
-                  </p>
-                )}
-                {r.note && (
-                  <p className="sm:col-span-2">
-                    <span className="text-gray-400">Ghi chú:</span> {r.note}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                {r.status === "cancelled" ? (
-                  <p className="text-sm text-red-600">
-                    <XCircle size={14} className="inline mr-1" />
-                    Đăng ký đã hủy{r.cancelNote ? `: ${r.cancelNote}` : ""}
-                  </p>
-                ) : (
-                  <p className="text-sm text-green-600">
-                    <CheckCircle size={14} className="inline mr-1" />
-                    Đã đăng ký ({fmtDateTime(r.createdAt)})
-                  </p>
-                )}
-
-                {canModifyBeforeDeadline(r) && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEditModal(r)}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-50 transition"
-                    >
-                      <Pencil size={12} /> Sửa phiếu
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCancellingItem(r);
-                        setCancelReason("");
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
-                    >
-                      <XCircle size={13} /> Hủy đăng ký
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ===== Modal chỉnh sửa phiếu đăng ký ===== */}
+      {/* Modal chỉnh sửa phiếu đăng ký */}
       {editingItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <form
@@ -357,7 +373,7 @@ export default function MyRegistrationsPage() {
               <button
                 type="submit"
                 disabled={savingEdit}
-                className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold disabled:opacity-60"
+                className="px-5 py-2 rounded-lg bg-[#2d5a3d] hover:bg-[#234730] text-white text-sm font-semibold disabled:opacity-60"
               >
                 {savingEdit ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
@@ -366,7 +382,7 @@ export default function MyRegistrationsPage() {
         </div>
       )}
 
-      {/* ===== Modal xác nhận tự hủy đăng ký ===== */}
+      {/* Modal xác nhận tự hủy đăng ký */}
       {cancellingItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <form

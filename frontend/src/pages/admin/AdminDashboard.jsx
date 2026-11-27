@@ -11,6 +11,7 @@ import {
   ChevronRight,
   CalendarCheck,
   Wrench,
+  Trophy,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -38,12 +39,12 @@ export default function AdminDashboard() {
     ])
       .then(
         ([courtsRes, bookingsRes, usersRes, maintenanceRes, analyticsRes]) => {
-          const bookings = bookingsRes.data.bookings;
+          const bookings = bookingsRes.data.bookings || [];
           const maintenances = maintenanceRes.data.maintenances || [];
           setStats({
-            courts: courtsRes.data.count,
-            bookings: bookingsRes.data.count,
-            users: usersRes.data.count,
+            courts: courtsRes.data.count || 0,
+            bookings: bookingsRes.data.count || 0,
+            users: usersRes.data.count || 0,
             maintenance: maintenances.filter(
               (m) => m.status === "in_progress" || m.status === "pending",
             ).length,
@@ -88,21 +89,21 @@ export default function AdminDashboard() {
     },
     {
       label: "Doanh thu hôm nay",
-      value: analytics.todayRevenue.toLocaleString("vi-VN") + "đ",
+      value: (analytics.todayRevenue || 0).toLocaleString("vi-VN") + "đ",
       icon: <Wallet size={22} />,
       color: "admin-stat-card--green",
       link: "/admin/analytics",
     },
     {
       label: "Doanh thu tháng",
-      value: analytics.monthRevenue.toLocaleString("vi-VN") + "đ",
+      value: (analytics.monthRevenue || 0).toLocaleString("vi-VN") + "đ",
       icon: <TrendingUp size={22} />,
       color: "admin-stat-card--blue",
       link: "/admin/analytics",
     },
     {
       label: "Bảo trì đang xử lý",
-      value: analytics.activeMaintenanceCount,
+      value: analytics.activeMaintenanceCount ?? stats.maintenance,
       icon: <Wrench size={22} />,
       color: "admin-stat-card--yellow",
       link: "/admin/maintenance",
@@ -110,7 +111,10 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="admin-page-content">
+    <div
+      className="admin-page-content"
+      style={{ maxWidth: "1360px", width: "100%", margin: "0 auto" }}
+    >
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Dashboard</h1>
@@ -147,13 +151,14 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Stat Cards */}
-      <div className="admin-stat-cards">
+      {/* Stat Cards — Lưới 3 cột × 2 hàng cân đối */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {statCards.map((card) => (
           <Link
             key={card.label}
             to={card.link}
             className={`admin-stat-card ${card.color}`}
+            style={{ width: "100%" }}
           >
             <div className="admin-stat-card-icon">{card.icon}</div>
             <div className="admin-stat-card-value">
@@ -164,8 +169,8 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Links */}
-      <div className="admin-quick-links">
+      {/* Quick Links — 4 lối tắt đều hàng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Link
           to="/admin/courts"
           className="admin-quick-link admin-quick-link--green"
@@ -204,7 +209,25 @@ export default function AdminDashboard() {
           <div>
             <div className="admin-quick-link-title">Bảo trì sân</div>
             <div className="admin-quick-link-desc">
-              Quản lý lịch bảo trì & sửa chữa
+              Quản lý lịch bảo trì &amp; sửa chữa
+            </div>
+          </div>
+        </Link>
+        <Link
+          to="/admin/events"
+          className="admin-quick-link"
+          style={{
+            background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+            color: "#fff",
+          }}
+        >
+          <span className="admin-quick-link-icon">
+            <Trophy size={22} />
+          </span>
+          <div>
+            <div className="admin-quick-link-title">Quản lý giải đấu</div>
+            <div className="admin-quick-link-desc">
+              Tạo sự kiện, duyệt DS &amp; Top 5
             </div>
           </div>
         </Link>

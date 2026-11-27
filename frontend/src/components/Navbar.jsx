@@ -8,43 +8,18 @@ import {
   CalendarDays,
   Settings,
   LogOut,
-  Calendar,
   Activity,
   Star,
   Wrench,
   Trophy,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-
-function getDayLabel() {
-  const now = new Date();
-  const days = [
-    "Chủ Nhật",
-    "Thứ Hai",
-    "Thứ Ba",
-    "Thứ Tư",
-    "Thứ Năm",
-    "Thứ Sáu",
-    "Thứ Bảy",
-  ];
-  const d = days[now.getDay()];
-  const date = String(now.getDate()).padStart(2, "0");
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
-  return `${d}, ${date}/${month}/${year}`;
-}
+import { useState } from "react";
 
 export default function Navbar() {
   const { user, logout, isAdmin, isPosStaff } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dateLabel, setDateLabel] = useState(getDayLabel());
-
-  useEffect(() => {
-    const timer = setInterval(() => setDateLabel(getDayLabel()), 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   const handleLogout = () => {
     logout();
@@ -53,7 +28,10 @@ export default function Navbar() {
   };
 
   const closeMenu = () => setMenuOpen(false);
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) =>
+    path === "/"
+      ? location.pathname === "/"
+      : location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const navLinks = [
     { path: "/", label: "Trang chủ", icon: <Home size={16} /> },
@@ -87,9 +65,17 @@ export default function Navbar() {
 
   return (
     <nav className={`alob-header ${user ? "alob-header--auth" : ""}`}>
-      <div className="alob-header-top">
+      <div
+        className="alob-header-top"
+        style={{ maxWidth: "1400px", width: "100%", gap: "16px" }}
+      >
         {/* Logo */}
-        <Link to="/" className="alob-header-logo" onClick={closeMenu}>
+        <Link
+          to="/"
+          className="alob-header-logo"
+          onClick={closeMenu}
+          style={{ flexShrink: 0 }}
+        >
           <div className="alob-header-logo-icon">
             <Activity size={20} />
           </div>
@@ -100,13 +86,17 @@ export default function Navbar() {
         </Link>
 
         {/* Links (desktop) */}
-        <div className="alob-nav-links">
+        <div
+          className="alob-nav-links"
+          style={{ flex: 1, justifyContent: "center", gap: "4px", overflow: "visible" }}
+        >
           {navLinks.map(({ path, label, icon }) => (
             <Link
               key={path}
               to={path}
               className={`alob-nav-link ${isActive(path) ? "alob-nav-link--active" : ""}`}
               aria-current={isActive(path) ? "page" : undefined}
+              style={{ whiteSpace: "nowrap", flexShrink: 0 }}
             >
               {icon}
               {label}
@@ -114,12 +104,8 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Date + auth */}
-        <div className="alob-header-actions">
-          <span className="alob-header-date">
-            <Calendar size={14} /> {dateLabel}
-          </span>
-
+        {/* Auth */}
+        <div className="alob-header-actions" style={{ flexShrink: 0 }}>
           {user ? (
             <div className="alob-header-user">
               <div className="alob-header-avatar" aria-hidden="true">
