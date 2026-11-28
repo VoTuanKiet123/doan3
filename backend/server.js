@@ -32,6 +32,7 @@ const racketServiceRoutes = require("./src/routes/racketServiceRoutes");
 const eventRoutes = require("./src/routes/eventRoutes");
 const eventTypeRoutes = require("./src/routes/eventTypeRoutes");
 const registrationRoutes = require("./src/routes/registrationRoutes");
+const sepayRoutes = require("./src/routes/sepayRoutes");
 const {
   cleanupExpiredPendingBookings,
 } = require("./src/controllers/bookingController");
@@ -74,6 +75,7 @@ app.use("/api/racket-services", racketServiceRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/event-types", eventTypeRoutes);
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/webhooks", sepayRoutes);
 
 // Health check
 app.get("/", (req, res) => {

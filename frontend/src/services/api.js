@@ -14,11 +14,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally
+// Handle 401 globally (bỏ qua khi đang ở trang đăng nhập hoặc gọi API login)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const isOnLoginPage = window.location.pathname === '/login';
+
+    if (error.response?.status === 401 && !isLoginRequest && !isOnLoginPage) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

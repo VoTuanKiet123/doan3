@@ -13,6 +13,16 @@ const crypto = require("crypto");
 
 const HOLD_MINUTES = 15;
 
+const VIETQR_CONFIG = {
+  bankId: "MB",
+  bankName: "MB Bank",
+  accountNumber: "0794729278",
+  accountName: "NGUYEN HUYNH VAN THUAN",
+};
+
+const buildCheckInCode = (id) =>
+  `BHUB-${String(id).slice(-6).toUpperCase()}`;
+
 // ============ HELPERS ============
 
 // Lấy Date theo múi giờ Việt Nam
@@ -138,21 +148,29 @@ const getBookingById = async (req, res) => {
 };
 
 const generatePaymentInfo = ({
+  bookingId,
   court,
   date,
   startTime,
   endTime,
   totalPrice,
 }) => {
-  const description = `Thanh toán đặt sân ${court.name} ${date} ${startTime}-${endTime}`;
-  const qrText = `BANK:VietQR;NAME:${court.name};ACCOUNT:1234567890;AMOUNT:${totalPrice};NOTE:${description}`;
+  const shortCode = bookingId
+    ? String(bookingId).slice(-6).toUpperCase()
+    : `${date.replace(/-/g, "").slice(-4)}${startTime.replace(":", "")}`;
+  const description = `BHUB ${shortCode}`;
+  const amount = Math.max(0, Math.round(Number(totalPrice) || 0));
+  const qrImageUrl = `https://img.vietqr.io/image/${VIETQR_CONFIG.bankId}-${VIETQR_CONFIG.accountNumber}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(description)}&accountName=${encodeURIComponent(VIETQR_CONFIG.accountName)}`;
+  const qrText = `BANK:${VIETQR_CONFIG.bankId};ACCOUNT:${VIETQR_CONFIG.accountNumber};NAME:${VIETQR_CONFIG.accountName};AMOUNT:${amount};NOTE:${description}`;
+
   return {
-    bankName: "VietQR",
-    accountNumber: "1234567890",
-    accountName: "Sân Cầu Lông Demo",
-    amount: totalPrice,
+    bankName: VIETQR_CONFIG.bankName,
+    accountNumber: VIETQR_CONFIG.accountNumber,
+    accountName: VIETQR_CONFIG.accountName,
+    amount,
     description,
     qrText,
+    qrImageUrl,
   };
 };
 
@@ -173,7 +191,7 @@ const cleanupExpiredPendingBookings = async () => {
   return result.modifiedCount || 0;
 };
 
-// @desc    Lấy thông tin thanh toán QR cho booking
+// @desc    Lấy thông tin thanh toán VietQR động cho booking
 // @route   GET /api/bookings/:id/payment
 const getBookingPaymentInfo = async (req, res) => {
   try {
@@ -195,32 +213,48 @@ const getBookingPaymentInfo = async (req, res) => {
         .status(403)
         .json({ success: false, message: "Không có quyền truy cập" });
     }
-    if (!booking.paymentInfo) {
+
+    // Tự động nâng cấp sang VietQR MB Bank nếu đơn cũ chưa có qrImageUrl
+    if (
+      !booking.paymentInfo ||
+      !booking.paymentInfo.qrImageUrl ||
+      booking.paymentInfo.accountNumber !== VIETQR_CONFIG.accountNumber
+    ) {
       booking.paymentInfo = generatePaymentInfo({
+        bookingId: booking._id,
         court: booking.court,
         date: booking.date,
         startTime: booking.startTime,
         endTime: booking.endTime,
         totalPrice: booking.totalPrice,
       });
+      if (!booking.checkInCode) {
+        booking.checkInCode = buildCheckInCode(booking._id);
+      }
       await booking.save();
     }
+
     res.json({
       success: true,
       paymentInfo: booking.paymentInfo,
+      checkInCode: booking.checkInCode || buildCheckInCode(booking._id),
       expiresAt: booking.expiresAt,
       status: booking.status,
+      paymentStatus: booking.paymentStatus,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Xác nhận đã thanh toán booking
+// @desc    Xác nhận đã thanh toán VietQR cho booking
 // @route   PUT /api/bookings/:id/payment/confirm
 const confirmBookingPayment = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id).populate(
+      "court",
+      "name pricePerHour",
+    );
     if (!booking) {
       return res
         .status(404)
@@ -249,9 +283,20 @@ const confirmBookingPayment = async (req, res) => {
         message: "Giữ chỗ đã hết hạn",
       });
     }
+
     booking.status = "confirmed";
+    booking.paymentStatus = "paid";
+    booking.expiresAt = null;
+    if (!booking.checkInCode) {
+      booking.checkInCode = buildCheckInCode(booking._id);
+    }
     await booking.save();
-    res.json({ success: true, message: "Thanh toán thành công", booking });
+
+    res.json({
+      success: true,
+      message: "Thanh toán VietQR thành công! Đã cấp mã vé QR Check-in.",
+      booking,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -262,19 +307,24 @@ const confirmBookingPayment = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true },
-    )
-      .populate("user", "name email")
-      .populate("court", "name");
-
+    const booking = await Booking.findById(req.params.id);
     if (!booking) {
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy booking" });
     }
+
+    booking.status = status;
+    if (status === "confirmed") {
+      booking.expiresAt = null;
+      if (!booking.checkInCode) {
+        booking.checkInCode = buildCheckInCode(booking._id);
+      }
+    }
+    await booking.save();
+    await booking.populate("user", "name email phone");
+    await booking.populate("court", "name");
+
     res.json({
       success: true,
       message: "Cập nhật trạng thái thành công",
@@ -391,18 +441,11 @@ const createBooking = async (req, res) => {
       endTime,
     );
 
-    const paymentInfo = generatePaymentInfo({
-      court,
-      date,
-      startTime,
-      endTime,
-      totalPrice: priceResult.totalPrice,
-    });
     const expiresAt = new Date(
       getVietnamTime().getTime() + HOLD_MINUTES * 60000,
     );
 
-    const booking = await Booking.create({
+    const booking = new Booking({
       user: req.user._id,
       court: courtId,
       bookingType: "casual",
@@ -414,8 +457,18 @@ const createBooking = async (req, res) => {
       note: note || "",
       status: "pending",
       expiresAt,
-      paymentInfo,
     });
+
+    booking.checkInCode = buildCheckInCode(booking._id);
+    booking.paymentInfo = generatePaymentInfo({
+      bookingId: booking._id,
+      court,
+      date,
+      startTime,
+      endTime,
+      totalPrice: priceResult.totalPrice,
+    });
+    await booking.save();
 
     await booking.populate("court", "name pricePerHour");
     res.status(201).json({
@@ -652,7 +705,6 @@ const previewFixedSchedule = async (req, res) => {
 
     let conflictDates = [];
     if (courtId) {
-      // Kiểm tra trạng thái sân trước khi preview
       const court = await Court.findById(courtId).select("status").lean();
       if (court && court.status !== "active") {
         return res.status(400).json({
@@ -710,7 +762,7 @@ const getBookingsByBatch = async (req, res) => {
   }
 };
 
-// @desc    Khách hàng check-in sân
+// @desc    Khách hàng / quầy check-in sân theo ID
 // @route   PUT /api/bookings/:id/checkin
 const checkInBooking = async (req, res) => {
   try {
@@ -746,8 +798,100 @@ const checkInBooking = async (req, res) => {
     }
     booking.checkedIn = true;
     booking.checkedInAt = getVietnamTime();
+    booking.checkedInBy = req.user._id;
     await booking.save();
     res.json({ success: true, message: "Check-in thành công!", booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Quét mã QR / nhập mã vé Check-in tại quầy (Admin / POS)
+// @route   PUT /api/bookings/check-in-code
+const checkInByCode = async (req, res) => {
+  try {
+    const raw = String(req.body.code || "").trim();
+    if (!raw) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Vui lòng nhập hoặc quét mã vé QR" });
+    }
+
+    const normalized = raw.toUpperCase();
+    let booking = await Booking.findOne({ checkInCode: normalized })
+      .populate("user", "name email phone")
+      .populate("court", "name pricePerHour");
+
+    // Hỗ trợ quét trực tiếp ObjectId 24 ký tự hoặc 6 ký tự cuối của các đơn cũ chưa có checkInCode
+    if (!booking && /^[0-9A-F]{24}$/i.test(raw)) {
+      booking = await Booking.findById(raw)
+        .populate("user", "name email phone")
+        .populate("court", "name pricePerHour");
+    }
+
+    if (!booking) {
+      const hex6 = normalized.replace(/^BHUB-?/, "");
+      if (/^[0-9A-F]{6}$/.test(hex6)) {
+        const candidates = await Booking.find({
+          status: { $in: ["confirmed", "pending", "checked_in"] },
+        })
+          .populate("user", "name email phone")
+          .populate("court", "name pricePerHour")
+          .sort({ createdAt: -1 })
+          .limit(200);
+        booking = candidates.find(
+          (b) => b._id.toString().slice(-6).toUpperCase() === hex6,
+        );
+      }
+    }
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy lịch đặt sân với mã "${normalized}"`,
+      });
+    }
+
+    if (booking.status === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Vé này đã bị hủy, không thể check-in",
+        booking,
+      });
+    }
+
+    if (booking.status === "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Đơn này chưa thanh toán / chưa được xác nhận",
+        booking,
+      });
+    }
+
+    if (booking.checkedIn) {
+      const timeStr = booking.checkedInAt
+        ? new Date(booking.checkedInAt).toLocaleString("vi-VN")
+        : "";
+      return res.status(400).json({
+        success: false,
+        message: `Vé đã được check-in trước đó${timeStr ? ` lúc ${timeStr}` : ""}`,
+        booking,
+      });
+    }
+
+    booking.checkedIn = true;
+    booking.checkedInAt = getVietnamTime();
+    booking.checkedInBy = req.user._id;
+    if (!booking.checkInCode) {
+      booking.checkInCode = buildCheckInCode(booking._id);
+    }
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: `Check-in thành công cho ${booking.user?.name || "khách hàng"} — ${booking.court?.name || "Sân"}!`,
+      booking,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -784,7 +928,6 @@ const submitReview = async (req, res) => {
       });
     }
 
-    // Kiểm tra ngày chơi đã qua chưa (cho phép đánh giá từ ngày chơi trở đi)
     const vnNow = getVietnamTime();
     const todayStr = `${vnNow.getFullYear()}-${String(vnNow.getMonth() + 1).padStart(2, "0")}-${String(vnNow.getDate()).padStart(2, "0")}`;
     if (booking.date > todayStr) {
@@ -957,6 +1100,7 @@ module.exports = {
   getBookingPaymentInfo,
   confirmBookingPayment,
   checkInBooking,
+  checkInByCode,
   submitReview,
   getCourtReviews,
   getMyReviews,

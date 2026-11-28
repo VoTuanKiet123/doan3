@@ -13,6 +13,7 @@ const {
   getBookingPaymentInfo,
   confirmBookingPayment,
   checkInBooking,
+  checkInByCode,
   submitReview,
   getMyReviews,
   getReviewableBookings,
@@ -34,9 +35,10 @@ router.post("/preview-fixed-schedule", protect, previewFixedSchedule);
 router.put("/batch/:batchId/cancel", protect, cancelBookingByBatch);
 
 // ========== Quản lý (admin + pos_staff) ==========
+router.put("/check-in-code", protect, adminOrPosStaff, checkInByCode);
 router.put("/:id/status", protect, adminOrPosStaff, updateBookingStatus);
 router.delete("/:id", protect, adminOrPosStaff, cancelBooking);
-router.put("/:id/payment/confirm", protect, confirmBookingPayment);
+router.put("/:id/payment/confirm", protect, adminOrPosStaff, confirmBookingPayment);
 
 // ========== Check-in & Đánh giá (khách hàng) ==========
 router.put("/:id/checkin", protect, checkInBooking);

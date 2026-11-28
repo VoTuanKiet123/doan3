@@ -72,6 +72,7 @@ const bookingSchema = new mongoose.Schema(
       amount: Number,
       description: String,
       qrText: String,
+      qrImageUrl: String,
     },
 
     // ============ TRẠNG THÁI PHIÊN (SESSION STATUS) ============
@@ -105,6 +106,12 @@ const bookingSchema = new mongoose.Schema(
     },
 
     // ============ CHECK-IN ============
+    checkInCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
     checkedIn: {
       type: Boolean,
       default: false,
@@ -205,5 +212,12 @@ bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ customerPhone: 1, status: 1 });
 // Index tra cứu booking theo người tạo (POS staff)
 bookingSchema.index({ createdBy: 1, status: 1 });
+
+bookingSchema.pre("save", function (next) {
+  if (!this.checkInCode && this._id) {
+    this.checkInCode = `BHUB-${this._id.toString().slice(-6).toUpperCase()}`;
+  }
+  next();
+});
 
 module.exports = mongoose.model("Booking", bookingSchema);
